@@ -175,7 +175,7 @@ preview_audio() {
   [ -n "$channels" ] && style -n "󰍛 $channels Channels" white italic
 
   if [ -n "$lyrics" ]; then
-    echo "Lyrics:"
+    echo
     echo "$lyrics" | preview_text /dev/stdin 20
   fi
 }
