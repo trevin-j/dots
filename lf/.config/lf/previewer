@@ -168,11 +168,11 @@ preview_audio() {
   # Codec
   style -n " $codec" bright_green
   # Bitrate, depth, sample rate
-  style "󰍛 $bitrate " white italic ; [ "$depth" -gt 0 ] && style -n "󰍛 $depth Bit" white italic ; style -n "󰎙 $sample_rate" white italic
+  style "󰍛 $bitrate " white italic ; [ "$depth" -gt 0 ] && style -n "󰎙 $depth Bit" white italic ; style -n " $sample_rate" white italic
   # Length, size
-  style "󰍛 $duration " white italic ; style -n "󰍛 $size " white italic
+  style "󰥔 $duration " white italic ; style -n " $size " white italic
   # Channels
-  [ -n "$channels" ] && style -n "󰍛 $channels Channels" white italic
+  [ -n "$channels" ] && style -n " $channels Channels" white italic
 
   if [ -n "$lyrics" ]; then
     echo
