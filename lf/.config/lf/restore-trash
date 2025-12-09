@@ -1,0 +1,31 @@
+#!/bin/bash
+TRASH="$HOME/.local/share/Trash"
+FILES="$TRASH/files"
+INFO="$TRASH/info"
+
+# Build list of trashed files with original paths
+mapfile -t trashed < <(for infofile in "$INFO"/*.trashinfo; do
+    orig_path=$(grep "^Path=" "$infofile" | cut -d= -f2-)
+    filename=$(basename "${infofile%.trashinfo}")
+    echo "$filename:::$orig_path"
+done)
+
+# Use fzf to pick files; display original path; preview file content using bat
+selected=$(printf "%s\n" "${trashed[@]}" | fzf --multi \
+    --with-nth=2 \
+    --delimiter=":::" \
+    --prompt="Restore> " \
+    --preview="~/.config/lf/previewer \"$FILES/{r1}\" \$FZF_PREVIEW_LINES \$FZF_PREVIEW_COLUMNS")
+
+[ -z "$selected" ] && exit 0
+
+# Restore each selection
+while IFS= read -r line; do
+    filename="${line%%:::*}"
+    orig_path="${line##*:::}"
+
+    mkdir -p "$(dirname "$orig_path")"
+    mv "$FILES/$filename" "$orig_path"
+    rm "$INFO/$filename.trashinfo"
+done <<< "$selected"
+

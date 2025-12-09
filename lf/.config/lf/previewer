@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# function to use bat if exists, otherwise use cat
+preview_text() {
+  if command -v bat >/dev/null 2>&1; then
+    bat --style=plain --pager=off --decorations=never --color=always --line-range=:$2 "$1"
+  else
+    cat "$1"
+  fi
+}
+
+case "$(file -Lb --mime-type -- "$1")" in
+  image/*)
+    chafa -f sixel -s "$2x$3" --animate off --polite on -t 1 --bg black "$1"
+    ;;
+  text/*)
+    preview_text "$1" "$2"
+    ;;
+  application/*)
+    preview_text "$1" "$2"
+    ;;
+esac

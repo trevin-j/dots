@@ -1,0 +1,35 @@
+[config.wallpaper]
+# command = "swww"
+# arguments = ["img", "--transition-type", "random"]
+command = "set_wallpaper"
+arguments = []
+set = true
+
+[templates.pywalfox]
+input_path = 'templates/pywalfox.json'
+output_path = '~/.cache/wal/colors.json'
+post_hook = 'pywalfox update; pywalfox {{mode | lower_case}}'
+
+[templates.gtk3]
+input_path = 'templates/gtk.css'
+output_path = '~/.config/gtk-3.0/colors.css'
+post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme {{ mode | replace: "Light", "adw-gtk3" | replace: "Dark", "adw-gtk3-dark" }}; gsettings set org.gnome.desktop.interface color-scheme {{ mode | replace: "Light", "default" | replace: "Dark", "prefer-dark" }}'
+
+[templates.gtk4]
+input_path = 'templates/gtk.css'
+output_path = '~/.config/gtk-4.0/colors.css'
+
+[templates.qt]
+input_path = 'templates/qt.colors'
+output_path = '~/.local/share/color-schemes/Matugen.colors'
+
+[templates.zellij]
+input_path = 'templates/zellij.kdl'
+output_path = '~/.config/zellij/themes/matugen.kdl'
+post_hook = 'touch ~/.config/zellij/config.kdl'
+
+[templates.terminals]
+input_path = "templates/update_terminals.sh"
+output_path = '~/.cache/update_terminals.sh'
+post_hook = 'sh ~/.cache/update_terminals.sh'
+

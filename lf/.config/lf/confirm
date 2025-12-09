@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Function to get a single character press from the user
+# $1 = default choice: "y" or "n"
+default="$1"
+confirm_prompt="$2"
+
+prompt="[y/n]"
+[ "$default" = "y" ] && prompt="[Y/n]"
+[ "$default" = "n" ] && prompt="[y/N]"
+
+printf "%s %s " "$confirm_prompt" "$prompt"
+
+# read exactly one char, silent, no enter required
+read -r -n 1 reply # </dev/tty
+printf "\n" # >/dev/tty
+
+# if user hit enter without typing anything
+if [ -z "$reply" ]; then
+    reply="$default"
+fi
+
+case "$reply" in
+    [yY]) exit 0 ;;
+    [nN]) exit 1 ;;
+    *)
+        if [ "$default" = "y" ]; then
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
+esac

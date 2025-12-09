@@ -1,0 +1,117 @@
+themes {
+    matugen {
+        text_unselected {
+            base {{colors.on_surface_variant.dark.red}} {{colors.on_surface_variant.dark.green}} {{colors.on_surface_variant.dark.blue}}
+            background {{colors.surface.dark.red}} {{colors.surface.dark.green}} {{colors.surface.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        text_selected {
+            base {{colors.on_surface.dark.red}} {{colors.on_surface.dark.green}} {{colors.on_surface.dark.blue}}
+            background {{colors.surface_container_highest.dark.red}} {{colors.surface_container.dark.green}} {{colors.surface_container.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        ribbon_unselected {
+            base {{colors.on_surface.dark.red}} {{colors.on_surface.dark.green}} {{colors.on_surface.dark.blue}}
+            background {{colors.surface_container.dark.red}} {{colors.surface_container.dark.green}} {{colors.surface_container.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        ribbon_selected {
+            base {{colors.on_primary.dark.red}} {{colors.on_primary.dark.green}} {{colors.on_primary.dark.blue}}
+            background {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_0 {{colors.tertiary_fixed.dark.red}} {{colors.tertiary_fixed.dark.green}} {{colors.tertiary_fixed.dark.blue}}
+            emphasis_1 {{colors.primary_fixed.dark.red}} {{colors.primary_fixed.dark.green}} {{colors.primary_fixed.dark.blue}}
+            emphasis_2 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+        }
+        table_title {
+            base {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            background {{colors.surface.dark.red}} {{colors.surface.dark.green}} {{colors.surface.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        table_cell_unselected {
+            base {{colors.on_surface.dark.red}} {{colors.on_surface.dark.green}} {{colors.on_surface.dark.blue}}
+            background {{colors.surface.dark.red}} {{colors.surface.dark.green}} {{colors.surface.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        table_cell_selected {
+            base {{colors.on_primary.dark.red}} {{colors.on_primary.dark.green}} {{colors.on_primary.dark.blue}}
+            background {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_0 {{colors.tertiary_fixed.dark.red}} {{colors.tertiary_fixed.dark.green}} {{colors.tertiary_fixed.dark.blue}}
+            emphasis_1 {{colors.primary_fixed.dark.red}} {{colors.primary_fixed.dark.green}} {{colors.primary_fixed.dark.blue}}
+            emphasis_2 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+        }
+        list_unselected {
+            base {{colors.on_surface.dark.red}} {{colors.on_surface.dark.green}} {{colors.on_surface.dark.blue}}
+            background {{colors.surface.dark.red}} {{colors.surface.dark.green}} {{colors.surface.dark.blue}}
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        list_selected {
+            base {{colors.on_primary.dark.red}} {{colors.on_primary.dark.green}} {{colors.on_primary.dark.blue}}
+            background {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_0 {{colors.tertiary_fixed.dark.red}} {{colors.tertiary_fixed.dark.green}} {{colors.tertiary_fixed.dark.blue}}
+            emphasis_1 {{colors.primary_fixed.dark.red}} {{colors.primary_fixed.dark.green}} {{colors.primary_fixed.dark.blue}}
+            emphasis_2 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed.dark.red}} {{colors.secondary_fixed.dark.green}} {{colors.secondary_fixed.dark.blue}}
+        }
+        frame_unselected {
+            base {{colors.outline_variant.dark.red}} {{colors.outline_variant.dark.green}} {{colors.outline_variant.dark.blue}}
+            background 0
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        frame_selected {
+            base {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            background 0
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        frame_highlight {
+            base {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            background 0
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        exit_code_success {
+            base {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            background 0
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        exit_code_error {
+            base {{colors.error.dark.red}} {{colors.error.dark.green}} {{colors.error.dark.blue}}
+            background 0
+            emphasis_0 {{colors.tertiary.dark.red}} {{colors.tertiary.dark.green}} {{colors.tertiary.dark.blue}}
+            emphasis_1 {{colors.primary.dark.red}} {{colors.primary.dark.green}} {{colors.primary.dark.blue}}
+            emphasis_2 {{colors.secondary.dark.red}} {{colors.secondary.dark.green}} {{colors.secondary.dark.blue}}
+            emphasis_3 {{colors.secondary_fixed_dim.dark.red}} {{colors.secondary_fixed_dim.dark.green}} {{colors.secondary_fixed_dim.dark.blue}}
+        }
+        // multiplayer_user_colors {}
+    }
+}
