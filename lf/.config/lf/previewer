@@ -1,17 +1,193 @@
 #!/bin/bash
 
+# style text with ANSI escape codes
+# usage: style "Your Text" color [bold|italic|underline]
+style() {
+  # If -n, at the end of the line, print a newline. -n should be the first option, then shift
+  local newline=""
+  if [ "$1" = "-n" ]; then
+    newline="\n"
+    shift
+  fi
+
+  local text="$1"
+  local color="$2"
+  local style="$3"
+
+  # map human-friendly colors to ANSI codes
+  local color_code=""
+  case "$color" in
+    black) color_code=30 ;;
+    red) color_code=31 ;;
+    green) color_code=32 ;;
+    yellow) color_code=33 ;;
+    blue) color_code=34 ;;
+    magenta) color_code=35 ;;
+    cyan) color_code=36 ;;
+    white) color_code=37 ;;
+    bright_black) color_code=90 ;;
+    bright_red) color_code=91 ;;
+    bright_green) color_code=92 ;;
+    bright_yellow) color_code=93 ;;
+    bright_blue) color_code=94 ;;
+    bright_magenta) color_code=95 ;;
+    bright_cyan) color_code=96 ;;
+    bright_white) color_code=97 ;;
+    *) color_code=37 ;; # default white
+  esac
+
+  # map style to ANSI codes
+  local style_code=""
+  case "$style" in
+    bold) style_code=1 ;;
+    italic) style_code=3 ;;
+    underline) style_code=4 ;;
+    reverse) style_code=7 ;;
+    *) style_code=0 ;; # normal
+  esac
+
+  # print styled text
+  printf "\e[${style_code};${color_code}m%s\e[0m${newline}" "$text"
+}
+
 # function to use bat if exists, otherwise use cat
 preview_text() {
   if command -v bat >/dev/null 2>&1; then
     bat --style=plain --pager=off --decorations=never --color=always --line-range=:$2 "$1"
+  elif command -v batcat >/dev/null 2>&1; then
+    # bat is batcat on debian and some other distros ¯\_(°°)_/¯
+    batcat --style=plain --pager=off --decorations=never --color=always --line-range=:$2 "$1"
   else
     cat "$1"
   fi
 }
 
-case "$(file -Lb --mime-type -- "$1")" in
+# function to extract a tag case-insensitively from ffprobe JSON
+get_tag() {
+  local json="$1"
+  local tag="$2"
+  echo "$json" | jq -r "
+  .format.tags
+  | to_entries
+  | map({key: (.key | ascii_downcase), value})
+  | from_entries
+  | .[\"${tag,,}\"] // \"\"
+  "
+}
+
+get_codec() {
+  local json="$1"
+  echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").codec_long_name'
+}
+
+get_bitrate() {
+  local json="$1"
+  # Divide by 1000 to get kbps, round to nearest integer
+  echo "$json" | jq -r '.format.bit_rate // ""' | awk '{printf "%.0fkbps", $1/1000}'
+}
+
+get_sample_rate() {
+  local json="$1"
+  # Divide by 1000 to get kHz, round to 1 decimal place, add kHz suffix
+  echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").sample_rate' | awk '{printf "%.1fkHz", $1/1000}'
+}
+
+get_channels() {
+  local json="$1"
+  echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").channels'
+}
+
+get_duration() {
+  local json="$1"
+  # Convert seconds to HH:MM:SS
+  echo "$json" | jq -r '.format.duration // ""' | awk '{h=$1/3600; m=($1%3600)/60; s=$1%60; printf "%02d:%02d:%02d\n", h, m, s}'
+}
+
+get_size() {
+  local json="$1"
+  # Return as megabytes
+  echo "$json" | jq -r '.format.size // ""' | numfmt --to=iec-i --suffix=B --format="%.2f"
+}
+
+get_depth() {
+  local json="$1"
+  # Either .bits_per_sample or .bits_per_raw_sample
+  echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").bits_per_sample // select(.codec_type == "audio").bits_per_raw_sample'
+}
+
+normalize_format_tags() {
+  jq '
+    if .format.tags then
+      .
+    else
+      .format.tags = (
+        reduce (.streams[] | select(.tags).tags) as $t ({}; . + $t)
+      )
+    end
+  '
+}
+
+# function to preview audio files
+preview_audio() {
+  local file="$1"
+
+  # Use ffprobe to get JSON metadata
+  local json_raw
+  json_raw=$(ffprobe -v quiet -of json -show_streams -show_format "$file") || return
+
+  local json
+  json=$(echo "$json_raw" | normalize_format_tags)
+
+
+  # Extract tags using jq
+  local title artist album genre year track lyrics
+  title=$(get_tag "$json" title)
+  artist=$(get_tag "$json" artist)
+  album=$(get_tag "$json" album)
+  genre=$(get_tag "$json" genre)
+  year=$(get_tag "$json" date)
+  track=$(get_tag "$json" track)
+  lyrics=$(get_tag "$json" lyrics)
+
+  # Get other metadata
+  local codec=$(get_codec "$json_raw")
+  local bitrate=$(get_bitrate "$json_raw")
+  local sample_rate=$(get_sample_rate "$json_raw")
+  local channels=$(get_channels "$json_raw")
+  local duration=$(get_duration "$json_raw")
+  local size=$(get_size "$json_raw")
+  local depth=$(get_depth "$json_raw")
+
+  # Track and title
+  [ -n "$track" ] && style "$track " white italic ; style -n " $title" bright_magenta bold
+  # Artist and album
+  style "󰠃 $artist " blue bold ; style -n "󰎄 $album" bright_yellow bold
+  # Date and genre
+  [ -n "$year" ] && style "󰃭 $year " white italic ; [ -n "$genre" ] && style -n "󰓹 $genre" white italic
+  echo
+  # Codec
+  style -n " $codec" bright_green
+  # Bitrate, depth, sample rate
+  style "󰍛 $bitrate " white italic ; [ "$depth" -gt 0 ] && style -n "󰍛 $depth Bit" white italic ; style -n "󰎙 $sample_rate" white italic
+  # Length, size
+  style "󰍛 $duration " white italic ; style -n "󰍛 $size " white italic
+  # Channels
+  [ -n "$channels" ] && style -n "󰍛 $channels Channels" white italic
+
+  if [ -n "$lyrics" ]; then
+    echo "Lyrics:"
+    echo "$lyrics" | preview_text /dev/stdin 20
+  fi
+}
+
+# main previewer
+mtype="$(file -Lb --mime-type -- "$1")"
+case "$mtype" in
   image/*)
     chafa -f sixel -s "$2x$3" --animate off --polite on -t 1 --bg black "$1"
+    ;;
+  audio/*)
+    preview_audio "$1"
     ;;
   text/*)
     preview_text "$1" "$2"
@@ -19,4 +195,13 @@ case "$(file -Lb --mime-type -- "$1")" in
   application/*)
     preview_text "$1" "$2"
     ;;
+  video/ogg)
+    # TODO: handle if video
+    # For now, just handle assuming it is audio only
+    preview_audio "$1"
+    ;;
+  *)
+    echo "Previewing $mtype is not supported yet."
+    ;;
 esac
+
