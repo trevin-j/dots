@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+dotdir="$HOME/dotfiles"
+
+if [[ $# -eq 0 ]] || [[ $1 == "-h" ]] || [[ $1 == "--help" ]]; then
+    echo "Usage: df-install [OPTIONS] [PKG|PKG PKG|all]"
+    exit 0
+fi
+
+###############################################################################
+# Helper: prompt
+###############################################################################
+confirm() {
+    local prompt="$1"
+    read -p "$prompt [y/N] " ans
+    [[ "$ans" =~ ^[Yy]$ ]]
+}
+
+###############################################################################
+# Helper: detect AUR helper
+###############################################################################
+pick_aur_helper() {
+    if command -v paru &>/dev/null; then
+        echo "paru"
+        return
+    fi
+    if command -v yay &>/dev/null; then
+        echo "yay"
+        return
+    fi
+
+    echo "No AUR helper found."
+    if confirm "Install paru?"; then
+        sudo pacman -S --needed --noconfirm base-devel
+        mkdir -p "$HOME/tmp"
+        pushd "$HOME/tmp" >/dev/null
+        git clone https://aur.archlinux.org/paru.git
+        cd paru
+        makepkg -si
+        popd >/dev/null
+        echo "paru"
+    else
+        echo ""
+    fi
+}
+
+###############################################################################
+# Install deps for a package
+###############################################################################
+handle_deps() {
+    local require_aur="$1"
+    shift
+    local deps=("$@")
+
+    [[ ${#deps[@]} -eq 0 ]] && return
+
+        local installer="sudo pacman -S --needed --noconfirm"
+
+        if [[ "$require_aur" == "true" ]]; then
+            local helper
+            helper=$(pick_aur_helper)
+            if [[ -z "$helper" ]]; then
+                echo "Cannot install AUR deps without helper. Skipping deps."
+                return
+            fi
+            installer="$helper -S --needed --noconfirm"
+        fi
+
+        echo "Installing deps: ${deps[*]}"
+        $installer "${deps[@]}"
+    }
+
+###############################################################################
+# Backup conflicting files before stow
+###############################################################################
+backup_conflicts() {
+    local pkg="$1"
+
+    echo "Checking for conflicts..."
+    mapfile -t conflicts < <(
+        stow --target="$HOME" --no-folding -nv "$pkg" 2>&1 \
+            | sed -n 's/.*existing target \(.*\) since.*/\1/p'
+        )
+
+        if (( ${#conflicts[@]} > 0 )); then
+            echo "Conflicts detected in package '$pkg':"
+            for c in "${conflicts[@]}"; do
+                echo "  ~/$c"
+            done
+
+            read -p "Back up conflicting files and replace? [y/N] " yn
+            if [[ "$yn" =~ ^[Yy]$ ]]; then
+                for c in "${conflicts[@]}"; do
+                    backup="$HOME/$c.backup.$(date +%s)"
+                    echo "Backing up ~/$c → $backup"
+                    mv "$HOME/$c" "$backup"
+                done
+            else
+                echo "Aborting."
+                exit 1
+            fi
+        fi
+    }
+
+###############################################################################
+# Process a single package
+###############################################################################
+process_pkg() {
+    local pkg="$1"
+    local pkgdir="$dotdir/$pkg"
+    local manifest="$dotdir/${pkg}-manifest.sh"
+
+    if [[ ! -d "$pkgdir" ]]; then
+        echo "Package $pkg not found."
+        return 1
+    fi
+    if [[ ! -f "$manifest" ]]; then
+        echo "No manifest for $pkg. Aborting."
+        return 1
+    fi
+
+    # defaults
+    require_aur="false"
+    deps=()
+    requires=()
+    pre_dl() { :; }
+    pre_stow() { :; }
+    post_stow() { :; }
+
+    # load manifest
+    source "$manifest"
+
+    # Process manifest-required packages
+    for req in "${requires[@]}"; do
+        echo "$pkg requires $req."
+
+        if confirm "Install $req first?"; then
+            process_pkg "$req"
+        else
+            echo "Cannot continue without $req."
+            exit 1
+        fi
+    done
+
+
+    echo
+    echo "=== Installing $pkg ==="
+
+    pre_dl
+    handle_deps "$require_aur" "${deps[@]}"
+
+    pre_stow
+    backup_conflicts "$pkg"
+
+    echo "Stowing $pkg..."
+    stow --dir="$dotdir" --target="$HOME" --no-folding "$pkg"
+
+    post_stow
+}
+
+###############################################################################
+# Handle "all" mode
+###############################################################################
+if [[ $1 == "all" ]]; then
+    pkgs=()
+    while IFS= read -r d; do
+        pkgs+=("$(basename "$d")")
+    done < <(find "$dotdir" -mindepth 1 -maxdepth 1 -type d)
+
+else
+    pkgs=("$@")
+fi
+
+###############################################################################
+# Execute packages
+###############################################################################
+for pkg in "${pkgs[@]}"; do
+    process_pkg "$pkg"
+done
+
+echo "Done."
+
