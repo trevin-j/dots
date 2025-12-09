@@ -26,4 +26,4 @@ I am super stoked about theming in this setup. I worked hard to create a cohesiv
 
 ## Installation
 
-A handy installation system is in the works. For now, I recommend using GNU Stow. To apply everything, run `stow *`, or to apply selectively, run `stow <package>` for example, `stow lf` will install the config for lf.
+A handy installation system is in the works. For now, I recommend using GNU Stow. To apply everything, run `stow */`, or to apply selectively, run `stow <package>` for example, `stow lf` will install the config for lf.
