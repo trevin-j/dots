@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # function to use bat if exists, otherwise use cat
 preview_text() {

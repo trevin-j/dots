@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Function to get a single character press from the user
 # $1 = default choice: "y" or "n"
