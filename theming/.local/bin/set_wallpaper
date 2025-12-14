@@ -1,0 +1,4 @@
+#!/bin/env sh
+transition_args=$(python3 ~/.config/matugen/random_transition.py)
+echo "swww img '$1' $transition_args"
+swww img "$1" $transition_args
