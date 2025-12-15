@@ -129,6 +129,7 @@ process_install_pkg() {
     echo "Stowing $pkg..."
     stow --dir="$DOTDIR" --target="$HOME" --no-folding "$pkg"
     post_stow
+    echo "Finished installing $pkg."
 }
 
 process_track_pkg() {
@@ -193,10 +194,11 @@ case "$cmd" in
             exit 1
         fi
         if [[ "$1" == "all" ]]; then
-            pkgs=()
-            while IFS= read -r d; do
-                pkgs+=("$(basename "$d")")
-            done < <(find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d)
+            mapfile -t pkgs < <(
+                find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d \
+                    -not -name ".*" -not -name "_*" \
+                    | xargs -n1 basename
+            )
         else
             pkgs=("$@")
         fi
