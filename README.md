@@ -27,4 +27,24 @@ I am super stoked about theming in this setup. I worked hard to create a cohesiv
 
 ## Installation
 
-A handy installation system is in the works. For now, I recommend using GNU Stow. To apply selectively, run `stow <package>` for example, `stow lf` will install the config for lf.
+There is a handy installation script in the bin package! It allows easy installation of the dotfiles and management. Documentation isn't great on it yet but first `git clone https://github.com/trevin-j/dots .dots` (you can change the .dots to whatever you like, but if you do, make sure to set the env var DOTDIR to where you installed them to) you can install the script to path by running `bin/.local/bin/dotctl install bin` from within the repo. e.g.:
+
+```bash
+git clone https://github.com/trevin-j/dots .dots
+bin/.local/bin/dotctl install bin
+```
+
+From here you can now install any/all of the configs you want by running `dotctl install <config>` or `dotctl install all` to install all of them. The script also does some dependency management (but assumes you are on an Arch based system!!), but this is WIP and not all dependencies are listed yet.
+
+### Non-Arch or manual installation
+
+If you are not on an Arch based system, or you want to install manually, you can do so by cloning the repo and runing `stow <config>` from within the repo. You'll need dependencies for some configs so check the manifests of each config. As noted in the previous section, dependencies are WIP and you may have to figure out for yourself what is required. Sorry!
+
+## Config-specific information
+
+(WIP) Any config-specific information can be found in <config>/meta/README.md. Sorry if it isn't there yet lol.
+
+## License
+
+MIT. Do whatever you want (within the rights of MIT). Freedom is beautiful.
+
