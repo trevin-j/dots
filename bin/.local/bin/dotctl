@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${DOTDIR:="$HOME/.dots"}"
+
+###############################################################################
+# Helpers
+###############################################################################
+
+confirm() {
+    local prompt="$1"
+    read -p "$prompt [y/N] " ans
+    [[ "$ans" =~ ^[Yy]$ ]]
+}
+
+pick_aur_helper() {
+    if command -v paru &>/dev/null; then
+        echo "paru"
+        return
+    fi
+    if command -v yay &>/dev/null; then
+        echo "yay"
+        return
+    fi
+
+    echo "No AUR helper found."
+    if confirm "Install paru?"; then
+        sudo pacman -S --needed --noconfirm base-devel
+        mkdir -p "$HOME/tmp"
+        pushd "$HOME/tmp" >/dev/null
+        git clone https://aur.archlinux.org/paru.git
+        cd paru
+        makepkg -si
+        popd >/dev/null
+        echo "paru"
+    else
+        echo ""
+    fi
+}
+
+handle_deps() {
+    local require_aur="$1"; shift
+    local deps=("$@")
+    [[ ${#deps[@]} -eq 0 ]] && return
+
+    local installer="sudo pacman -S --needed --noconfirm"
+
+    if [[ "$require_aur" == "true" ]]; then
+        local helper
+        helper=$(pick_aur_helper)
+        if [[ -z "$helper" ]]; then
+            echo "Cannot install AUR deps without helper. Skipping deps."
+            return
+        fi
+        installer="$helper -S --needed --noconfirm"
+    fi
+
+    echo "Installing deps: ${deps[*]}"
+    $installer "${deps[@]}"
+}
+
+backup_conflicts() {
+    local pkg="$1"
+    echo "Checking for conflicts..."
+    mapfile -t conflicts < <(
+        stow --target="$HOME" --no-folding -nv "$pkg" 2>&1 \
+            | sed -n 's/.*existing target \(.*\) since.*/\1/p'
+    )
+
+    if (( ${#conflicts[@]} > 0 )); then
+        echo "Conflicts detected in package '$pkg':"
+        for c in "${conflicts[@]}"; do
+            echo "  ~/$c"
+        done
+
+        if confirm "Back up conflicting files and replace?"; then
+            for c in "${conflicts[@]}"; do
+                backup="$HOME/$c.backup.$(date +%s)"
+                echo "Backing up ~/$c → $backup"
+                mv "$HOME/$c" "$backup"
+            done
+        else
+            echo "Aborting."
+            exit 1
+        fi
+    fi
+}
+
+process_install_pkg() {
+    local pkg="$1"
+    local pkgdir="$DOTDIR/$pkg"
+    local manifest="$pkgdir/meta/manifest.sh"
+
+    if [[ ! -d "$pkgdir" ]]; then
+        echo "Package $pkg not found."
+        return 1
+    fi
+    if [[ ! -f "$manifest" ]]; then
+        echo "No manifest for $pkg. Aborting."
+        return 1
+    fi
+
+    # defaults
+    require_aur="false"
+    deps=()
+    requires=()
+    pre_dl() { :; }
+    pre_stow() { :; }
+    post_stow() { :; }
+
+    source "$manifest"
+
+    for req in "${requires[@]}"; do
+        echo "$pkg requires $req."
+        if confirm "Install $req first?"; then
+            process_install_pkg "$req"
+        else
+            echo "Cannot continue without $req."
+            exit 1
+        fi
+    done
+
+    echo
+    echo "=== Installing $pkg ==="
+    pre_dl
+    handle_deps "$require_aur" "${deps[@]}"
+    pre_stow
+    backup_conflicts "$pkg"
+    echo "Stowing $pkg..."
+    stow --dir="$DOTDIR" --target="$HOME" --no-folding "$pkg"
+    post_stow
+}
+
+process_track_pkg() {
+    local package="$1"
+    shift
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: dotctl track [package] [...paths]"
+        exit 1
+    fi
+
+    local pkgdir="$DOTDIR/$package"
+    local template_dir="$DOTDIR/_package_template"
+
+    # Copy template if package doesn't exist
+    if [[ ! -d "$pkgdir" ]]; then
+        if [[ ! -d "$template_dir" ]]; then
+            echo "Template package not found: $template_dir"
+            exit 1
+        fi
+        echo "Creating new package '$package' from template..."
+        cp -r "$template_dir" "$pkgdir"
+    fi
+
+    for path in "$@"; do
+        rel=$(realpath --relative-to="$HOME" "$path")
+        mkdir -p "$pkgdir/$(dirname "$rel")"
+        mv "$HOME/$rel" "$pkgdir/$rel"
+    done
+
+    echo "Stowing $package..."
+    stow --dir="$DOTDIR" --target="$HOME" --no-folding "$package"
+}
+
+###############################################################################
+# Help
+###############################################################################
+show_help() {
+    cat <<EOF
+dotctl - manage your dotfiles
+
+Usage:
+  dotctl install [PKG|PKG PKG|all]    Install one or more packages
+  dotctl track [PACKAGE] [...PATH]    Track an existing config into a package
+  dotctl help                         Show this help
+EOF
+}
+
+###############################################################################
+# Main
+###############################################################################
+if [[ $# -lt 1 ]]; then
+    show_help
+    exit 1
+fi
+
+cmd="$1"; shift || true
+
+case "$cmd" in
+    install)
+        if [[ $# -eq 0 ]]; then
+            echo "Specify packages or 'all'"
+            exit 1
+        fi
+        if [[ "$1" == "all" ]]; then
+            pkgs=()
+            while IFS= read -r d; do
+                pkgs+=("$(basename "$d")")
+            done < <(find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d)
+        else
+            pkgs=("$@")
+        fi
+        for pkg in "${pkgs[@]}"; do
+            process_install_pkg "$pkg"
+        done
+        ;;
+    track)
+        if [[ $# -lt 2 ]]; then
+            echo "Usage: dotctl track [package] [...paths]"
+            exit 1
+        fi
+        process_track_pkg "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        echo "Unknown command: $cmd"
+        show_help
+        exit 1
+        ;;
+esac
+
+echo "Done."
+
