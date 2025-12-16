@@ -131,16 +131,63 @@ bw_ensure_ready() {
 bw_picker() {
     bw_ensure_ready || return 1
 
+    local opt
+    opt="${1:---password}"
+    local prompt
+    prompt=${opt//--/}
+    prompt="${prompt^}"
+
+    local previewer
+    previewer='rbw get {} --raw 2>/dev/null | jq -r "
+        . as \$item |
+        [
+            \$item.name,
+            (\$item.folder // \"No Folder\"),
+            (\$item.data.username // \"No Username\"),
+            (if \$item.data.totp? then \"Has TOTP\" else empty end),
+            \"URIs:\",
+            (\$item.data.uris // [] | map(\" - \" + .uri) | join(\"\n\")),
+            (\$item.notes // empty)
+        ] | join(\"\n\")"
+    '
+
     local choice
 
-    choice=$(rbw ls |
-        fzf_picker \
-        --prompt="❯ Bitwarden " \
-    )
+    if [[ "$opt" == "--totp" ]]; then
+        choice=$(
+            fzf_picker --prompt="❯ Bitwarden TOTP Code " --preview="$previewer" < <(
+                entries=$(rbw ls)
+                printf '%s\n' "$entries" | xargs -P 8 -I{} sh -c '
+                json=$(rbw get "{}" --raw 2>/dev/null) || exit 0
+                echo "$json" | jq -r "select(.data.totp? != null) | .name"
+                '
+            )
+        )
+    else
+        choice=$(
+            rbw ls |
+                fzf_picker --prompt="❯ Bitwarden $prompt " --preview="$previewer"
+            )
+    fi
 
-    [ -z "$choice" ] && return 0
+    local rbw_cmd
+    case "$opt" in
+        --password)
+            rbw_cmd="rbw get \"$choice\""
+            ;;
+        --totp)
+            rbw_cmd="rbw totp \"$choice\""
+            ;;
+        --username)
+            rbw_cmd="rbw get \"$choice\" --raw | jq -r '.data.username'"
+            ;;
+        *)
+            echo "Unknown option: $opt" >&2
+            return 1
+            ;;
+    esac
 
-    session_run "rbw get \"$choice\" | sed -z 's/\n$//' | wtype -"
+    session_run "$rbw_cmd | sed -z 's/\n$//' | wtype -"
 }
 
 # -----------------------------
