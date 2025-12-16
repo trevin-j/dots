@@ -17,8 +17,6 @@ Being the huge linux nerd that I am, I use Arch (btw). Therefore this was built 
 
 I tried Sway for a short amount of time, but ultimately I came back to Hyprland. It is just too good.
 
-If you take a look at my hyprland config, just understand that it is just a mess at the moment and I wouldn't recommend using it right now. It's probably not a good starting point as it's built specifically for me and isn't very well organized.
-
 I am currently working on my own desktop shell in [ignis](https://ignis-sh.github.io/ignis/stable/index.html), but that is time consuming and not ready. So it is not included here. But that is why the only other shell-type config here is a somewhat half-baked waybar that I considered "good enough" when I first created it.
 
 ## Theming

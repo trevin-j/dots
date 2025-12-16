@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Run tl in a gui panel
+
+kitty +kitten panel \
+    --edge center-sized \
+    --layer top \
+    --columns 100 \
+    --lines 20 \
+    --focus-policy exclusive \
+    tl

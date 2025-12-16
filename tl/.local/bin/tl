@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# -----------------------------
+# Wayland session runner
+# -----------------------------
+# Runs a command through the compositor so it's independent of cwd/env
+session_run() {
+    local cmd="$*"
+    hyprctl dispatch exec "$cmd"
+    # Later, you can detect Sway or other compositors and modify here
+}
+
+# -----------------------------
+# Common fzf wrapper
+# -----------------------------
+fzf_picker() {
+    fzf \
+        --prompt="❯ " \
+        --layout=reverse \
+        --border \
+        --ansi \
+        "$@"
+}
+
+# -----------------------------
+# App launcher picker
+# -----------------------------
+launch_picker() {
+    local dirs=(/usr/share/applications ~/.local/share/applications)
+
+    choice=$(fzf_picker \
+        --delimiter=$'\t' \
+        --with-nth=1 \
+        --preview='echo "Desktop file: {2}"' \
+        < <(
+            for dir in "${dirs[@]}"; do
+                [ -d "$dir" ] || continue
+                for file in "$dir"/*.desktop; do
+                    [ -f "$file" ] || continue
+                    grep -q '^NoDisplay=true' "$file" && continue
+                    name=$(grep -m1 '^Name=' "$file" | cut -d= -f2-)
+                    [ -n "$name" ] || continue
+                    printf '%s\t%s\n' "$name" "$file"
+                done
+            done
+        )
+    )
+
+    [ -z "$choice" ] && exit 0
+
+    local desktop_file
+    desktop_file=$(cut -f2 <<<"$choice")
+
+    session_run "gio launch '$desktop_file'"
+}
+
+
+# -----------------------------
+# Main dispatcher
+# -----------------------------
+main() {
+    local cmd="${1:-launch}"  # default to launch
+    shift || true
+
+    case "$cmd" in
+        launch)
+            launch_picker "$@"
+            ;;
+        # Future pickers can go here
+        *)
+            echo "Unknown subcommand: $cmd" >&2
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
+
