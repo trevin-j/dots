@@ -4,11 +4,13 @@ set -euo pipefail
 # -----------------------------
 # Wayland session runner
 # -----------------------------
-# Runs a command through the compositor so it's independent of cwd/env
+# Runs a command through the compositor so it's independent of env
+# This is important because if this script is run from a brand new terminal,
+# anything that needs to spawn a gui or use the session in any way will fail.
 session_run() {
     local cmd="$*"
     hyprctl dispatch exec "$cmd"
-    # Later, you can detect Sway or other compositors and modify here
+    # Support for Swar and other compositors could be added here
 }
 
 # -----------------------------
@@ -76,6 +78,51 @@ cliphist_picker() {
     session_run "cliphist decode \"$choice\" | sed -z 's/\n$//' | wtype -"
 }
 
+# ----------------------------- 
+# Bitwarden password picker
+# -----------------------------
+bw_ensure_ready() {
+    if rbw login >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo "Bitwarden not ready. Signing in..."
+
+    read -rp "Email: " email
+    [ -z "$email" ] && return 1
+
+    read -rp "Base URL (optional): " base_url
+    read -rp "Identity URL (optional): " identity_url
+
+    rbw config set email "$email"
+
+    [ -n "$base_url" ] && rbw config set base_url "$base_url"
+    [ -n "$identity_url" ] && rbw config set identity_url "$identity_url"
+
+    # Set to a tty pinentry so it all stays in the terminal rather than popping up a gui
+    rbw config set pinentry pinentry-tty
+
+    if ! rbw login; then
+        echo "Bitwarden sync failed" >&2
+        return 1
+    fi
+}
+
+bw_picker() {
+    bw_ensure_ready || return 1
+
+    local choice
+
+    choice=$(rbw ls |
+        fzf_picker \
+            --prompt="❯ Bitwarden " \
+    )
+
+    [ -z "$choice" ] && return 0
+
+    session_run "rbw get \"$choice\" | sed -z 's/\n$//' | wtype -"
+}
+
 # -----------------------------
 # Main dispatcher
 # -----------------------------
@@ -89,6 +136,9 @@ main() {
             ;;
         cliphist)
             cliphist_picker "$@"
+            ;;
+        bitwarden)
+            bw_picker "$@"
             ;;
         *)
             echo "Unknown subcommand: $cmd" >&2
