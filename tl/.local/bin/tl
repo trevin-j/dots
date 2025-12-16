@@ -124,6 +124,46 @@ bw_picker() {
 }
 
 # -----------------------------
+# Power menu
+# -----------------------------
+power_picker() {
+    local choice
+
+    choice=$(
+        printf '%s\n' \
+            "  Lock" \
+            "󰤄  Suspend" \
+            "󰍃  Logout" \
+            "󰜉  Reboot" \
+            "󰐥  Shutdown" |
+        fzf_picker \
+            --prompt="❯ Power " \
+            --no-sort
+    )
+
+    [ -z "$choice" ] && return 0
+
+    case "$choice" in
+        *Lock)
+            loginctl lock-session
+            ;;
+        *Suspend)
+            systemctl suspend
+            ;;
+        *Logout)
+            hyprctl dispatch exit
+            ;;
+        *Reboot)
+            systemctl reboot
+            ;;
+        *Shutdown)
+            systemctl poweroff
+            ;;
+    esac
+}
+
+
+# -----------------------------
 # Main dispatcher
 # -----------------------------
 main() {
@@ -139,6 +179,9 @@ main() {
             ;;
         bitwarden)
             bw_picker "$@"
+            ;;
+        power)
+            power_picker "$@"
             ;;
         *)
             echo "Unknown subcommand: $cmd" >&2
