@@ -172,7 +172,7 @@ emoji_picker() {
     emoji_glyph=$(cut -f1 <<<"$choice")
 
     # Insert emoji
-    session_run "printf '%s '$emoji_glyph' | wtype -"
+    session_run "printf '%s' '$emoji_glyph' | wtype -"
 
     # Update MRU: append to file
     printf '%s' "$emoji_glyph" >> "$mru_file"
