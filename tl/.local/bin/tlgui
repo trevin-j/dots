@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Run tl in a gui panel
+# Run tl in a gui panel, pass all args to tl
 
 kitty +kitten panel \
     --edge center-sized \
@@ -8,4 +8,4 @@ kitty +kitten panel \
     --columns 100 \
     --lines 20 \
     --focus-policy exclusive \
-    tl
+    tl "$@"
