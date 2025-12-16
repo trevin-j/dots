@@ -32,6 +32,7 @@ launch_picker() {
     choice=$(fzf_picker \
         --delimiter=$'\t' \
         --with-nth=1 \
+        --prompt="❯ Launch " \
         --preview='echo "Desktop file: {2}"' \
         < <(
             for dir in "${dirs[@]}"; do
@@ -55,6 +56,25 @@ launch_picker() {
     session_run "gio launch '$desktop_file'"
 }
 
+# -----------------------------
+# Clipboard history picker
+# -----------------------------
+cliphist_picker() {
+    local choice
+
+    choice=$(fzf_picker \
+        --prompt="❯ Clipboard history " \
+        --no-sort \
+        --preview='cliphist decode {1} | head -100' \
+        --delimiter=$'\t' \
+        --with-nth=2 \
+        < <(cliphist list)
+    )
+
+    [ -z "$choice" ] && exit 0
+
+    session_run "cliphist decode \"$choice\" | sed -z 's/\n$//' | wtype -"
+}
 
 # -----------------------------
 # Main dispatcher
@@ -67,7 +87,9 @@ main() {
         launch)
             launch_picker "$@"
             ;;
-        # Future pickers can go here
+        cliphist)
+            cliphist_picker "$@"
+            ;;
         *)
             echo "Unknown subcommand: $cmd" >&2
             exit 1
