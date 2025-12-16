@@ -168,13 +168,45 @@ emoji_picker() {
     [ -z "$choice" ] && return 0
 
     local emoji_glyph
-    emoji_glyph=$(cut -f1 <<<"$choice" | sed -z 's/\n$//')
+    emoji_glyph=$(cut -f1 <<<"$choice")
 
     # Insert emoji
-    session_run "echo '$emoji_glyph' | sed -z 's/\n$//' | wtype -"
+    session_run "printf '%s '$emoji_glyph' | wtype -"
 
     # Update MRU: append to file
-    echo "$emoji_glyph" >> "$mru_file"
+    printf '%s' "$emoji_glyph" >> "$mru_file"
+}
+
+# -----------------------------
+# Nerd Font Icon Picker
+# -----------------------------
+nerdfont_picker() {
+    local data_file="$HOME/.local/share/tl/nerd-font-icons.json"
+    local mru_file="$HOME/.local/share/tl/nerdfont-mru"
+
+    # Build fzf input: glyph + name
+    local fzf_input
+    fzf_input=$(jq -r 'to_entries[] | [.value.char, .key] | @tsv' "$data_file" | mru_sort "$mru_file")
+
+    # Launch fzf picker
+    local choice
+    choice=$(printf "%s\n" "$fzf_input" |
+        fzf_picker \
+            --prompt="❯ Nerd Font " \
+            --delimiter=$'\t' \
+            --with-nth=1,2
+    )
+
+    [ -z "$choice" ] && return 0
+
+    local glyph
+    glyph=$(cut -f1 <<<"$choice")
+
+    # Insert into focused window
+    session_run "printf '%s' '$glyph' | wtype -"
+
+    # Update MRU frequency
+    printf '%s' "$glyph" >> "$mru_file"
 }
 
 # -----------------------------
@@ -239,6 +271,9 @@ main() {
             ;;
         emoji)
             emoji_picker "$@"
+            ;;
+        nerdfont)
+            nerdfont_picker "$@"
             ;;
         power)
             power_picker "$@"
