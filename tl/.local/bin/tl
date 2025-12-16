@@ -23,6 +23,26 @@ fzf_picker() {
         --border \
         --ansi \
         "$@"
+    }
+
+# -----------------------------
+# Generic MRU frequency sorter
+# -----------------------------
+mru_sort() {
+    local mru_file="$1"
+    shift
+    # Read items from stdin, output sorted with MRU frequency
+    awk -v mru="$mru_file" '
+        BEGIN {
+            # Count frequency of each item in MRU file
+            while ((getline line < mru) > 0) freq[line]++
+        }
+        {
+            key = $1
+            sortval = (key in freq) ? -freq[key] : 0
+            print sortval "\t" $0
+        }
+    ' | sort -k1,1n | cut -f2-
 }
 
 # -----------------------------
@@ -66,7 +86,6 @@ cliphist_picker() {
 
     choice=$(fzf_picker \
         --prompt="❯ Clipboard history " \
-        --no-sort \
         --preview='cliphist decode {1} | head -100' \
         --delimiter=$'\t' \
         --with-nth=2 \
@@ -115,12 +134,47 @@ bw_picker() {
 
     choice=$(rbw ls |
         fzf_picker \
-            --prompt="❯ Bitwarden " \
+        --prompt="❯ Bitwarden " \
     )
 
     [ -z "$choice" ] && return 0
 
     session_run "rbw get \"$choice\" | sed -z 's/\n$//' | wtype -"
+}
+
+# -----------------------------
+# Emoji picker
+# -----------------------------
+emoji_picker() {
+    local data_file="$HOME/.local/share/tl/emoji.json"
+    local mru_file="$HOME/.local/share/tl/emoji-mru"
+
+    # Build fzf input (glyph + label)
+    local fzf_input
+    fzf_input=$(jq -r '
+        .[] | ([.unicode, .label] | @tsv),
+        (.skins[]? | [.unicode, .label] | @tsv)
+    ' "$data_file" | mru_sort "$mru_file")
+
+    # Launch fzf picker
+    local choice
+    choice=$(printf "%s\n" "$fzf_input" |
+        fzf_picker \
+            --prompt="❯ Emoji " \
+            --delimiter=$'\t' \
+            --with-nth=1,2
+    )
+
+    [ -z "$choice" ] && return 0
+
+    local emoji_glyph
+    emoji_glyph=$(cut -f1 <<<"$choice" | sed -z 's/\n$//')
+
+    # Insert emoji
+    session_run "echo '$emoji_glyph' | sed -z 's/\n$//' | wtype -"
+
+    # Update MRU: append to file
+    echo "$emoji_glyph" >> "$mru_file"
 }
 
 # -----------------------------
@@ -133,34 +187,37 @@ power_picker() {
         printf '%s\n' \
             "  Lock" \
             "󰤄  Suspend" \
+            "󰒲  Hibernate" \
             "󰍃  Logout" \
             "󰜉  Reboot" \
             "󰐥  Shutdown" |
-        fzf_picker \
-            --prompt="❯ Power " \
-            --no-sort
-    )
+            fzf_picker \
+            --prompt="❯ Power "
+        )
 
-    [ -z "$choice" ] && return 0
+        [ -z "$choice" ] && return 0
 
-    case "$choice" in
-        *Lock)
-            loginctl lock-session
-            ;;
-        *Suspend)
-            systemctl suspend
-            ;;
-        *Logout)
-            hyprctl dispatch exit
-            ;;
-        *Reboot)
-            systemctl reboot
-            ;;
-        *Shutdown)
-            systemctl poweroff
-            ;;
-    esac
-}
+        case "$choice" in
+            *Lock)
+                loginctl lock-session
+                ;;
+            *Suspend)
+                systemctl suspend
+                ;;
+            *Hibernate)
+                systemctl hibernate
+                ;;
+            *Logout)
+                hyprctl dispatch exit
+                ;;
+            *Reboot)
+                systemctl reboot
+                ;;
+            *Shutdown)
+                systemctl poweroff
+                ;;
+        esac
+    }
 
 
 # -----------------------------
@@ -179,6 +236,9 @@ main() {
             ;;
         bitwarden)
             bw_picker "$@"
+            ;;
+        emoji)
+            emoji_picker "$@"
             ;;
         power)
             power_picker "$@"
