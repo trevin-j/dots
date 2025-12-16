@@ -1,12 +1,11 @@
-# Required packages to have already been df-installed
-requires=()
+# Required packages to have already been installed from this repo
+export requires=()
 
 # Do any dependencies need to be installed via AUR?
-# For foot, no. It is in the extra repo.
-require_aur="false"
+export require_aur="false"
 
 # System dependencies (to be installed via pacman or aur helper)
-deps=()
+export deps=()
 
 # Pre-download hook
 # pre_dl() {

@@ -1,24 +1,14 @@
-# Required packages to have already been df-installed
-requires=()
-
-# Do any dependencies need to be installed via AUR?
-# For foot, no. It is in the extra repo.
-require_aur="false"
-
-# System dependencies (to be installed via pacman or aur helper)
-deps=()
-
-# Pre-download hook
-# pre_dl() {
-#     # Code to run before downloading dependencies
-# }
-
-# Pre-stow hook
-# pre_stow() {
-#     # Code to run before stowing config
-# }
-
-# Post-stow hook
-# post_stow() {
-#     # Code to run after stowing config
-# }
+export requires=(foot theming tl waybar)
+export require_aur="true"
+export deps=(
+    thunar gvfs thunar-archive-plugin thunar-media-tags-plugin thunar-volman tumbler libgsf tumbler-extra-thumbnailers webp-pixbuf-loader
+    firefox
+    brightnessctl
+    wl-clipboard
+    flameshot
+    swaync
+    hyprpolkitagent
+    hyprland
+    kdeconnect
+    qt6ct
+)

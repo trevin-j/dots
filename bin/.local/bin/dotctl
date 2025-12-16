@@ -101,9 +101,12 @@ process_install_pkg() {
     fi
 
     # defaults
+    local require_aur deps requires
     require_aur="false"
     deps=()
     requires=()
+
+    local pre_dl pre_stow post_stow
     pre_dl() { :; }
     pre_stow() { :; }
     post_stow() { :; }
