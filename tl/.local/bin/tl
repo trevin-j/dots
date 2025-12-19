@@ -20,6 +20,7 @@ fzf_picker() {
     fzf \
         --prompt="❯ " \
         --layout=reverse \
+        --wrap \
         --border \
         --ansi \
         "$@"
@@ -49,13 +50,19 @@ mru_sort() {
 # App launcher picker
 # -----------------------------
 launch_picker() {
-    local dirs=(/usr/share/applications ~/.local/share/applications)
+    local dirs=(
+        /usr/share/applications
+        ~/.local/share/applications
+        /var/lib/flatpak/exports/share/applications
+        ~/.local/share/flatpak/exports/share/applications
+    )
+
 
     choice=$(fzf_picker \
         --delimiter=$'\t' \
         --with-nth=1 \
         --prompt="❯ Launch " \
-        --preview='echo "Desktop file: {2}"' \
+        --preview='preview-desktop-file {2}' \
         < <(
             for dir in "${dirs[@]}"; do
                 [ -d "$dir" ] || continue

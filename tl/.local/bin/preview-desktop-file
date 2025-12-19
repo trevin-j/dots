@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+file="$1"
+
+name=$(grep -m1 '^Name=' "$file" | cut -d= -f2-)
+comment=$(grep -m1 '^Comment=' "$file" | cut -d= -f2-)
+icon=$(grep -m1 '^Icon=' "$file" | cut -d= -f2-)
+
+printf "\n\033[1m%s\033[0m\n" "$name"
+[ -n "$comment" ] && printf "%s\n\n" "$comment"
+
+resolve_icon() {
+    name="$1"
+    [ -z "$name" ] && return 1
+
+    # Absolute path
+    if [ -f "$name" ]; then
+        printf '%s\n' "$name"
+        return 0
+    fi
+
+    for base in \
+        ~/.local/share/icons \
+        /usr/share/icons \
+        /var/lib/flatpak/exports/share/icons \
+        ~/.local/share/flatpak/exports/share/icons
+    do
+        found=$(find "$base" -type f \
+            -path '*/apps/*' \
+            \( -name "$name.png" -o -name "$name.svg" -o -name "$name.webp" \) \
+            2>/dev/null | head -n1)
+
+        if [ -n "$found" ]; then
+            printf '%s\n' "$found"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+render_icon() {
+    icon="$1"
+    width=20
+    height=12
+    dim="${width}x${height}"
+
+    # Kitty / Ghostty
+    if { [ -n "$KITTY_WINDOW_ID" ] || [ -n "$GHOSTTY_RESOURCES_DIR" ]; } \
+        && command -v kitten >/dev/null; then
+
+        kitten icat \
+            --clear \
+            --transfer-mode=memory \
+            --unicode-placeholder \
+            --stdin=no \
+            --place="${dim}@0x0" \
+            "$icon" 
+
+    # Sixel fallback
+    elif command -v chafa >/dev/null; then
+        chafa \
+            --clear \
+            --size="$dim" \
+            --stretch \
+            "$icon"
+        echo
+    fi
+}
+
+
+icon_path=$(resolve_icon "$icon")
+
+if [ -n "$icon_path" ]; then
+    render_icon "$icon_path"
+fi
+
