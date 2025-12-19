@@ -1,3 +1,3 @@
-export requires=(zellij)
+export requires=()
 export require_aur="false"
-export deps=()
+export deps=(zellij)
