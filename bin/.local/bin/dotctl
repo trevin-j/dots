@@ -223,13 +223,17 @@ process_track_pkg() {
 ###############################################################################
 
 process_upgrade_pkg() {
-    git -C "$DOTDIR" pull
-    # For every package that has a .commit file, re-run install on it
-    for pkg in $(find "$DATADIR" -mindepth 1 -maxdepth 1 -type f -name ".commit"); do
+    if [[ $NOPULL != "true" ]]; then
+        echo "Pulling git repo..."
+        git -C "$DOTDIR" pull
+    fi
+
+    while read -r pkg; do
         pkg=$(basename "$pkg")
+        pkg=${pkg%.commit}
         echo "Upgrading $pkg..."
         process_install_pkg "$pkg"
-    done
+    done < <(find "$DATADIR" -type f -name '*.commit')
 }
 
 ###############################################################################
@@ -267,6 +271,13 @@ if contains "-y" "$@"; then
   YES="true"
 fi
 export YES
+
+# Check for --no-pull
+NOPULL="false"
+if contains "--no-pull" "$@"; then
+  NOPULL="true"
+fi
+export NOPULL
 
 cmd="$1"; shift || true
 
