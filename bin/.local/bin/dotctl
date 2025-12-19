@@ -315,12 +315,27 @@ case "$cmd" in
         # Updates ALL packages. Partial updates are not supported because they are all git tracked together.
         process_upgrade_pkg
         ;;
+    ls|list)
+        mapfile -t all_pkgs < <(find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d -not -name ".*" -not -name "_*" | xargs -n1 basename)
+        echo "Installed configs:"
+        while read -r pkg; do
+            pkg=$(basename "$pkg")
+            pkg=${pkg%.commit}
+            echo "$pkg"
+        done < <(find "$DATADIR" -type f -name '*.commit')
+        echo
+        echo "Not installed:"
+        for pkg in "${all_pkgs[@]}"; do
+            if [[ -f "$DATADIR/$pkg.commit" ]]; then
+                continue
+            fi
+            echo "$pkg"
+        done
+        ;;
     *)
         echo "Unknown command: $cmd"
         show_help
         exit 1
         ;;
 esac
-
-echo "Done."
 
