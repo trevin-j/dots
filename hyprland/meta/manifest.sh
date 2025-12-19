@@ -10,5 +10,4 @@ export deps=(
     hyprpolkitagent
     hyprland
     kdeconnect
-    qt6ct
 )
