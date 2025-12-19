@@ -2,14 +2,45 @@
 set -euo pipefail
 
 : "${DOTDIR:="$HOME/.dots"}"
+DATADIR="$HOME/.local/share/dotctl"
+mkdir -p "$DATADIR"
 
 ###############################################################################
 # Helpers
 ###############################################################################
 
+contains() {
+    local needle="$1"; shift
+    for x; do
+        [[ "$x" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+pkg_commit() {
+    git -C "$DOTDIR" log -1 --format=%H -- "$1"
+}
+
+installed_commit_file() {
+    echo "$DATADIR/$1.commit"
+}
+
+get_installed_commit() {
+    local f
+    f=$(installed_commit_file "$1")
+    [[ -f "$f" ]] && cat "$f" || echo ""
+}
+
+set_installed_commit() {
+    echo "$2" > "$(installed_commit_file "$1")"
+}
+
 confirm() {
+    if [[ "$YES" == "true" ]]; then
+        return 0
+    fi
     local prompt="$1"
-    read -p "$prompt [y/N] " ans
+    read -r -p "$prompt [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]]
 }
 
@@ -91,6 +122,23 @@ process_install_pkg() {
     local pkgdir="$DOTDIR/$pkg"
     local manifest="$pkgdir/meta/manifest.sh"
 
+    local force="${DOTCTL_FORCE:-false}"
+
+    local current_commit installed_commit
+    current_commit=$(pkg_commit "$pkg")
+    installed_commit=$(get_installed_commit "$pkg")
+
+    echo "Current commit: $current_commit"
+    echo "Installed commit: $installed_commit"
+
+    if [[ "$force" != "true" ]] \
+        && [[ -n "$current_commit" ]] \
+        && [[ "$current_commit" == "$installed_commit" ]]; then
+    echo "Skipping $pkg (no changes)"
+    return 0
+    fi
+
+
     if [[ ! -d "$pkgdir" ]]; then
         echo "Package $pkg not found."
         return 1
@@ -133,6 +181,10 @@ process_install_pkg() {
     stow --dir="$DOTDIR" --target="$HOME" --no-folding "$pkg"
     post_stow
     echo "Finished installing $pkg."
+
+    if [[ -n "$current_commit" ]]; then
+        set_installed_commit "$pkg" "$current_commit"
+    fi
 }
 
 process_track_pkg() {
@@ -167,6 +219,20 @@ process_track_pkg() {
 }
 
 ###############################################################################
+# Upgrade
+###############################################################################
+
+process_upgrade_pkg() {
+    git -C "$DOTDIR" pull
+    # For every package that has a .commit file, re-run install on it
+    for pkg in $(find "$DATADIR" -mindepth 1 -maxdepth 1 -type f -name ".commit"); do
+        pkg=$(basename "$pkg")
+        echo "Upgrading $pkg..."
+        process_install_pkg "$pkg"
+    done
+}
+
+###############################################################################
 # Help
 ###############################################################################
 show_help() {
@@ -188,6 +254,20 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+DOTCTL_FORCE="false"
+if contains "--force" "$@"; then
+  DOTCTL_FORCE="true"
+fi
+export DOTCTL_FORCE
+
+
+# Check for -y
+YES="false"
+if contains "-y" "$@"; then
+  YES="true"
+fi
+export YES
+
 cmd="$1"; shift || true
 
 case "$cmd" in
@@ -205,6 +285,7 @@ case "$cmd" in
         else
             pkgs=("$@")
         fi
+        echo "Installing packages: ${pkgs[*]}"
         for pkg in "${pkgs[@]}"; do
             process_install_pkg "$pkg"
         done
@@ -218,6 +299,10 @@ case "$cmd" in
         ;;
     help|--help|-h)
         show_help
+        ;;
+    upgrade|update)
+        # Updates ALL packages. Partial updates are not supported because they are all git tracked together.
+        process_upgrade_pkg
         ;;
     *)
         echo "Unknown command: $cmd"
