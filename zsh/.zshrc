@@ -11,6 +11,8 @@ SAVEHIST=10000
 # setopt hist_ignore_all_dups
 setopt hist_ignore_space
 setopt append_history
+setopt EXTENDED_GLOB
+setopt REMATCH_PCRE
 
 export EDITOR=nvim
 export VISUAL=nvim
