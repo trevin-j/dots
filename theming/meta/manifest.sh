@@ -4,4 +4,6 @@ export deps=(uv qt6ct-kde matugen swww)
 
 post_stow() {
     uv tool install "$DOTDIR/theming/tintterm"
+    uv tool install pywalfox
+    pywalfox install
 }
