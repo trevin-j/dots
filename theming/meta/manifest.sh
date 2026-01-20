@@ -1,9 +1,8 @@
 export requires=()
 export require_aur="true"
-export deps=(uv qt6ct-kde matugen swww)
+export deps=(uv qt6ct-kde matugen swww python-pywalfox)
 
 post_stow() {
     uv tool install "$DOTDIR/theming/tintterm"
-    uv tool install pywalfox
     pywalfox install
 }
