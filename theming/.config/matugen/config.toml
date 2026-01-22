@@ -33,3 +33,6 @@ input_path = "templates/update_terminals.sh"
 output_path = '~/.cache/update_terminals.sh'
 post_hook = 'sh ~/.cache/update_terminals.sh'
 
+[templates.quickshell]
+input_path = "templates/quickshell.json"
+output_path = "~/.config/quickshell/config/palette.json"
