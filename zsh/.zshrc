@@ -127,7 +127,7 @@ typeset -a SINGLES_ALIASES=(
 
 # Misc commands that must run on startup with dependencies
 typeset -a SINGLES_COMMANDS=(
-    "thefuck:eval \"\$(thefuck -a crap)\"" # Type `crap` and it will suggest a fix
+    "thefuck:eval \"\$(thefuck -a fuck)\"" # Type `fuck` and it will suggest a fix
     "zoxide:eval \"\$(zoxide init --cmd cd zsh)\""
     "fzf:source <(fzf --zsh)"
 )
