@@ -1,0 +1,137 @@
+background = {{ colors.surface.default.hex }}
+foreground = {{ colors.on_surface.default.hex }}
+
+selection-background = {{ colors.primary_container.default.hex }}
+selection-foreground = {{ colors.on_primary_container.default.hex }}
+
+cursor-color = {{ colors.primary.default.hex }}
+
+<* if {{ is_dark_mode }} *>
+
+# ---------- DARK MODE ----------
+# "Dim" = slightly darker (toward surface)
+# "Bright" = slightly lighter (away from surface)
+
+# Black
+palette = 0={{ colors.surface.default.hex }}
+# Red
+palette = 1={{ colors.error.default.hex | lighten: -8.0 }}
+# Green
+palette = 2={{ colors.secondary_fixed.default.hex | lighten: -8.0 }}
+# Yellow
+palette = 3={{ colors.tertiary_fixed.default.hex | lighten: -8.0 }}
+# Blue
+palette = 4={{ colors.primary_fixed.default.hex | lighten: -40.0 }}
+
+# Magenta (synth: primary_fixed blended toward tertiary_fixed, then dim)
+palette = 5={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.tertiary_fixed.default.hex }}, 0.55
+  | lighten: -8.0
+}}
+
+# Cyan (synth: primary_fixed blended toward secondary_fixed, then dim)
+palette = 6={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.secondary_fixed.default.hex }}, 0.35
+  | lighten: -8.0
+}}
+
+# White (dim)
+palette = 7={{ colors.on_surface_variant.default.hex }}
+
+# Light Black
+palette = 8={{ colors.surface_container.default.hex }}
+# Light Red
+palette = 9={{ colors.error.default.hex | lighten: 10.0 }}
+# Light Green
+palette = 10={{ colors.secondary_fixed.default.hex | lighten: 10.0 }}
+# Light Yellow
+palette = 11={{ colors.tertiary_fixed.default.hex | lighten: 10.0 }}
+# Light Blue
+palette = 12={{ colors.primary_fixed.default.hex | lighten: 10.0 }}
+
+# Light Magenta (same synth, bright)
+palette = 13={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.tertiary_fixed.default.hex }}, 0.55
+  | lighten: 10.0
+}}
+
+# Light Cyan (same synth, bright)
+palette = 14={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.secondary_fixed.default.hex }}, 0.35
+  | lighten: 10.0
+}}
+
+# Light White
+palette = 15={{ colors.on_surface.default.hex }}
+
+<* else *>
+
+# ---------- LIGHT MODE ----------
+# In light terminals, ANSI "bright" should mean "more ink" (darker),
+# so we invert the deltas:
+# "Dim" = slightly lighter (toward surface)
+# "Bright" = slightly darker (away from surface)
+
+# Black (use light neutrals for "black" slots)
+palette = 0={{ colors.surface.dark.hex }}
+# Red
+palette = 1={{ colors.error.default.hex | lighten: -18.0 }}
+# Green
+palette = 2={{ colors.secondary_fixed.default.hex | lighten: -25.0 }}
+# Yellow
+palette = 3={{ colors.tertiary_fixed.default.hex | lighten: -18.0 }}
+# Blue
+palette = 4={{ colors.primary_fixed.default.hex | lighten: -45.0 }}
+
+# Magenta (synth, dim)
+palette = 5={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.tertiary_fixed.default.hex }}, 0.35
+  | lighten: -18.0
+}}
+
+# Cyan (synth, dim)
+palette = 6={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.secondary_fixed.default.hex }}, 0.35
+  | lighten: -18.0
+}}
+
+# White (use dark neutrals for "white" slots)
+palette = 7={{ colors.on_surface_variant.dark.hex }}
+
+# Light Black (a slightly “stronger” light neutral)
+palette = 8={{ colors.surface_container.dark.hex }}
+
+# Light Red (emphasized ink: darker)
+palette = 9={{ colors.error.default.hex | lighten: -10.0 }}
+# Light Green
+palette = 10={{ colors.secondary_fixed.default.hex | lighten: -10.0 }}
+# Light Yellow
+palette = 11={{ colors.tertiary_fixed.default.hex | lighten: -10.0 }}
+# Light Blue
+palette = 12={{ colors.primary_fixed.default.hex | lighten: -10.0 }}
+
+# Light Magenta (synth, emphasized)
+palette = 13={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.tertiary_fixed.default.hex }}, 0.35
+  | lighten: -10.0
+}}
+
+# Light Cyan (synth, emphasized)
+palette = 14={{
+  colors.primary_fixed.default.hex
+  | blend: {{ colors.secondary_fixed.default.hex }}, 0.35
+  | lighten: -10.0
+}}
+
+# Light White (strongest ink)
+palette = 15={{ colors.on_surface.dark.hex }}
+
+<* endif *>
+

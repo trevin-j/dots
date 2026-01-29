@@ -295,12 +295,15 @@ power_picker() {
                 systemctl hibernate
                 ;;
             *Logout)
+                # hyprshutdown
                 hyprctl dispatch exit
                 ;;
             *Reboot)
+                # hyprshutdown -t "Rebooting..." --post-cmd 'systemctl reboot'
                 systemctl reboot
                 ;;
             *Shutdown)
+                # hyprshutdown -t "Powering down..." --post-cmd "systemctl poweroff"
                 systemctl poweroff
                 ;;
         esac

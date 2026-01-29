@@ -1,4 +1,4 @@
-export requires=(foot theming tl waybar)
+export requires=(ghostty theming tl waybar)
 export require_aur="true"
 export deps=(
     sudo bash coreutils
@@ -7,11 +7,14 @@ export deps=(
     firefox
     brightnessctl
     wl-clipboard
-    flameshot
     swaync
     hyprpolkitagent
     hyprland
     kdeconnect
+    hyprsunset
+    bibata-cursor-theme-bin
+    grim slurp
+    quickshell
 )
 
 pre_dl() {

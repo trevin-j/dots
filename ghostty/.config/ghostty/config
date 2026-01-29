@@ -1,0 +1,28 @@
+font-family = "VictorMono Nerd Font Mono"
+font-family-bold = "VictorMono Nerd Font Mono"
+font-family-italic = "VictorMono Nerd Font Mono"
+font-family-bold-italic = "VictorMono Nerd Font Mono"
+
+font-style = "Medium"
+font-style-bold = "ExtraBold"
+font-style-italic= "Italic"
+font-style-bold-italic = "ExtraBold Italic"
+
+font-feature = +calt, +salt
+
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = true
+window-padding-color = extend
+
+window-vsync = false
+
+window-decoration = none
+
+resize-overlay = never
+
+confirm-close-surface = false
+
+mouse-scroll-multiplier = 0.35
+
+config-file = ?colors

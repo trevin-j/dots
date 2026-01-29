@@ -13,7 +13,7 @@ post_hook = 'pywalfox update; pywalfox {{mode | lower_case}}'
 [templates.gtk3]
 input_path = 'templates/gtk.css'
 output_path = '~/.config/gtk-3.0/colors.css'
-post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme {{ mode | replace: "Light", "adw-gtk3" | replace: "Dark", "adw-gtk3-dark" }}; gsettings set org.gnome.desktop.interface color-scheme {{ mode | replace: "Light", "default" | replace: "Dark", "prefer-dark" }}'
+post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme {{ mode | replace: "light", "adw-gtk3" | replace: "dark", "adw-gtk3-dark" }}; gsettings set org.gnome.desktop.interface color-scheme {{ mode | replace: "light", "default" | replace: "dark", "prefer-dark" }}'
 
 [templates.gtk4]
 input_path = 'templates/gtk.css'
@@ -28,11 +28,25 @@ input_path = 'templates/zellij.kdl'
 output_path = '~/.config/zellij/themes/matugen.kdl'
 post_hook = 'touch ~/.config/zellij/config.kdl'
 
-[templates.terminals]
-input_path = "templates/update_terminals.sh"
-output_path = '~/.cache/update_terminals.sh'
-post_hook = 'sh ~/.cache/update_terminals.sh'
+# [templates.terminals]
+# input_path = "templates/update_terminals.sh"
+# output_path = '~/.cache/update_terminals.sh'
+# post_hook = 'sh ~/.cache/update_terminals.sh'
 
 [templates.quickshell]
 input_path = "templates/quickshell.json"
 output_path = "~/.config/quickshell/config/palette.json"
+
+[templates.hyprland]
+input_path = "templates/hyprland.conf"
+output_path = "~/.config/hypr/colors.conf"
+post_hook = 'hyprctl setcursor "{{ mode | replace: "light", "Bibata-Modern-Ice" | replace: "dark", "Bibata-Modern-Classic" }}" 24'
+
+[templates.ghostty]
+input_path = "templates/ghostty"
+output_path = "~/.config/ghostty/colors"
+post_hook = "kill -s USR2 $(pgrep ghostty)"
+
+[templates.materialized-web]
+input_path = "templates/materialized-web.json"
+output_path = "~/.config/matugen/materialized-web/scheme/current.json"

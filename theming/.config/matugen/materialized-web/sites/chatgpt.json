@@ -1,0 +1,49 @@
+{
+    "version": 1,
+    "match": [
+        "*://chatgpt.com/*"
+    ],
+    "rules": [
+        {
+            "selector": "html",
+            "important": true,
+            "set": {
+                "--sidebar-bg": "var(--mat-surface-container-low)",
+                "--text-primary": "var(--mat-on-surface)",
+                "--bg-primary": "var(--mat-surface)",
+                "--bg-scrim": "var(--mat-scrim)",
+                "--sidebar-mask-bg": "var(--mat-surface-container-low)",
+                "--bg-elevated-secondary": "var(--mat-surface-container)",
+                "--text-tertiary": "var(--mat-on-surface-variant)",
+                "--sidebar-surface-primary": "var(--mat-surface-container-low)",
+                "--main-surface-primary": "var(--mat-surface-container-low)",
+                "--theme-submit-btn-bg": "var(--mat-primary)",
+                "--theme-submit-btn-text": "var(--mat-on-primary)",
+                "--theme-user-msg-text": "var(--mat-on-primary)",
+                "--theme-user-msg-bg": "var(--mat-primary)"
+            }
+        },
+        {
+            "selector": ".bg-token-bg-primary",
+            "important": true,
+            "set": {
+                "background-color": "var(--mat-surface-container-low)",
+                "color": "var(--mat-on-surface)"
+            }
+        },
+        {
+            "selector": ".bg-token-sidebar-surface-primary",
+            "important": true,
+            "set": {
+                "background-color": "var(--mat-surface-container-low)"
+            }
+        },
+        {
+            "selector": ".popover",
+            "important": true,
+            "set": {
+                "background-color": "var(--mat-surface-container)"
+            }
+        }
+    ]
+}
