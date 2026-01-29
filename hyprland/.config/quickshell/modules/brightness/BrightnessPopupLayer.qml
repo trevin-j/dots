@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 
 import "../../config" as Config
 import "../../services" as Services
@@ -46,12 +47,22 @@ Scope {
         }
     }
 
-    BrightnessPopup {
-        active: root.shouldShowOsd
+    Variants {
+        model: Quickshell.screens
 
-        onInteractingChanged: {
-            root.isInteracting = interacting;
-            root.showOsd();
+        BrightnessPopup {
+            required property var modelData
+
+            readonly property var monitor: Hyprland.monitorFor(modelData)
+            readonly property bool isFocused: !Hyprland.focusedMonitor || monitor === Hyprland.focusedMonitor
+
+            screen: modelData
+            active: root.shouldShowOsd && isFocused
+
+            onInteractingChanged: {
+                root.isInteracting = interacting;
+                root.showOsd();
+            }
         }
     }
 

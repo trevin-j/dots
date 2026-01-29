@@ -14,7 +14,7 @@ ShellRoot {
 
         FrameOverlay {
             required property var modelData
-            screen: modelData
+            panelScreen: modelData
         }
     }
 

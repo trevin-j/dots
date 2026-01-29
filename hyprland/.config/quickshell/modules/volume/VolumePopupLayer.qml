@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 
 import "../../config" as Config
@@ -55,14 +56,22 @@ Scope {
         }
     }
 
-    VolumePopup {
-        id: popup
+    Variants {
+        model: Quickshell.screens
 
-        active: root.shouldShowOsd
+        VolumePopup {
+            required property var modelData
 
-        onInteractingChanged: {
-            root.isInteracting = interacting;
-            root.showOsd();
+            readonly property var monitor: Hyprland.monitorFor(modelData)
+            readonly property bool isFocused: !Hyprland.focusedMonitor || monitor === Hyprland.focusedMonitor
+
+            screen: modelData
+            active: root.shouldShowOsd && isFocused
+
+            onInteractingChanged: {
+                root.isInteracting = interacting;
+                root.showOsd();
+            }
         }
     }
 }

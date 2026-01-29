@@ -7,12 +7,12 @@ import "../../config" as Config
 /*!
   FrameOverlay
   Per-screen overlay hosting the global frame and attached bubble layer.
-  Required properties: screen.
+    Required properties: panelScreen.
 */
 PanelWindow {
     id: root
 
-    required property ShellScreen screen
+    required property ShellScreen panelScreen
 
     readonly property string barPosition: Config.Config.bar.position || "top"
     readonly property int barThickness: Config.Config.bar.size?.thickness ?? 36
@@ -38,7 +38,7 @@ PanelWindow {
     readonly property string frameColorRole: Config.Appearance.frameColorRole
     readonly property color cutoutBlack: Config.Appearance.cutoutBlack
 
-    screen: root.screen
+    screen: root.panelScreen
     aboveWindows: true
     focusable: false
     color: "transparent"
@@ -57,7 +57,7 @@ PanelWindow {
 
     Shared.AttachedBubbleLayer {
         anchors.fill: parent
-        screen: root.screen
+        screen: root.panelScreen
         frameInnerX: root.borderThickness + root.leftMargin
         frameInnerY: root.borderThickness + root.topMargin
         frameInnerWidth: Math.max(0, width - root.borderThickness * 2 - root.leftMargin)
