@@ -36,6 +36,7 @@ PanelWindow {
     readonly property real borderThickness: Config.Appearance.frameBorderThickness
     readonly property real borderRounding: Config.Appearance.frameBorderRounding
     readonly property string frameColorRole: Config.Appearance.frameColorRole
+    readonly property color cutoutBlack: Config.Appearance.cutoutBlack
 
     screen: root.screen
     aboveWindows: true
@@ -70,6 +71,31 @@ PanelWindow {
         frameColor: Config.Palette.color(frameColorRole)
         leftMargin: root.leftMargin
         topMargin: root.topMargin
+    }
+
+    Item {
+        id: screenCutouts
+
+        anchors.fill: parent
+        visible: root.borderRounding > 0
+        z: 2
+
+        Shared.CornerCutout {
+            radius: root.borderRounding
+            fillColor: root.cutoutBlack
+            mirrorY: true
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+        }
+
+        Shared.CornerCutout {
+            radius: root.borderRounding
+            fillColor: root.cutoutBlack
+            mirrorX: true
+            mirrorY: true
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+        }
     }
 
     Rectangle {

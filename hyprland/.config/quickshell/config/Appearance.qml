@@ -27,6 +27,8 @@ QtObject {
     readonly property real frameMaskThresholdMin: ConfigFiles.Config.appearance.frame?.maskThresholdMin ?? 0.5
     readonly property real frameMaskSpreadAtMin: ConfigFiles.Config.appearance.frame?.maskSpreadAtMin ?? 1.0
 
+    readonly property color cutoutBlack: ConfigFiles.Config.appearance.cutoutBlack || "#000000"
+
     readonly property bool shadowEnabled: ConfigFiles.Config.appearance.shadow?.enabled ?? true
     readonly property real shadowOpacity: ConfigFiles.Config.appearance.shadow?.opacity ?? 0.18
     readonly property real shadowBlur: ConfigFiles.Config.appearance.shadow?.blur ?? 24

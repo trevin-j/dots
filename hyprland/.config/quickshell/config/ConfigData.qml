@@ -52,6 +52,7 @@ QtObject {
             maskThresholdMin: 0.5,
             maskSpreadAtMin: 1.0
         }),
+        cutoutBlack: "#000000",
         shadow: ({
             enabled: true,
             opacity: 0.18,

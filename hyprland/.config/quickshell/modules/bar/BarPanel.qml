@@ -54,6 +54,7 @@ PanelWindow {
     implicitHeight: (position === "top" || position === "bottom") ? visualThickness : 0
 
     readonly property real cornerRadius: Math.min(Config.Appearance.radiusLarge, thickness * 0.5)
+    readonly property color barColor: Config.Palette.color("surface")
 
     Item {
         id: background
@@ -66,7 +67,24 @@ PanelWindow {
             anchors.right: parent.right
             anchors.top: parent.top
             height: root.thickness
-            color: Config.Palette.color("surface")
+            color: root.barColor
+        }
+
+        Shared.CornerCutout {
+            visible: root.position === "top" && root.cornerRadius > 0
+            radius: root.cornerRadius
+            fillColor: Config.Appearance.cutoutBlack
+            anchors.left: parent.left
+            anchors.top: parent.top
+        }
+
+        Shared.CornerCutout {
+            visible: root.position === "top" && root.cornerRadius > 0
+            radius: root.cornerRadius
+            fillColor: Config.Appearance.cutoutBlack
+            mirrorX: true
+            anchors.right: parent.right
+            anchors.top: parent.top
         }
 
         Shared.CornerCutout {
@@ -74,7 +92,7 @@ PanelWindow {
 
             visible: root.position === "top" && root.cornerRadius > 0
             radius: root.cornerRadius
-            fillColor: barBase.color
+            fillColor: root.barColor
             anchors.left: parent.left
             anchors.top: barBase.bottom
         }
@@ -84,7 +102,7 @@ PanelWindow {
 
             visible: root.position === "top" && root.cornerRadius > 0
             radius: root.cornerRadius
-            fillColor: barBase.color
+            fillColor: root.barColor
             mirrorX: true
             anchors.right: parent.right
             anchors.top: barBase.bottom
