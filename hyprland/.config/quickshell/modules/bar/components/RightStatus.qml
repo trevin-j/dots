@@ -33,6 +33,8 @@ Item {
     readonly property int barThickness: Config.Config.bar.size?.thickness ?? barHeight
     readonly property real barCornerRadius: Math.min(Config.Appearance.radiusLarge, barThickness * 0.5)
     readonly property color barColor: Config.Palette.color("surface")
+    readonly property int barMargin: Config.Config.bar.size?.margin ?? 10
+    readonly property int barMarginTop: Config.Config.bar.size?.marginTop ?? barMargin
 
     readonly property var windowTransform: QSWindow.window?.windowTransform
     readonly property rect pillRect: {
@@ -131,6 +133,8 @@ Item {
     implicitWidth: pill.implicitWidth
     implicitHeight: pill.implicitHeight
 
+
+    readonly property int popdownTop: Math.max(0, Math.round(barMarginTop + barThickness - barCornerRadius * 2 + popdownOffset))
 
     function updatePopdownHold() {
         if (pillHover.containsMouse || popdownHover.containsMouse) {
@@ -266,7 +270,9 @@ Item {
         id: closeTimer
         interval: popdownCloseDelay
         repeat: false
-        onTriggered: closeHold = false
+        onTriggered: {
+            closeHold = false;
+        }
     }
 
     PanelWindow {
@@ -281,11 +287,11 @@ Item {
         anchors.top: true
         anchors.right: true
 
-        margins.top: Math.round((Config.Config.bar.size?.marginTop ?? 0) + root.barThickness - root.barCornerRadius + root.popdownOffset)
+        margins.top: root.popdownTop
         margins.right: Math.max(0, Math.round(QSWindow.window ? (QSWindow.window.width - (root.pillRect.x + root.pillRect.width)) : 0))
 
-        implicitWidth: root.popdownWidth
-        implicitHeight: root.popdownHeight
+        implicitWidth: popdownWrapper.implicitWidth
+        implicitHeight: popdownWrapper.implicitHeight
 
         mask: Region {
             item: popdownWrapper
@@ -302,59 +308,34 @@ Item {
             bubbleRounding: root.barCornerRadius
 
             width: implicitWidth
-            height: implicitHeight
-            implicitWidth: root.popdownWidth
-            implicitHeight: 0
+            height: root.popdownOpen ? implicitHeight : 0
+            implicitWidth: root.popdownWidth + root.barCornerRadius
+            implicitHeight: root.popdownHeight + root.barCornerRadius
             clip: true
-            visible: root.popdownOpen || implicitHeight > 0
+            visible: root.popdownOpen || height > 0
 
             anchors.top: parent.top
 
-            states: State {
-                name: "open"
-                when: root.popdownOpen
-
-                PropertyChanges {
-                    popdownWrapper.implicitHeight: root.popdownHeight
+            Behavior on height {
+                Anim {
+                    durationMs: root.popdownOpen ? Config.Motion.shellDuration : Config.Motion.shortDuration
+                    curve: root.popdownOpen ? Config.Motion.shellCurve : Config.Motion.standardCurve
                 }
             }
-
-            transitions: [
-                Transition {
-                    from: ""
-                    to: "open"
-
-                    Anim {
-                        target: popdownWrapper
-                        property: "implicitHeight"
-                        durationMs: Config.Motion.shellDuration
-                        curve: Config.Motion.shellCurve
-                    }
-                },
-                Transition {
-                    from: "open"
-                    to: ""
-
-                    Anim {
-                        target: popdownWrapper
-                        property: "implicitHeight"
-                        durationMs: Config.Motion.shortDuration
-                        curve: Config.Motion.standardCurve
-                    }
-                }
-            ]
 
             Item {
                 id: popdownSurface
 
-                width: root.popdownWidth
-                height: root.popdownHeight
+                width: root.popdownWidth + root.barCornerRadius
+                height: root.popdownHeight + root.barCornerRadius
                 anchors.top: parent.top
 
                 Rectangle {
                     id: popdownBody
 
-                    anchors.fill: parent
+                    width: root.popdownWidth
+                    height: root.popdownHeight
+                    x: root.barCornerRadius
                     radius: root.barCornerRadius
                     color: root.barColor
                 }
@@ -392,6 +373,7 @@ Item {
                     visible: root.barCornerRadius > 0
                     radius: root.barCornerRadius
                     fillColor: popdownBody.color
+                    mirrorX: true
                     anchors.right: popdownBody.left
                     anchors.top: popdownBody.top
                 }
@@ -410,13 +392,13 @@ Item {
                 Rectangle {
                     id: placeholderButton
 
-                    width: parent.width - root.popdownPadding * 2
+                    width: root.popdownWidth - root.popdownPadding * 2
                     height: Math.max(32, Math.round(root.barHeight * 1.4))
                     radius: Config.Appearance.radiusSmall
                     color: Config.Palette.color("surface_container_high")
 
                     anchors.top: parent.top
-                    anchors.left: parent.left
+                    anchors.left: popdownBody.left
                     anchors.topMargin: root.popdownPadding
                     anchors.leftMargin: root.popdownPadding
                     z: 2
@@ -434,7 +416,7 @@ Item {
 
             MouseArea {
                 id: popdownHover
-                anchors.fill: popdownBody
+                anchors.fill: popdownWrapper
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton
                 onContainsMouseChanged: root.updatePopdownHold()
