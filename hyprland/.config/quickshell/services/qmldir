@@ -1,1 +1,3 @@
 singleton BrightnessService BrightnessService.qml
+singleton ConnectivityService ConnectivityService.qml
+singleton PowerService PowerService.qml

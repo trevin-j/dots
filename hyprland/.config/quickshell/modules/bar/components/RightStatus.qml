@@ -1,12 +1,12 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
 import "../../../config" as Config
 import "../../../components" as Shared
+import "../../../services" as Services
 import "../../../utils"
 
 /*!
@@ -25,16 +25,21 @@ Item {
     readonly property int iconSize: Math.max(14, Math.round(barHeight * 0.45))
     readonly property string materialFont: "Material Symbols Rounded"
 
-    readonly property int popdownWidth: Math.max(200, Math.round(barHeight * 6.5))
-    readonly property int popdownHeight: Math.max(120, Math.round(barHeight * 4.5))
-    readonly property int popdownPadding: Math.max(8, Math.round(spacing * 1.1))
+    readonly property int popdownWidth: Math.max(320, Math.round(barHeight * 10.5))
+    readonly property int popdownPadding: Math.max(12, Math.round(spacing * 1.6))
     readonly property int popdownOffset: 0
     readonly property int popdownCloseDelay: 140
     readonly property int barThickness: Config.Config.bar.size?.thickness ?? barHeight
     readonly property real barCornerRadius: Math.min(Config.Appearance.radiusLarge, barThickness * 0.5)
     readonly property color barColor: Config.Palette.color("surface")
+    readonly property int toggleHeight: Math.max(52, Math.round(barHeight * 1.6))
+    readonly property int toggleSpacing: Math.max(12, Math.round(spacing * 1.5))
+    readonly property int popdownMinHeight: Math.max(260, popdownPadding * 2 + toggleHeight * 4 + toggleSpacing * 3)
+    property int popdownTargetHeight: popdownMinHeight
     readonly property int barMargin: Config.Config.bar.size?.margin ?? 10
     readonly property int barMarginTop: Config.Config.bar.size?.marginTop ?? barMargin
+
+    Component.onCompleted: updatePopdownTarget()
 
     readonly property var windowTransform: QSWindow.window?.windowTransform
     readonly property rect pillRect: {
@@ -84,9 +89,9 @@ Item {
 
     readonly property color batteryTextColor: batteryLow ? Config.Palette.color("error") : Config.Palette.color("on_surface")
 
-    property int wifiStrength: -1
-    property bool wifiConnected: false
-    property bool ethernetConnected: false
+    readonly property int wifiStrength: Services.ConnectivityService.wifiStrength
+    readonly property bool wifiConnected: Services.ConnectivityService.wifiConnected
+    readonly property bool ethernetConnected: Services.ConnectivityService.ethernetConnected
 
     readonly property string wifiIconName: {
         if (ethernetConnected) {
@@ -107,6 +112,10 @@ Item {
     readonly property var defaultSink: Pipewire.defaultAudioSink
     readonly property real volumeLevel: defaultSink?.audio?.volume ?? 0
     readonly property bool volumeMuted: defaultSink?.audio?.muted ?? false
+
+    property bool dndEnabled: false
+    property bool nightLightEnabled: false
+    property bool darkModeEnabled: false
 
     readonly property string volumeIconName: {
         if (volumeMuted || volumeLevel <= 0) {
@@ -275,6 +284,25 @@ Item {
         }
     }
 
+    function updatePopdownTarget() {
+        if (!toggleGrid) {
+            return;
+        }
+        const target = Math.round(
+            popdownPadding * 2 + toggleGrid.implicitHeight + toggleSpacing + powerMenu.expandedHeight
+        );
+        popdownTargetHeight = Math.max(popdownMinHeight, target);
+    }
+
+    onPopdownOpenChanged: sizeDebounce.restart()
+
+    Timer {
+        id: sizeDebounce
+        interval: 16
+        repeat: false
+        onTriggered: updatePopdownTarget()
+    }
+
     PanelWindow {
         id: popdown
 
@@ -308,34 +336,36 @@ Item {
             bubbleRounding: root.barCornerRadius
 
             width: implicitWidth
-            height: root.popdownOpen ? implicitHeight : 0
+            height: root.popdownOpen ? Math.round(root.popdownTargetHeight + root.barCornerRadius) : 0
             implicitWidth: root.popdownWidth + root.barCornerRadius
-            implicitHeight: root.popdownHeight + root.barCornerRadius
+            implicitHeight: root.popdownTargetHeight + root.barCornerRadius
             clip: true
             visible: root.popdownOpen || height > 0
 
-            anchors.top: parent.top
-
             Behavior on height {
                 Anim {
-                    durationMs: root.popdownOpen ? Config.Motion.shellDuration : Config.Motion.shortDuration
-                    curve: root.popdownOpen ? Config.Motion.shellCurve : Config.Motion.standardCurve
+                    durationMs: Config.Motion.shellDuration
+                    curve: Config.Motion.shellCurve
                 }
             }
 
-            Item {
-                id: popdownSurface
+            anchors.top: parent.top
 
-                width: root.popdownWidth + root.barCornerRadius
-                height: root.popdownHeight + root.barCornerRadius
-                anchors.top: parent.top
+            // Height follows implicit size without re-animating content changes.
 
-                Rectangle {
-                    id: popdownBody
+                Item {
+                    id: popdownSurface
 
-                    width: root.popdownWidth
-                    height: root.popdownHeight
-                    x: root.barCornerRadius
+                    width: root.popdownWidth + root.barCornerRadius
+                    height: root.popdownTargetHeight + root.barCornerRadius
+                    anchors.top: parent.top
+
+                    Rectangle {
+                        id: popdownBody
+
+                        width: root.popdownWidth
+                        height: root.popdownTargetHeight
+                        x: root.barCornerRadius
                     radius: root.barCornerRadius
                     color: root.barColor
                 }
@@ -389,27 +419,126 @@ Item {
                     anchors.top: popdownBody.bottom
                 }
 
-                Rectangle {
-                    id: placeholderButton
-
-                    width: root.popdownWidth - root.popdownPadding * 2
-                    height: Math.max(32, Math.round(root.barHeight * 1.4))
-                    radius: Config.Appearance.radiusSmall
-                    color: Config.Palette.color("surface_container_high")
+                ColumnLayout {
+                    id: quickSettingsLayout
 
                     anchors.top: parent.top
                     anchors.left: popdownBody.left
+                    anchors.right: popdownBody.right
                     anchors.topMargin: root.popdownPadding
                     anchors.leftMargin: root.popdownPadding
+                    anchors.rightMargin: root.popdownPadding
+                    spacing: root.toggleSpacing
                     z: 2
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Button"
-                        color: Config.Palette.color("on_surface")
-                        font.family: Config.Appearance.fontFamily
-                        font.weight: Config.Appearance.fontWeight
-                        font.pixelSize: Config.Appearance.fontSizeMedium
+                    GridLayout {
+                        id: toggleGrid
+
+                        columns: 2
+                        columnSpacing: root.toggleSpacing
+                        rowSpacing: root.toggleSpacing
+                        Layout.fillWidth: true
+
+                        Shared.QuickToggle {
+                            label: "Wi-Fi"
+                            icon: "wifi"
+                            iconFont: root.materialFont
+                            active: Services.ConnectivityService.wifiEnabled
+                            secondaryText: Services.ConnectivityService.wifiConnected
+                                ? Services.ConnectivityService.wifiSsid
+                                : (Services.ConnectivityService.wifiEnabled ? "Not connected" : "")
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: Services.ConnectivityService.setWifiEnabled(next)
+                        }
+
+                        Shared.QuickToggle {
+                            label: "Bluetooth"
+                            icon: "bluetooth"
+                            iconFont: root.materialFont
+                            active: Services.ConnectivityService.bluetoothEnabled
+                            secondaryText: Services.ConnectivityService.bluetoothDevices !== ""
+                                ? Services.ConnectivityService.bluetoothDevices
+                                : (Services.ConnectivityService.bluetoothEnabled ? "No devices" : "")
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: Services.ConnectivityService.setBluetoothEnabled(next)
+                        }
+
+                        Shared.QuickToggle {
+                            label: "Airplane"
+                            icon: "airplanemode_active"
+                            iconFont: root.materialFont
+                            active: Services.ConnectivityService.airplaneEnabled
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: Services.ConnectivityService.setAirplaneEnabled(next)
+                        }
+
+                        Shared.QuickToggle {
+                            label: "Do Not Disturb"
+                            icon: "notifications_off"
+                            iconFont: root.materialFont
+                            active: root.dndEnabled
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: root.dndEnabled = next
+                        }
+
+                        Shared.QuickToggle {
+                            label: "Night Light"
+                            icon: "nightlight"
+                            iconFont: root.materialFont
+                            active: root.nightLightEnabled
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: root.nightLightEnabled = next
+                        }
+
+                        Shared.QuickToggle {
+                            label: "Dark Mode"
+                            icon: "dark_mode"
+                            iconFont: root.materialFont
+                            active: root.darkModeEnabled
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.toggleHeight
+                            onToggled: root.darkModeEnabled = next
+                        }
+
+                    }
+
+                    Shared.PowerMenu {
+                        id: powerMenu
+
+                        iconFont: root.materialFont
+                        spacing: root.toggleSpacing
+                        itemHeight: Math.max(36, Math.round(root.toggleHeight * 0.8))
+                        Layout.fillWidth: true
+                        onActionTriggered: {
+                            if (actionId === "lock") {
+                                Services.PowerService.lock();
+                                return;
+                            }
+                            if (actionId === "suspend") {
+                                Services.PowerService.suspend();
+                                return;
+                            }
+                            if (actionId === "hibernate") {
+                                Services.PowerService.hibernate();
+                                return;
+                            }
+                            if (actionId === "logout") {
+                                Services.PowerService.logout();
+                                return;
+                            }
+                            if (actionId === "reboot") {
+                                Services.PowerService.reboot();
+                                return;
+                            }
+                            if (actionId === "poweroff") {
+                                Services.PowerService.poweroff();
+                            }
+                        }
                     }
                 }
             }
@@ -424,59 +553,4 @@ Item {
         }
     }
 
-    Timer {
-        id: wifiTimer
-        interval: 10000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: wifiProcess.exec(["sh", "-c", "nmcli -t -f IN-USE,SIGNAL,DEVICE dev wifi; nmcli -t -f TYPE,STATE dev"])
-    }
-
-    Process {
-        id: wifiProcess
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const output = text.trim();
-                if (!output) {
-                    root.wifiStrength = -1;
-                    root.wifiConnected = false;
-                    root.ethernetConnected = false;
-                    return;
-                }
-                const lines = output.split("\n");
-                let wifiStrength = -1;
-                let wifiConnected = false;
-                let ethernetConnected = false;
-                for (const line of lines) {
-                    if (!line) {
-                        continue;
-                    }
-                    const parts = line.split(":");
-                    if (parts.length === 3) {
-                        const inUse = parts[0];
-                        const signalValue = Number(parts[1]);
-                        if (inUse === "*") {
-                            wifiConnected = true;
-                            if (!Number.isNaN(signalValue)) {
-                                wifiStrength = Math.max(0, Math.min(100, signalValue));
-                            }
-                        }
-                        continue;
-                    }
-                    if (parts.length === 2) {
-                        const typeValue = parts[0];
-                        const stateValue = parts[1];
-                        if (typeValue === "ethernet" && stateValue === "connected") {
-                            ethernetConnected = true;
-                        }
-                    }
-                }
-                root.wifiStrength = wifiStrength;
-                root.wifiConnected = wifiConnected;
-                root.ethernetConnected = ethernetConnected;
-            }
-        }
-    }
 }
