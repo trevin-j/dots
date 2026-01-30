@@ -147,7 +147,7 @@ Item {
     readonly property int popdownTop: Math.max(0, Math.round(barMarginTop + barThickness - barCornerRadius * 2 + popdownOffset))
 
     function updatePopdownHold() {
-        if (pillHover.containsMouse || popdownHover.containsMouse) {
+        if (pillHover.hovered || popdownHover.hovered) {
             closeHold = false;
             closeTimer.stop();
             return;
@@ -157,7 +157,7 @@ Item {
     }
 
     property bool closeHold: false
-    readonly property bool popdownOpen: pillHover.containsMouse || popdownHover.containsMouse || closeHold
+    readonly property bool popdownOpen: pillHover.hovered || popdownHover.hovered || closeHold
 
     Rectangle {
         id: pill
@@ -268,12 +268,10 @@ Item {
         }
     }
 
-    MouseArea {
+    HoverHandler {
         id: pillHover
-        anchors.fill: pill
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton
-        onContainsMouseChanged: root.updatePopdownHold()
+        target: pill
+        onHoveredChanged: root.updatePopdownHold()
     }
 
     Timer {
@@ -307,12 +305,13 @@ Item {
     PanelWindow {
         id: popdown
 
-        visible: root.popdownOpen || popdownWrapper.implicitHeight > 0
+        visible: root.popdownOpen || popdownWrapper.height > 0
         color: "transparent"
         surfaceFormat.opaque: false
-        focusable: false
+        focusable: true
         exclusiveZone: 0
         screen: root.screen
+        aboveWindows: true
 
         anchors.top: true
         anchors.right: true
@@ -323,8 +322,11 @@ Item {
         implicitWidth: popdownWrapper.implicitWidth
         implicitHeight: popdownWrapper.implicitHeight
 
-        mask: Region {
-            item: popdownWrapper
+        mask: root.popdownOpen ? popdownMask : null
+
+        Region {
+            id: popdownMask
+            item: popdownBody
         }
 
         Shared.FrameWrapper {
@@ -545,12 +547,10 @@ Item {
                 }
             }
 
-            MouseArea {
+            HoverHandler {
                 id: popdownHover
-                anchors.fill: popdownWrapper
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
-                onContainsMouseChanged: root.updatePopdownHold()
+                target: popdownWrapper
+                onHoveredChanged: root.updatePopdownHold()
             }
         }
     }

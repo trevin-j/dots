@@ -114,15 +114,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             radius: background.radius
-            color: root.active ? root.activeTextColor : root.inactiveTextColor
-            opacity: root.pressed ? 0.24 : 0
-
-            Behavior on opacity {
-                Anim {
-                    durationMs: Config.Motion.shortDuration
-                    curve: Config.Motion.standardCurve
-                }
-            }
+            color: "transparent"
         }
     }
 
