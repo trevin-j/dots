@@ -12,13 +12,14 @@ import "../../../utils"
 /*!
   RightStatus
   Displays wifi strength, battery, date, and time in a pill.
-  Required properties: barHeight, spacing.
+  Required properties: barHeight, spacing, screen.
 */
 Item {
     id: root
 
     required property int barHeight
     required property int spacing
+    required property ShellScreen screen
 
     readonly property int horizontalPadding: Math.max(6, Math.round(spacing * 0.75))
     readonly property int verticalPadding: Math.max(4, Math.round(horizontalPadding * 0.6))
@@ -311,6 +312,7 @@ Item {
         surfaceFormat.opaque: false
         focusable: false
         exclusiveZone: 0
+        screen: root.screen
 
         anchors.top: true
         anchors.right: true

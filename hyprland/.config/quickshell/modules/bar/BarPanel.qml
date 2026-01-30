@@ -154,6 +154,7 @@ PanelWindow {
                     RightStatus {
                         barHeight: root.thickness - root.padding * 2
                         spacing: root.spacing
+                        screen: root.panelScreen
                         Layout.fillHeight: true
                     }
                 }
