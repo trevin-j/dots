@@ -137,6 +137,11 @@ PanelWindow {
                         screen: root.panelScreen
                         vertical: position === "left" || position === "right"
                     }
+
+                    ActiveWindowPill {
+                        screen: root.panelScreen
+                        Layout.fillHeight: true
+                    }
                 }
 
                 Item {
@@ -160,25 +165,6 @@ PanelWindow {
                 }
             }
 
-            Item {
-                id: centerSection
-
-                anchors.centerIn: parent
-                height: parent.height
-                width: centerRow.implicitWidth
-
-                RowLayout {
-                    id: centerRow
-
-                    anchors.fill: parent
-                    spacing: root.spacing
-
-                    ActiveWindowPill {
-                        screen: root.panelScreen
-                        Layout.fillHeight: true
-                    }
-                }
-            }
         }
     }
 }
