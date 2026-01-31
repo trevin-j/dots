@@ -1,14 +1,16 @@
-font-family = "VictorMono Nerd Font Mono"
-font-family-bold = "VictorMono Nerd Font Mono"
-font-family-italic = "VictorMono Nerd Font Mono"
-font-family-bold-italic = "VictorMono Nerd Font Mono"
+font-family = "Monaspace Neon NF"
+font-family-bold = "Monaspace Neon NF"
+font-family-italic = "Monaspace Radon NF"
+font-family-bold-italic = "Monaspace Radon NF"
 
-font-style = "Medium"
+font-style = "Regular"
 font-style-bold = "ExtraBold"
 font-style-italic= "Italic"
 font-style-bold-italic = "ExtraBold Italic"
 
-font-feature = +calt, +salt
+font-feature = +calt, +liga, +ss01, +ss02, +ss03, +ss04, +ss05, +ss06, +ss07, +ss08, +ss09, +ss10, +cv10, +cv11
+
+font-size = 12
 
 window-padding-x = 0
 window-padding-y = 0
@@ -26,3 +28,10 @@ confirm-close-surface = false
 mouse-scroll-multiplier = 0.35
 
 config-file = ?colors
+
+window-inherit-working-directory = false
+working-directory = home
+
+shell-integration-features = sudo, title, ssh-env, ssh-terminfo
+
+app-notifications = false

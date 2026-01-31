@@ -260,6 +260,12 @@ web_client {
 //   - false (Default)
 // 
 // simplified_ui true
+
+ui {
+    pane_frames {
+        rounded_corners true
+    }
+}
  
 // Choose the theme that is specified in the themes section.
 // Default: default
@@ -392,7 +398,7 @@ default_mode "locked"
 //   - true (default)
 //   - false
 // 
-// session_serialization false
+session_serialization false
  
 // Whether pane viewports are serialized along with the session, default is false
 // Options:

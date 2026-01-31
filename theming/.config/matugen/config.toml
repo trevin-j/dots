@@ -1,8 +1,13 @@
+[config]
+version_check = false
+caching = false
+expr_prefix = "{{"
+expr_postfix = "}}"
+block_prefix = "<*"
+block_postfix = "*>"
+
 [config.wallpaper]
-# command = "swww"
-# arguments = ["img", "--transition-type", "random"]
-command = "set_wallpaper"
-arguments = []
+command = "set_wallpaper {{ image }}"
 set = true
 
 [templates.pywalfox]
@@ -50,3 +55,7 @@ post_hook = "kill -s USR2 $(pgrep ghostty)"
 [templates.materialized-web]
 input_path = "templates/materialized-web.json"
 output_path = "~/.config/matugen/materialized-web/scheme/current.json"
+
+[templates.nvim]
+input_path = "templates/nvim.lua"
+output_path = "~/.local/share/nvim/matugen.lua"

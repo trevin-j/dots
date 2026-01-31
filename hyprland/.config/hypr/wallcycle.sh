@@ -32,7 +32,7 @@ mkdir -p "$DARK_DIR"
 # scheme-expressive
 # scheme-fruit-salad
 # scheme-rainbow
-SCHEME="scheme-fidelity"
+SCHEME="scheme-vibrant"
 
 # Current wallpaper file
 CURRENT_FILE="$HOME/.cache/wallcycle_current"
@@ -240,7 +240,7 @@ case "$cmd" in
 
         log "Applying: $NEW"
         # Capture matugen stdout/stderr and log each line with timestamp
-        matugen_output=$(matugen image -t "$SCHEME" -m "$mode" "$NEW" 2>&1)
+        matugen_output=$(matugen image -t "$SCHEME" -m "$mode" "$NEW" --source-color-index 0 2>&1)
         matugen_rc=$?
         if [ -n "$matugen_output" ]; then
             printf '%s\n' "$matugen_output" | while IFS= read -r _line; do
