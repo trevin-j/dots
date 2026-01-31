@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import QtQuick
 import Quickshell
 
@@ -8,6 +9,7 @@ import "modules/frame"
 
 ShellRoot {
     id: root
+
 
     Variants {
         model: Quickshell.screens
