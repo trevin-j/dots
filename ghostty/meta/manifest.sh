@@ -5,7 +5,7 @@ export requires=()
 export require_aur="false"
 
 # System dependencies (to be installed via pacman or aur helper)
-export deps=(ghostty ttf-victor-mono-nerd)
+export deps=(ghostty otf-monaspace-nerdfonts)
 
 # Pre-download hook
 # pre_dl() {
