@@ -34,7 +34,7 @@ source "${ZINIT_HOME}/zinit.zsh"
 # Better vim mode config
 ZVM_INIT_MODE=sourcing # Fix overriding binds that are specified later
 zvm_config() {
-    ZVM_INSERT_MODE_CURSOR=$ZVM_CURSOR_BAR
+    ZVM_INSERT_MODE_CURSOR=$ZVM_CURSOR_BLINKING_BEAM
     ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
 }
 
