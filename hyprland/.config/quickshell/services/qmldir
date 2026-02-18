@@ -1,4 +1,3 @@
 singleton BrightnessService BrightnessService.qml
 singleton ConnectivityAdapter adapters/ConnectivityAdapter.qml
 singleton PowerService PowerService.qml
-singleton FrameRegistry FrameRegistry.qml

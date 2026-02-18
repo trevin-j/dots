@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 
 import "../../config" as Config
-import "../../services" as Services
 
 /*
   FrameWrapper
@@ -30,6 +29,4 @@ Item {
         return mapToGlobal(0, 0).y;
     }
 
-    Component.onCompleted: Services.FrameRegistry.registerWrapper(root)
-    Component.onDestruction: Services.FrameRegistry.unregisterWrapper(root)
 }

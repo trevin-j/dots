@@ -2,14 +2,14 @@ import QtQuick
 import Quickshell
 
 import "../features/bar" as BarFeature
-import "../features/frame" as FrameFeature
+import "../features/chrome" as ChromeFeature
 import "../features/osd" as OsdFeature
 
 ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        FrameFeature.FrameOverlayFeature {
+        ChromeFeature.BottomCornerCutoutsFeature {
             required property var modelData
             panelScreen: modelData
         }
