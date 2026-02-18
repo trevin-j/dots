@@ -15,6 +15,32 @@ Scope {
         commandProcess.exec(args);
     }
 
+    function trigger(actionId) {
+        if (actionId === "lock") {
+            lock();
+            return;
+        }
+        if (actionId === "suspend") {
+            suspend();
+            return;
+        }
+        if (actionId === "hibernate") {
+            hibernate();
+            return;
+        }
+        if (actionId === "logout") {
+            logout();
+            return;
+        }
+        if (actionId === "reboot") {
+            reboot();
+            return;
+        }
+        if (actionId === "poweroff") {
+            poweroff();
+        }
+    }
+
     function lock() {
         runCommand(["loginctl", "lock-session"]);
     }

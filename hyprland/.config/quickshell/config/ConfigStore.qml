@@ -11,15 +11,17 @@ Item {
     readonly property string configPath: Quickshell.env("QS_CONFIG_PATH") || Qt.resolvedUrl("config.json")
 
     property bool ready: false
-    property bool _saving: false
     property bool _loaded: false
 
-    property var data: ({})
+    property var overrides: ({})
 
     signal loaded()
 
-    Component.onCompleted: {
-        console.log("ConfigStore path", configPath);
+    function markReadyWithDefaults() {
+        root.overrides = ({});
+        root.ready = true;
+        root._loaded = true;
+        root.loaded();
     }
 
     FileView {
@@ -34,18 +36,20 @@ Item {
         onLoaded: {
             try {
                 const rawText = configFile.text();
-                console.log("ConfigStore loaded bytes", rawText.length);
-                root.data = JSON.parse(rawText);
+                const parsed = rawText ? JSON.parse(rawText) : ({});
+                root.overrides = parsed && typeof parsed === "object" ? parsed : ({});
                 root.ready = true;
                 root._loaded = true;
                 root.loaded();
             } catch (error) {
                 console.warn("ConfigStore: failed to parse config.json", error);
+                root.markReadyWithDefaults();
             }
         }
 
         onLoadFailed: {
             console.warn("ConfigStore: failed to load config.json", errorString);
+            root.markReadyWithDefaults();
         }
     }
 }

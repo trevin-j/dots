@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Qt.labs.platform as Platform
+import "PaletteUtils.js" as PaletteUtils
 
 Item {
     id: root
@@ -24,9 +25,14 @@ Item {
 
     signal loaded
 
-    Component.onCompleted: {
-        console.log("ThemeStore path", palettePath);
-        console.log("ThemeStore current keys", Object.keys(current));
+    function markReadyWithDefaults() {
+        const sanitized = PaletteUtils.sanitizePaletteData(({}), root.mode, root.light, root.dark);
+        root.mode = sanitized.mode;
+        root.light = sanitized.light;
+        root.dark = sanitized.dark;
+        root.ready = true;
+        root._loaded = true;
+        root.loaded();
     }
 
     FileView {
@@ -41,22 +47,23 @@ Item {
         onLoaded: {
             try {
                 const rawText = paletteFile.text();
-                console.log("ThemeStore loaded bytes", rawText.length);
                 const parsed = JSON.parse(rawText);
-                root.mode = parsed.mode || root.mode;
-                root.light = parsed.light || ({});
-                root.dark = parsed.dark || ({});
-                console.log("ThemeStore mode", root.mode, "dark keys", Object.keys(root.dark).length, "surface", root.dark.surface_container);
+                const sanitized = PaletteUtils.sanitizePaletteData(parsed, root.mode, root.light, root.dark);
+                root.mode = sanitized.mode;
+                root.light = sanitized.light;
+                root.dark = sanitized.dark;
                 root.ready = true;
                 root._loaded = true;
                 root.loaded();
             } catch (error) {
                 console.warn("ThemeStore: failed to parse palette.json", error);
+                root.markReadyWithDefaults();
             }
         }
 
         onLoadFailed: {
             console.warn("ThemeStore: failed to load palette.json", errorString);
+            root.markReadyWithDefaults();
         }
     }
 }

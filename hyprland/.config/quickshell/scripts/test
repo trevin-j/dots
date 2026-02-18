@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if ! command -v qmltestrunner >/dev/null 2>&1; then
+  echo "qmltestrunner is required" >&2
+  exit 1
+fi
+
+mapfile -t test_files < <(rg --files tests -g 'tst_*.qml')
+
+if [[ "${#test_files[@]}" -eq 0 ]]; then
+  echo "No QML tests found under tests/" >&2
+  exit 1
+fi
+
+for test_file in "${test_files[@]}"; do
+  QT_QPA_PLATFORM=offscreen qmltestrunner -input "$test_file" -o -,txt
+done

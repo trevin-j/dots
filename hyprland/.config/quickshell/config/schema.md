@@ -1,15 +1,28 @@
 # Config Schema Overview
 
-This document defines the JSON structure used for centralized configuration.
+This document defines live-reload configuration sources used by the shell.
 
 ## Files
-- ConfigData.qml: primary shell configuration values
-- palette.json: Material 3 role palette (light/dark variants)
+- ConfigData.qml: immutable defaults bundled with the shell
+- config.json: user overrides (hot-reloaded)
+- palette.json: Material 3 role palette (light/dark variants, hot-reloaded)
 
-## ConfigData.qml
-Configuration now lives in `config/ConfigData.qml` as a singleton QtObject.
-Use the `bar`, `appearance`, `motion`, and `popouts` objects defined there as
-the single source of truth for shell configuration.
+## Config runtime model
+- `ConfigStore.qml` watches `config.json` and parses overrides.
+- `ConfigRuntime.qml` deep-merges overrides on top of `ConfigData.qml` defaults.
+- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, and `popouts`.
+
+### config.json
+```json
+{
+  "bar": {},
+  "appearance": {},
+  "motion": {},
+  "popouts": {}
+}
+```
+
+Any subset of keys can be provided. Changes are reloaded at runtime.
 
 ## palette.json
 ```

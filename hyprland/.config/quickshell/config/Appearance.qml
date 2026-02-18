@@ -9,6 +9,7 @@ QtObject {
     id: root
 
     readonly property string fontFamily: ConfigFiles.Config.appearance.font?.family || "Roboto"
+    readonly property string iconFontFamily: ConfigFiles.Config.appearance.font?.iconFamily || "Material Symbols Rounded"
     readonly property int fontWeight: ConfigFiles.Config.appearance.font?.weight || 400
     readonly property real fontSizeSmall: ConfigFiles.Config.appearance.font?.size?.small || 11
     readonly property real fontSizeMedium: ConfigFiles.Config.appearance.font?.size?.medium || 13

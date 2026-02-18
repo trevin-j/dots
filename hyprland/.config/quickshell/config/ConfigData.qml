@@ -30,6 +30,7 @@ QtObject {
     readonly property var appearance: ({
         font: ({
             family: "Roboto",
+            iconFamily: "Material Symbols Rounded",
             size: ({
                 small: 11,
                 medium: 13,

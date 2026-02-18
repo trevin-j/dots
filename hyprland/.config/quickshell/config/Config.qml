@@ -8,10 +8,10 @@ import "./" as ConfigFiles
 QtObject {
     id: root
 
-    readonly property bool ready: true
+    readonly property bool ready: ConfigFiles.ConfigRuntime.ready
 
-    readonly property var bar: ConfigFiles.ConfigData.bar
-    readonly property var appearance: ConfigFiles.ConfigData.appearance
-    readonly property var motion: ConfigFiles.ConfigData.motion
-    readonly property var popouts: ConfigFiles.ConfigData.popouts
+    readonly property var bar: ConfigFiles.ConfigRuntime.bar
+    readonly property var appearance: ConfigFiles.ConfigRuntime.appearance
+    readonly property var motion: ConfigFiles.ConfigRuntime.motion
+    readonly property var popouts: ConfigFiles.ConfigRuntime.popouts
 }

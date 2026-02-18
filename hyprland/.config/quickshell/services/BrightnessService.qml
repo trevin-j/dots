@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 
 import "../config" as Config
+import "parsers/BrightnessParsers.js" as BrightnessParsers
 
 /*!
   BrightnessService
@@ -15,12 +16,18 @@ Scope {
 
     property real level: 0
     property bool ready: false
+    property bool applyInFlight: false
+    property string lastError: ""
 
     readonly property string brightnessctlPath: "/usr/bin/brightnessctl"
     readonly property string configuredDevice: Config.Config.popouts?.brightness?.device ?? ""
     readonly property bool deviceLocked: configuredDevice !== ""
 
     property string deviceName: configuredDevice
+
+    function clampLevel(value) {
+        return BrightnessParsers.clampLevel(value);
+    }
 
     function buildCommand(args) {
         const command = [root.brightnessctlPath];
@@ -31,9 +38,12 @@ Scope {
     }
 
     function setLevel(value) {
-        const clamped = Math.max(0, Math.min(1, value));
+        const clamped = clampLevel(value);
+        const percent = Math.round(clamped * 100);
         root.level = clamped;
-        root.ready = true;
+        root.applyInFlight = true;
+        root.lastError = "";
+        setProcess.exec(root.buildCommand(["set", `${percent}%`]));
     }
 
     function refresh() {
@@ -58,22 +68,17 @@ Scope {
         stdout: StdioCollector {
             onStreamFinished: {
                 const output = text.trim();
-                if (!output) {
+                const parsed = BrightnessParsers.parseBrightnessctlOutput(output);
+                if (!parsed.ok) {
+                    root.lastError = `BrightnessService: ${parsed.error}`;
                     return;
                 }
-                const parts = output.split(",");
-                if (parts.length < 4) {
-                    return;
+                if (!root.deviceLocked && !root.deviceName && parsed.deviceName) {
+                    root.deviceName = parsed.deviceName;
                 }
-                if (!root.deviceLocked && !root.deviceName && parts[0]) {
-                    root.deviceName = parts[0];
-                }
-                const percentValue = Number(parts[3].replace("%", ""));
-                if (Number.isNaN(percentValue)) {
-                    return;
-                }
-                root.level = Math.max(0, Math.min(1, percentValue / 100));
+                root.level = parsed.level;
                 root.ready = true;
+                root.lastError = "";
             }
         }
 
@@ -81,9 +86,39 @@ Scope {
             onStreamFinished: {
                 const output = text.trim();
                 if (output) {
-                    root.ready = false;
+                    root.lastError = output;
                 }
             }
+        }
+    }
+
+    Process {
+        id: setProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.applyInFlight = false;
+                root.refresh();
+            }
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const output = text.trim();
+                root.applyInFlight = false;
+                if (output) {
+                    root.lastError = output;
+                }
+                root.refresh();
+            }
+        }
+    }
+
+    Component.onCompleted: refresh()
+
+    onDeviceNameChanged: {
+        if (ready) {
+            refresh();
         }
     }
 }
