@@ -22,6 +22,11 @@ PanelWindow {
     surfaceFormat.opaque: false
     exclusiveZone: 0
 
+    mask: Region {
+        item: inputPassthrough
+        intersection: Intersection.Xor
+    }
+
     anchors.top: true
     anchors.bottom: true
     anchors.left: true
@@ -47,5 +52,11 @@ PanelWindow {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
         }
+    }
+
+    Rectangle {
+        id: inputPassthrough
+        anchors.fill: parent
+        visible: false
     }
 }
