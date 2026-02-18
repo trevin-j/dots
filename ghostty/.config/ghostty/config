@@ -27,11 +27,14 @@ confirm-close-surface = false
 
 mouse-scroll-multiplier = 0.35
 
+cursor-style-blink = true
+
 config-file = ?colors
 
 window-inherit-working-directory = false
 working-directory = home
 
-shell-integration-features = sudo, title, ssh-env, ssh-terminfo
+shell-integration-features = sudo, title, ssh-env
+#shell-integration-features = sudo, title, ssh-env, ssh-terminfo
 
 app-notifications = false

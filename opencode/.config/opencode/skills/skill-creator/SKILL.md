@@ -2,7 +2,6 @@
 name: skill-creator
 description: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Opencode's capabilities with specialized knowledge, workflows, or tool integrations.
 license: This skill is based on work by Anthropic. Original copyright © Anthropic. Modifications copyright © DevTrev. Licensed under the Apache License, Version 2.0
-
 ---
 
 # Skill Creator

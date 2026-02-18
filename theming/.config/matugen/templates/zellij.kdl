@@ -10,7 +10,7 @@ themes {
         }
         text_selected {
             base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
-            background {{colors.surface_container_highest.default.red}} {{colors.surface_container.default.green}} {{colors.surface_container.default.blue}}
+            background {{colors.surface_container_highest.default.red}} {{colors.surface_container_highest.default.green}} {{colors.surface_container_highest.default.blue}}
             emphasis_0 {{colors.tertiary.default.red}} {{colors.tertiary.default.green}} {{colors.tertiary.default.blue}}
             emphasis_1 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
             emphasis_2 {{colors.secondary.default.red}} {{colors.secondary.default.green}} {{colors.secondary.default.blue}}

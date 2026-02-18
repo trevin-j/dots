@@ -259,7 +259,7 @@ web_client {
 //   - true
 //   - false (Default)
 // 
-// simplified_ui true
+simplified_ui true
 
 ui {
     pane_frames {
@@ -315,7 +315,7 @@ default_mode "locked"
 //   - true (default, enabled)
 //   - false
 // 
-// pane_frames false
+pane_frames false
  
 // When attaching to an existing session with other users,
 // should the session be mirrored (true)
@@ -398,7 +398,7 @@ default_mode "locked"
 //   - true (default)
 //   - false
 // 
-session_serialization false
+// session_serialization false
  
 // Whether pane viewports are serialized along with the session, default is false
 // Options:
@@ -418,7 +418,7 @@ session_serialization false
 // (Requires restart)
 // Default: true
 // 
-// styled_underlines false
+styled_underlines false
  
 // How often in seconds sessions are serialized
 // 

@@ -59,3 +59,7 @@ output_path = "~/.config/matugen/materialized-web/scheme/current.json"
 [templates.nvim]
 input_path = "templates/nvim.lua"
 output_path = "~/.local/share/nvim/matugen.lua"
+
+[templates.tshell]
+input_path = "templates/tshell.toml"
+output_path = "~/.config/tshell/colors.toml"
