@@ -117,4 +117,15 @@ QtObject {
             device: "intel_backlight"
         })
     })
+
+    readonly property var controlCenter: ({
+        size: ({
+            width: 420,
+            padding: 16,
+            spacing: 12,
+            traySpacing: 8,
+            trayItemHeight: 42,
+            toggleHeight: 58
+        })
+    })
 }

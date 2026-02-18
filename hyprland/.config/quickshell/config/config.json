@@ -2,5 +2,6 @@
   "bar": {},
   "appearance": {},
   "motion": {},
-  "popouts": {}
+  "popouts": {},
+  "controlCenter": {}
 }

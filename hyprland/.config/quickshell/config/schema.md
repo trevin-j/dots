@@ -10,7 +10,7 @@ This document defines live-reload configuration sources used by the shell.
 ## Config runtime model
 - `ConfigStore.qml` watches `config.json` and parses overrides.
 - `ConfigRuntime.qml` deep-merges overrides on top of `ConfigData.qml` defaults.
-- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, and `popouts`.
+- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, and `controlCenter`.
 
 ### config.json
 ```json
@@ -18,7 +18,8 @@ This document defines live-reload configuration sources used by the shell.
   "bar": {},
   "appearance": {},
   "motion": {},
-  "popouts": {}
+  "popouts": {},
+  "controlCenter": {}
 }
 ```
 

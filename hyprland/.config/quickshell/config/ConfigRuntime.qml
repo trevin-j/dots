@@ -19,4 +19,5 @@ QtObject {
     readonly property var appearance: merged.appearance
     readonly property var motion: merged.motion
     readonly property var popouts: merged.popouts
+    readonly property var controlCenter: merged.controlCenter
 }

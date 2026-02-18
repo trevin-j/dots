@@ -14,6 +14,7 @@ PanelWindow {
     id: root
 
     required property ShellScreen panelScreen
+    required property var controlCenterState
 
     readonly property string position: Config.Config.bar.position || "top"
     readonly property int thickness: Config.Config.bar.size?.thickness ?? 40
@@ -147,8 +148,15 @@ PanelWindow {
                     BarComponents.RightStatus {
                         barHeight: root.thickness - root.padding * 2
                         spacing: root.spacing
-                        screen: root.panelScreen
                         Layout.fillHeight: true
+                    }
+
+                    BarComponents.ControlCenterButton {
+                        barHeight: root.thickness - root.padding * 2
+                        iconFont: Config.Appearance.iconFontFamily
+                        active: root.controlCenterState?.open ?? false
+                        Layout.fillHeight: true
+                        onClicked: root.controlCenterState.toggle()
                     }
                 }
             }

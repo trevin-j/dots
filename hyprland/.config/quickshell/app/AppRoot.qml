@@ -1,24 +1,14 @@
 import QtQuick
 import Quickshell
 
-import "../features/bar" as BarFeature
-import "../features/chrome" as ChromeFeature
 import "../features/osd" as OsdFeature
+import "./" as App
 
 ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        ChromeFeature.BottomCornerCutoutsFeature {
-            required property var modelData
-            panelScreen: modelData
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        BarFeature.BarPanelFeature {
+        App.ScreenShell {
             required property var modelData
             panelScreen: modelData
         }

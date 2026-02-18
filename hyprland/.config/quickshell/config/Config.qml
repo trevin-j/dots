@@ -14,4 +14,5 @@ QtObject {
     readonly property var appearance: ConfigFiles.ConfigRuntime.appearance
     readonly property var motion: ConfigFiles.ConfigRuntime.motion
     readonly property var popouts: ConfigFiles.ConfigRuntime.popouts
+    readonly property var controlCenter: ConfigFiles.ConfigRuntime.controlCenter
 }
