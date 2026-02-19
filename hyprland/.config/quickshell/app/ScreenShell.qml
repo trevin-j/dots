@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 
+import "../services" as Services
 import "../features/bar" as BarFeature
 import "../features/chrome" as ChromeFeature
 import "../features/controlcenter" as ControlCenterFeature
@@ -19,6 +20,9 @@ Item {
     ControlCenterVm.ControlCenterState {
         id: controlCenterState
     }
+
+    Component.onCompleted: Services.ControlCenterService.registerScreenState(root.panelScreen, controlCenterState)
+    Component.onDestruction: Services.ControlCenterService.unregisterScreenState(controlCenterState)
 
     BarFeature.BarPanelFeature {
         panelScreen: root.panelScreen
