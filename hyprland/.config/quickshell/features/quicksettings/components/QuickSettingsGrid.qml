@@ -21,10 +21,14 @@ ColumnLayout {
     Layout.fillWidth: true
 
     GridLayout {
+        id: toggleGrid
+
         columns: 2
         columnSpacing: root.toggleSpacing
         rowSpacing: root.toggleSpacing
         Layout.fillWidth: true
+
+        readonly property real columnWidth: Math.max(0, (width - columnSpacing) / columns)
 
         Controls.QuickToggle {
             label: "Wi-Fi"
@@ -35,6 +39,7 @@ ColumnLayout {
                 ? root.state.connectivity.wifiSsid
                 : (root.state.connectivity.wifiEnabled ? "Not connected" : "")
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.connectivity.setWifiEnabled(next)
         }
@@ -48,6 +53,7 @@ ColumnLayout {
                 ? root.state.connectivity.bluetoothDevices
                 : (root.state.connectivity.bluetoothEnabled ? "No devices" : "")
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.connectivity.setBluetoothEnabled(next)
         }
@@ -58,6 +64,7 @@ ColumnLayout {
             iconFont: root.materialFont
             active: root.state.connectivity.airplaneEnabled
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.connectivity.setAirplaneEnabled(next)
         }
@@ -68,6 +75,7 @@ ColumnLayout {
             iconFont: root.materialFont
             active: root.state.dndEnabled
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.dndEnabled = next
         }
@@ -78,6 +86,7 @@ ColumnLayout {
             iconFont: root.materialFont
             active: root.state.nightLightEnabled
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.nightLightEnabled = next
         }
@@ -88,6 +97,7 @@ ColumnLayout {
             iconFont: root.materialFont
             active: root.state.darkModeEnabled
             Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
             onToggled: root.state.darkModeEnabled = next
         }
