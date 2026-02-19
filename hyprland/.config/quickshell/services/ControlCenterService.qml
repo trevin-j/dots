@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 
@@ -8,7 +9,7 @@ import Quickshell.Io
   ControlCenterService
   Tracks per-screen control center state and exposes IPC controls.
 */
-QtObject {
+Scope {
     id: root
 
     property var entries: []
@@ -68,6 +69,15 @@ QtObject {
         callback(entry.state);
     }
 
+    function targetState() {
+        const entry = root.stateEntryForFocusedMonitor() || root.fallbackEntry();
+        if (!entry || !entry.state) {
+            return null;
+        }
+
+        return entry.state;
+    }
+
     function registerScreenState(screen, state) {
         if (!screen || !state) {
             return;
@@ -101,6 +111,29 @@ QtObject {
         root.withTargetState(state => state.close());
     }
 
+    function isOpen() {
+        const state = root.targetState();
+        return state ? state.open : false;
+    }
+
+    function swipeLeft() {
+        if (!root.isOpen()) {
+            root.open();
+        }
+    }
+
+    function swipeRight() {
+        if (root.isOpen()) {
+            root.close();
+        }
+    }
+
+    function swipeUp() {
+    }
+
+    function swipeDown() {
+    }
+
     IpcHandler {
         target: "controlcenter"
 
@@ -114,6 +147,26 @@ QtObject {
 
         function close(): void {
             root.close();
+        }
+    }
+
+    IpcHandler {
+        target: "shellgestures"
+
+        function swipeLeft(): void {
+            root.swipeLeft();
+        }
+
+        function swipeRight(): void {
+            root.swipeRight();
+        }
+
+        function swipeUp(): void {
+            root.swipeUp();
+        }
+
+        function swipeDown(): void {
+            root.swipeDown();
         }
     }
 }
