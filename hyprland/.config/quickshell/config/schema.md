@@ -25,6 +25,31 @@ This document defines live-reload configuration sources used by the shell.
 
 Any subset of keys can be provided. Changes are reloaded at runtime.
 
+### controlCenter (example)
+```json
+{
+  "controlCenter": {
+    "size": {
+      "width": 420,
+      "padding": 16,
+      "spacing": 12,
+      "traySpacing": 8,
+      "trayItemHeight": 42,
+      "toggleHeight": 58,
+      "overshootPadding": 112
+    },
+    "backdrop": {
+      "scrimOpacity": 0.24,
+      "fadeInDuration": 180,
+      "fadeOutDuration": 140
+    },
+    "transition": {
+      "drawerOpenDelay": 0
+    }
+  }
+}
+```
+
 ## palette.json
 ```
 {

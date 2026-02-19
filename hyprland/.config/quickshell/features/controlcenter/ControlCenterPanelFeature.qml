@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Services.SystemTray
 
 import "../../config" as Config
@@ -30,10 +31,12 @@ PanelWindow {
     readonly property int toggleHeight: Config.Config.controlCenter?.size?.toggleHeight ?? 58
     readonly property int overshootRightPadding: Config.Config.controlCenter?.size?.overshootPadding
         ?? Math.max(96, Math.round(panelWidth * 0.24))
+    readonly property int drawerOpenDelay: Config.Config.controlCenter?.transition?.drawerOpenDelay ?? 0
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
 
-    property real drawerOffset: root.state.open ? 0 : (root.panelWidth + root.overshootRightPadding)
+    property bool drawerOpen: false
+    property real drawerOffset: drawerOpen ? 0 : (root.panelWidth + root.overshootRightPadding)
     readonly property real revealWidth: Math.max(0, root.panelWidth - Math.max(0, drawerOffset))
     readonly property real drawerX: width - root.panelWidth + drawerOffset
 
@@ -44,14 +47,67 @@ PanelWindow {
     surfaceFormat.opaque: false
     exclusiveZone: 0
 
+    WlrLayershell.namespace: "qs-control-center-panel"
+    WlrLayershell.layer: WlrLayer.Overlay
+
     anchors.top: true
     anchors.bottom: true
     anchors.left: true
     anchors.right: true
 
-    visible: root.state.open || drawerOffset < (root.panelWidth + root.overshootRightPadding)
+    visible: root.state.open || root.drawerOpen || drawerOffset < (root.panelWidth + root.overshootRightPadding)
 
     onDrawerOffsetChanged: root.state.edgeInset = Math.round(revealWidth)
+
+    onVisibleChanged: {
+        if (!visible) {
+            root.drawerOpen = false;
+            openDelayTimer.stop();
+            trayState.trayTooltipVisible = false;
+            trayState.trayTooltipSource = null;
+            trayState.trayTooltipPending = null;
+            tooltipTimer.stop();
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.state.open) {
+            if (root.drawerOpenDelay <= 0) {
+                root.drawerOpen = true;
+            } else {
+                openDelayTimer.restart();
+            }
+        }
+    }
+
+    Connections {
+        target: root.state
+
+        function onOpenChanged() {
+            if (root.state.open) {
+                if (root.drawerOpenDelay <= 0) {
+                    root.drawerOpen = true;
+                } else {
+                    openDelayTimer.restart();
+                }
+            } else {
+                openDelayTimer.stop();
+                root.drawerOpen = false;
+            }
+        }
+    }
+
+    Timer {
+        id: openDelayTimer
+
+        interval: root.drawerOpenDelay
+        repeat: false
+        onTriggered: {
+            if (root.state.open) {
+                root.drawerOpen = true;
+            }
+        }
+    }
 
     Behavior on drawerOffset {
         Anim {
@@ -83,15 +139,6 @@ PanelWindow {
                     trayState.trayTooltipY
                 );
             }
-        }
-    }
-
-    onVisibleChanged: {
-        if (!visible) {
-            trayState.trayTooltipVisible = false;
-            trayState.trayTooltipSource = null;
-            trayState.trayTooltipPending = null;
-            tooltipTimer.stop();
         }
     }
 

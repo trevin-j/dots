@@ -125,7 +125,16 @@ QtObject {
             spacing: 12,
             traySpacing: 8,
             trayItemHeight: 42,
-            toggleHeight: 58
+            toggleHeight: 58,
+            overshootPadding: 112
+        }),
+        backdrop: ({
+            scrimOpacity: 0.24,
+            fadeInDuration: 180,
+            fadeOutDuration: 140
+        }),
+        transition: ({
+            drawerOpenDelay: 0
         })
     })
 }
