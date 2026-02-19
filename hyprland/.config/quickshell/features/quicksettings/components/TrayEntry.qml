@@ -20,10 +20,18 @@ Item {
     required property Timer tooltipTimer
     required property QuickSettingsVm.PopoverState state
 
-    readonly property string trayTitle: trayItem.tooltipTitle || trayItem.title || trayItem.id
-    readonly property string trayDescription: trayItem.tooltipDescription || ""
+    readonly property bool hasTrayItem: trayItem !== null && trayItem !== undefined
+    readonly property string rawIconName: (trayItem && trayItem.icon) ? String(trayItem.icon) : ""
+    readonly property string iconBaseName: {
+        const raw = root.rawIconName;
+        const queryIndex = raw.indexOf("?");
+        return queryIndex >= 0 ? raw.slice(0, queryIndex) : raw;
+    }
+    readonly property string trayTitle: (trayItem && (trayItem.tooltipTitle || trayItem.title || trayItem.id || root.iconBaseName)) || ""
+    readonly property string trayDescription: (trayItem && trayItem.tooltipDescription) || ""
     readonly property string trayTitleClean: trayTitle ? trayTitle.replace(/[\r\n]+/g, " ") : ""
     readonly property string trayDescriptionClean: trayDescription ? trayDescription.replace(/[\r\n]+/g, " ") : ""
+    readonly property string resolvedIconSource: root.iconBaseName || Quickshell.iconPath("image-missing", true)
     property bool hovered: trayEntryArea.containsMouse
     property real lastMouseX: width * 0.5
     property real lastMouseY: height
@@ -32,6 +40,15 @@ Item {
         if (!trayItem || !trayItem.hasMenu) {
             return;
         }
+
+        if (trayItem.display && QsWindow.window) {
+            const localX = Math.round(mouseX ?? root.width * 0.5);
+            const localY = Math.round(mouseY ?? root.height);
+            const point = root.mapToItem(null, localX, localY);
+            trayItem.display(QsWindow.window, Math.round(point.x), Math.round(point.y));
+            return;
+        }
+
         trayMenu.anchor.item = root;
         trayMenu.anchor.rect = Qt.rect(
             Math.round(mouseX ?? root.width * 0.5),
@@ -43,17 +60,21 @@ Item {
     }
 
     function handleClick(mouseEvent) {
-        if (!mouseEvent) {
+        if (!mouseEvent || !root.hasTrayItem) {
             return;
         }
         if (mouseEvent.button === Qt.LeftButton) {
             if (trayItem.onlyMenu) {
                 openTrayMenuAt(mouseEvent.x, mouseEvent.y);
             } else {
-                trayItem.activate();
+                if (trayItem.activate) {
+                    trayItem.activate();
+                }
             }
         } else if (mouseEvent.button === Qt.MiddleButton) {
-            trayItem.secondaryActivate();
+            if (trayItem.secondaryActivate) {
+                trayItem.secondaryActivate();
+            }
         } else if (mouseEvent.button === Qt.RightButton) {
             openTrayMenuAt(mouseEvent.x, mouseEvent.y);
         }
@@ -74,7 +95,7 @@ Item {
         spacing: 8
 
         IconImage {
-            source: root.trayItem.icon
+            source: root.resolvedIconSource
             implicitSize: root.iconSize
             asynchronous: true
             mipmap: true
@@ -121,6 +142,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+        enabled: root.hasTrayItem
 
         onEntered: root.state.scheduleTrayTooltip(root, root.lastMouseX, root.lastMouseY, root.tooltipTimer)
         onExited: root.state.clearTrayTooltip(root, root.tooltipTimer)
@@ -134,7 +156,9 @@ Item {
                 root.state.trayTooltipY = mouse.y;
             }
         }
-        onClicked: mouse => root.handleClick(mouse)
+        function onClicked(mouse) {
+            root.handleClick(mouse);
+        }
     }
 
     QsMenuAnchor {

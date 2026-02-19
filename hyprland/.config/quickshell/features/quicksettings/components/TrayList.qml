@@ -18,33 +18,46 @@ Item {
     required property Timer tooltipTimer
     required property QuickSettingsVm.PopoverState state
 
-    readonly property int itemCount: trayView.count
+    readonly property var trayItems: SystemTray.items.values ?? []
+    readonly property int itemCount: trayItems.length
 
-    ListView {
-        id: trayView
+    Flickable {
+        id: trayFlick
 
         anchors.fill: parent
-        visible: count > 0
-        clip: false
-        spacing: root.spacing
+        visible: root.itemCount > 0
+        clip: true
+        contentWidth: width
+        contentHeight: trayColumn.implicitHeight
         boundsBehavior: Flickable.StopAtBounds
-        reuseItems: true
-        cacheBuffer: root.itemHeight * 6
-        model: SystemTray.items
+        interactive: contentHeight > height
 
-        delegate: TrayEntry {
-            width: trayView.width
-            trayItem: modelData
-            itemHeight: root.itemHeight
-            iconSize: root.iconSize
-            tooltipLayer: root.tooltipLayer
-            tooltipTimer: root.tooltipTimer
-            state: root.state
+        Column {
+            id: trayColumn
+
+            width: trayFlick.width
+            spacing: root.spacing
+
+            Repeater {
+                model: root.trayItems
+
+                delegate: TrayEntry {
+                    required property var modelData
+
+                    width: trayColumn.width
+                    trayItem: modelData
+                    itemHeight: root.itemHeight
+                    iconSize: root.iconSize
+                    tooltipLayer: root.tooltipLayer
+                    tooltipTimer: root.tooltipTimer
+                    state: root.state
+                }
+            }
         }
     }
 
     Text {
-        visible: trayView.count === 0
+        visible: root.itemCount === 0
         text: "No tray items"
         font.family: Config.Appearance.fontFamily
         font.weight: Config.Appearance.fontWeight
