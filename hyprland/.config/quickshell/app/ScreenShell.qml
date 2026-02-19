@@ -25,11 +25,6 @@ Item {
         controlCenterState: controlCenterState
     }
 
-    ControlCenterFeature.ControlCenterBackdropFeature {
-        panelScreen: root.panelScreen
-        state: controlCenterState
-    }
-
     ControlCenterFeature.ControlCenterPanelFeature {
         panelScreen: root.panelScreen
         state: controlCenterState

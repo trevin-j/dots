@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import Quickshell.Services.SystemTray
 
 import "../../config" as Config
@@ -46,9 +45,6 @@ PanelWindow {
     color: "transparent"
     surfaceFormat.opaque: false
     exclusiveZone: 0
-
-    WlrLayershell.namespace: "qs-control-center-panel"
-    WlrLayershell.layer: WlrLayer.Overlay
 
     anchors.top: true
     anchors.bottom: true
