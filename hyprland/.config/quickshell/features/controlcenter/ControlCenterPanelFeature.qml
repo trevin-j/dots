@@ -188,6 +188,7 @@ PanelWindow {
                 toggleSpacing: root.contentSpacing
                 materialFont: Config.Appearance.iconFontFamily
                 state: statusVm
+                forceCollapseMenus: !root.state.open
                 Layout.fillWidth: true
                 onPowerAction: actionId => Services.PowerService.trigger(actionId)
             }

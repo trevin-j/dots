@@ -14,6 +14,7 @@ ColumnLayout {
     required property int toggleSpacing
     required property string materialFont
     required property var state
+    property bool forceCollapseMenus: false
 
     signal powerAction(string actionId)
 
@@ -103,12 +104,11 @@ ColumnLayout {
         }
     }
 
-    Controls.PowerMenu {
-        id: powerMenu
-
+    Controls.ExpandablePowerMenu {
         iconFont: root.materialFont
         spacing: root.toggleSpacing
         itemHeight: Math.max(36, Math.round(root.toggleHeight * 0.8))
+        forceCollapsed: root.forceCollapseMenus
         Layout.fillWidth: true
         onActionTriggered: actionId => root.powerAction(actionId)
     }
