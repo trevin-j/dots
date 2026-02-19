@@ -38,6 +38,9 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
       "toggleHeight": 58,
       "overshootPadding": 112
     },
+    "nightLight": {
+      "temperature": 3500
+    },
     "transition": {
       "drawerOpenDelay": 0
     }

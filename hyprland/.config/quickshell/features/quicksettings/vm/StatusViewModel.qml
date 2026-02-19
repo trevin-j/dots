@@ -6,6 +6,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
 import "../../../config" as Config
+import "../../../services" as Services
 import "./" as Vm
 import "StatusIconLogic.js" as IconLogic
 
@@ -13,8 +14,9 @@ Item {
     id: root
 
     property bool dndEnabled: false
-    property bool nightLightEnabled: false
     property bool darkModeEnabled: false
+
+    readonly property bool nightLightEnabled: Services.NightLightService.enabled
 
     Vm.ConnectivityModel {
         id: connectivityModel
@@ -61,4 +63,8 @@ Item {
 
     readonly property string dateText: Qt.formatDateTime(clock.date, "ddd MMM d")
     readonly property string timeText: Qt.formatDateTime(clock.date, "h:mm AP")
+
+    function setNightLightEnabled(next) {
+        Services.NightLightService.setEnabled(next);
+    }
 }

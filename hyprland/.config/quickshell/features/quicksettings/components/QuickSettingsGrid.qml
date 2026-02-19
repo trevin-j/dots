@@ -88,7 +88,7 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
-            onToggled: root.state.nightLightEnabled = next
+            onToggled: root.state.setNightLightEnabled(next)
         }
 
         Controls.QuickToggle {

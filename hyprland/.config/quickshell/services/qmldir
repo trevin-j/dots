@@ -1,3 +1,4 @@
 singleton BrightnessService BrightnessService.qml
 singleton ConnectivityAdapter adapters/ConnectivityAdapter.qml
+singleton NightLightService NightLightService.qml
 singleton PowerService PowerService.qml
