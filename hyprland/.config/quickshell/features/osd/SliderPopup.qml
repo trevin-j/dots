@@ -20,7 +20,7 @@ PanelWindow {
     required property var style
 
     property bool interacting: false
-    property string bubbleColorRole: "surface_container_high"
+    property string bubbleColorRole: "surface"
     property string attachEdge: "bottom"
 
     signal levelSet(real value)

@@ -11,8 +11,6 @@ import ".." as Osd
 Osd.SliderPopup {
     id: root
 
-    required property bool active
-
     readonly property real volumeLevel: Pipewire.defaultAudioSink?.audio?.volume ?? 0
     readonly property bool volumeMuted: Pipewire.defaultAudioSink?.audio?.muted ?? false
 

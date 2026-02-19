@@ -18,6 +18,33 @@ Scope {
     property real volumeLevel: Pipewire.defaultAudioSink?.audio?.volume ?? 0
     property bool volumeMuted: Pipewire.defaultAudioSink?.audio?.muted ?? false
 
+    function monitorKey(monitor) {
+        if (!monitor) {
+            return "";
+        }
+
+        return monitor.name
+            || monitor.connector
+            || monitor.id
+            || monitor.lastIpcObject?.name
+            || "";
+    }
+
+    function isFocusedMonitor(monitor) {
+        const focused = Hyprland.focusedMonitor;
+        if (!focused || !monitor) {
+            return true;
+        }
+
+        if (monitor === focused) {
+            return true;
+        }
+
+        const monitorKeyValue = root.monitorKey(monitor);
+        const focusedKeyValue = root.monitorKey(focused);
+        return monitorKeyValue !== "" && monitorKeyValue === focusedKeyValue;
+    }
+
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink]
     }
@@ -29,18 +56,6 @@ Scope {
 
     onVolumeLevelChanged: showOsd()
     onVolumeMutedChanged: showOsd()
-
-    Connections {
-        target: Pipewire.defaultAudioSink?.audio
-
-        function onVolumeChanged() {
-            root.showOsd();
-        }
-
-        function onMutedChanged() {
-            root.showOsd();
-        }
-    }
 
     Timer {
         id: hideTimer
@@ -63,7 +78,7 @@ Scope {
             required property var modelData
 
             readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool isFocused: !Hyprland.focusedMonitor || monitor === Hyprland.focusedMonitor
+            readonly property bool isFocused: root.isFocusedMonitor(monitor)
 
             screen: modelData
             active: root.shouldShowOsd && isFocused

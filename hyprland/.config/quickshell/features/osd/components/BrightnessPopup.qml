@@ -11,8 +11,6 @@ import ".." as Osd
 Osd.SliderPopup {
     id: root
 
-    required property bool active
-
     iconName: "brightness_6"
     level: Services.BrightnessService.level
     style: Config.Config.popouts?.brightness ?? ({})

@@ -18,15 +18,8 @@ Item {
     property real bubblePadding: Config.Appearance.bubblePadding
     property real bubbleRounding: Config.Appearance.bubbleRounding
 
-    readonly property var windowTransform: QSWindow.window?.windowTransform
     readonly property bool bubbleVisible: width > 0 && height > 0 && visible
-    readonly property real globalX: {
-        windowTransform;
-        return mapToGlobal(0, 0).x;
-    }
-    readonly property real globalY: {
-        windowTransform;
-        return mapToGlobal(0, 0).y;
-    }
+    readonly property real globalX: mapToGlobal(0, 0).x
+    readonly property real globalY: mapToGlobal(0, 0).y
 
 }
