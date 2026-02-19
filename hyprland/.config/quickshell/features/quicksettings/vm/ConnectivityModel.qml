@@ -21,7 +21,7 @@ QtObject {
 
     readonly property string wifiSsid: Parsers.parseWifiSsid(adapter.activeConnectionOutput, wifiEnabled)
 
-    readonly property bool bluetoothEnabled: Parsers.parseBluetoothEnabled(adapter.bluetoothShowOutput)
+    readonly property bool bluetoothEnabled: Parsers.parseBluetoothEnabled(adapter.bluetoothRadioOutput)
 
     readonly property string bluetoothDevices: Parsers.parseBluetoothDevices(adapter.bluetoothDevicesOutput, bluetoothEnabled)
 

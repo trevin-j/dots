@@ -69,14 +69,8 @@ function parseWifiSsid(output, wifiEnabled) {
 }
 
 function parseBluetoothEnabled(output) {
-    const lines = (output || "").split("\n");
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("Powered:")) {
-            return trimmed.toLowerCase().endsWith("yes");
-        }
-    }
-    return false;
+    const value = normalizeColonValue(output).toLowerCase();
+    return value.startsWith("enabled");
 }
 
 function parseBluetoothDevices(output, bluetoothEnabled) {

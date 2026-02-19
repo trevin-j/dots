@@ -22,8 +22,9 @@ TestCase {
         compare(Parsers.parseWifiSsid("Home:wifi:wlan0", true), "Home");
         compare(Parsers.parseWifiSsid("Home:wifi:wlan0", false), "");
 
-        verify(Parsers.parseBluetoothEnabled("Name: adapter\nPowered: yes\n"));
-        verify(!Parsers.parseBluetoothEnabled("Powered: no\n"));
+        verify(Parsers.parseBluetoothEnabled("enabled"));
+        verify(Parsers.parseBluetoothEnabled("BLUETOOTH:enabled"));
+        verify(!Parsers.parseBluetoothEnabled("disabled"));
 
         const devices = Parsers.parseBluetoothDevices("Device 11:22:33:44 Headphones\nDevice 99:AA:BB:CC Keyboard", true);
         compare(devices, "Headphones, Keyboard");

@@ -18,8 +18,8 @@ Scope {
     property string deviceStateOutput: ""
     property string activeConnectionOutput: ""
     property string wifiRadioOutput: ""
+    property string bluetoothRadioOutput: ""
     property string allRadioOutput: ""
-    property string bluetoothShowOutput: ""
     property string bluetoothDevicesOutput: ""
 
     property bool suppressAirplaneUpdate: false
@@ -30,8 +30,8 @@ Scope {
         deviceStateProcess.exec([nmcliPath, "-t", "-f", "TYPE,STATE", "dev"]);
         activeConnectionProcess.exec([nmcliPath, "-t", "-f", "NAME,TYPE,DEVICE", "connection", "show", "--active"]);
         wifiRadioProcess.exec([nmcliPath, "-t", "-f", "WIFI", "radio"]);
+        bluetoothRadioProcess.exec([nmcliPath, "-t", "-f", "BLUETOOTH", "radio"]);
         allRadioProcess.exec([nmcliPath, "-t", "-f", "ALL", "radio"]);
-        bluetoothShowProcess.exec([bluetoothctlPath, "show"]);
         bluetoothDevicesProcess.exec([bluetoothctlPath, "devices", "Connected"]);
     }
 
@@ -41,14 +41,13 @@ Scope {
     }
 
     function setBluetoothEnabled(enabled) {
-        bluetoothToggleProcess.exec([bluetoothctlPath, "power", enabled ? "on" : "off"]);
+        bluetoothToggleProcess.exec([nmcliPath, "radio", "bluetooth", enabled ? "on" : "off"]);
         refreshSoon();
     }
 
     function setAirplaneEnabled(enabled) {
         suppressAirplaneUpdate = true;
         airplaneToggleProcess.exec([nmcliPath, "radio", "all", enabled ? "off" : "on"]);
-        bluetoothToggleProcess.exec([bluetoothctlPath, "power", enabled ? "off" : "on"]);
         refreshSoon();
     }
 
@@ -117,6 +116,14 @@ Scope {
     }
 
     Process {
+        id: bluetoothRadioProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: root.bluetoothRadioOutput = text.trim()
+        }
+    }
+
+    Process {
         id: allRadioProcess
 
         stdout: StdioCollector {
@@ -125,14 +132,6 @@ Scope {
                     root.allRadioOutput = text.trim();
                 }
             }
-        }
-    }
-
-    Process {
-        id: bluetoothShowProcess
-
-        stdout: StdioCollector {
-            onStreamFinished: root.bluetoothShowOutput = text
         }
     }
 
