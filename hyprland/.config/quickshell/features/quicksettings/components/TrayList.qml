@@ -18,28 +18,23 @@ Item {
     required property Timer tooltipTimer
     required property QuickSettingsVm.PopoverState state
 
-    readonly property var trayItems: SystemTray.items.values ?? []
-    readonly property int itemCount: trayItems.length
+    readonly property int itemCount: SystemTray.items.values?.length ?? 0
 
-    Flickable {
-        id: trayFlick
+    Item {
+        id: trayContainer
 
         anchors.fill: parent
         visible: root.itemCount > 0
         clip: true
-        contentWidth: width
-        contentHeight: trayColumn.implicitHeight
-        boundsBehavior: Flickable.StopAtBounds
-        interactive: contentHeight > height
 
         Column {
             id: trayColumn
 
-            width: trayFlick.width
+            width: trayContainer.width
             spacing: root.spacing
 
             Repeater {
-                model: root.trayItems
+                model: SystemTray.items
 
                 delegate: TrayEntry {
                     required property var modelData

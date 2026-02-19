@@ -5,6 +5,7 @@ import Quickshell.Widgets
 
 import "../../../config" as Config
 import "../vm" as QuickSettingsVm
+import "../vm/TrayInteraction.js" as TrayInteraction
 
 /*
   TrayEntry
@@ -21,63 +22,20 @@ Item {
     required property QuickSettingsVm.PopoverState state
 
     readonly property bool hasTrayItem: trayItem !== null && trayItem !== undefined
-    readonly property string rawIconName: (trayItem && trayItem.icon) ? String(trayItem.icon) : ""
-    readonly property string iconBaseName: {
-        const raw = root.rawIconName;
-        const queryIndex = raw.indexOf("?");
-        return queryIndex >= 0 ? raw.slice(0, queryIndex) : raw;
-    }
-    readonly property string trayTitle: (trayItem && (trayItem.tooltipTitle || trayItem.title || trayItem.id || root.iconBaseName)) || ""
-    readonly property string trayDescription: (trayItem && trayItem.tooltipDescription) || ""
+    readonly property string iconBaseName: TrayInteraction.iconBaseName(trayItem?.icon)
+    readonly property string trayTitle: TrayInteraction.titleFor(trayItem)
+    readonly property string trayDescription: TrayInteraction.descriptionFor(trayItem)
     readonly property string trayTitleClean: trayTitle ? trayTitle.replace(/[\r\n]+/g, " ") : ""
     readonly property string trayDescriptionClean: trayDescription ? trayDescription.replace(/[\r\n]+/g, " ") : ""
     readonly property string resolvedIconSource: root.iconBaseName || Quickshell.iconPath("image-missing", true)
+    property real pressX: 0
+    property real pressY: 0
     property bool hovered: trayEntryArea.containsMouse
     property real lastMouseX: width * 0.5
     property real lastMouseY: height
 
     function openTrayMenuAt(mouseX, mouseY) {
-        if (!trayItem || !trayItem.hasMenu) {
-            return;
-        }
-
-        if (trayItem.display && QsWindow.window) {
-            const localX = Math.round(mouseX ?? root.width * 0.5);
-            const localY = Math.round(mouseY ?? root.height);
-            const point = root.mapToItem(null, localX, localY);
-            trayItem.display(QsWindow.window, Math.round(point.x), Math.round(point.y));
-            return;
-        }
-
-        trayMenu.anchor.item = root;
-        trayMenu.anchor.rect = Qt.rect(
-            Math.round(mouseX ?? root.width * 0.5),
-            Math.round(mouseY ?? root.height),
-            1,
-            1
-        );
-        trayMenu.open();
-    }
-
-    function handleClick(mouseEvent) {
-        if (!mouseEvent || !root.hasTrayItem) {
-            return;
-        }
-        if (mouseEvent.button === Qt.LeftButton) {
-            if (trayItem.onlyMenu) {
-                openTrayMenuAt(mouseEvent.x, mouseEvent.y);
-            } else {
-                if (trayItem.activate) {
-                    trayItem.activate();
-                }
-            }
-        } else if (mouseEvent.button === Qt.MiddleButton) {
-            if (trayItem.secondaryActivate) {
-                trayItem.secondaryActivate();
-            }
-        } else if (mouseEvent.button === Qt.RightButton) {
-            openTrayMenuAt(mouseEvent.x, mouseEvent.y);
-        }
+        TrayInteraction.openMenu(root.trayItem, trayMenu, root, QsWindow.window, mouseX, mouseY);
     }
 
     height: root.itemHeight
@@ -141,12 +99,25 @@ Item {
 
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+        acceptedButtons: Qt.AllButtons
         enabled: root.hasTrayItem
+        preventStealing: true
+
+        onPressed: mouse => {
+            root.pressX = mouse.x;
+            root.pressY = mouse.y;
+            mouse.accepted = true;
+
+            if (mouse.button === Qt.RightButton) {
+                root.openTrayMenuAt(mouse.x, mouse.y);
+            } else if (mouse.button === Qt.MiddleButton) {
+                TrayInteraction.secondaryActivate(root.trayItem);
+            }
+        }
 
         onEntered: root.state.scheduleTrayTooltip(root, root.lastMouseX, root.lastMouseY, root.tooltipTimer)
         onExited: root.state.clearTrayTooltip(root, root.tooltipTimer)
-        onPositionChanged: {
+        onPositionChanged: mouse => {
             root.lastMouseX = mouse.x;
             root.lastMouseY = mouse.y;
             if (root.state.trayTooltipSource === root) {
@@ -156,8 +127,12 @@ Item {
                 root.state.trayTooltipY = mouse.y;
             }
         }
-        function onClicked(mouse) {
-            root.handleClick(mouse);
+        onReleased: mouse => {
+            if (!root.hasTrayItem || mouse.button !== Qt.LeftButton) {
+                return;
+            }
+
+            TrayInteraction.activate(root.trayItem, trayMenu, root, QsWindow.window, root.pressX, root.pressY);
         }
     }
 
