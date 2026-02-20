@@ -60,6 +60,11 @@ PanelWindow {
         item: popupWrapper
     }
 
+    Primitives.SurfaceShadow {
+        source: popupWrapper
+        enabled: Config.Appearance.shadowEnabled && (root.active || popupWrapper.implicitHeight > 0)
+    }
+
     Primitives.FrameWrapper {
         id: popupWrapper
 

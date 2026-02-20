@@ -59,6 +59,48 @@ PanelWindow {
     readonly property color barColor: Config.Palette.color("surface")
 
     Item {
+        id: shadowShape
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: root.visualThickness
+        visible: false
+
+        Rectangle {
+            id: shadowBarBase
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: root.thickness
+            color: root.barColor
+        }
+
+        Primitives.CornerCutout {
+            visible: root.position === "top" && root.cornerRadius > 0
+            radius: root.cornerRadius
+            fillColor: root.barColor
+            anchors.left: parent.left
+            anchors.top: shadowBarBase.bottom
+        }
+
+        Primitives.CornerCutout {
+            visible: root.position === "top" && root.cornerRadius > 0
+            radius: root.cornerRadius
+            fillColor: root.barColor
+            mirrorX: true
+            anchors.right: parent.right
+            anchors.top: shadowBarBase.bottom
+        }
+    }
+
+    Primitives.SurfaceShadow {
+        source: shadowShape
+        enabled: Config.Appearance.shadowEnabled
+    }
+
+    Item {
         anchors.fill: parent
 
         Rectangle {

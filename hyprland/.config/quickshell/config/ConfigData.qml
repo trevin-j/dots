@@ -56,9 +56,9 @@ QtObject {
         cutoutBlack: "#000000",
         shadow: ({
             enabled: true,
-            opacity: 0.18,
-            blur: 24,
-            offsetY: 6
+            opacity: 0.26,
+            blur: 30,
+            offsetY: 8
         })
     })
 

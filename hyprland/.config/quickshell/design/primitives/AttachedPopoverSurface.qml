@@ -56,6 +56,11 @@ PanelWindow {
         item: body
     }
 
+    Primitives.SurfaceShadow {
+        source: wrapper
+        enabled: Config.Appearance.shadowEnabled && (root.open || wrapper.height > 0)
+    }
+
     Primitives.FrameWrapper {
         id: wrapper
 

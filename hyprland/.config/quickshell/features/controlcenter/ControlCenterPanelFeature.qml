@@ -148,6 +148,51 @@ PanelWindow {
     }
 
     Item {
+        id: drawerShadowShape
+
+        readonly property real shadowRadius: Config.Appearance.frameBorderRounding
+
+        width: root.panelWidth + shadowRadius
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        x: root.drawerX - shadowRadius
+        visible: false
+
+        Rectangle {
+            id: shadowBody
+
+            width: root.panelWidth
+            height: parent.height
+            x: drawerShadowShape.shadowRadius
+            color: root.surfaceColor
+        }
+
+        Primitives.CornerCutout {
+            visible: drawerShadowShape.shadowRadius > 0
+            radius: drawerShadowShape.shadowRadius
+            fillColor: root.surfaceColor
+            mirrorX: true
+            anchors.right: shadowBody.left
+            anchors.top: shadowBody.top
+        }
+
+        Primitives.CornerCutout {
+            visible: drawerShadowShape.shadowRadius > 0
+            radius: drawerShadowShape.shadowRadius
+            fillColor: root.surfaceColor
+            mirrorX: true
+            mirrorY: true
+            anchors.right: shadowBody.left
+            anchors.bottom: shadowBody.bottom
+        }
+    }
+
+    Primitives.SurfaceShadow {
+        source: drawerShadowShape
+        enabled: root.revealWidth > 0 && Config.Appearance.shadowEnabled
+    }
+
+    Item {
         id: drawer
 
         width: root.panelWidth + root.overshootRightPadding
