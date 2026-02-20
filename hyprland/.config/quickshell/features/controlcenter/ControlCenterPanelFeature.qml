@@ -7,6 +7,7 @@ import "../../config" as Config
 import "../../design/primitives" as Primitives
 import "../../services" as Services
 import "../../utils"
+import "./components" as ControlCenterComponents
 import "../quicksettings/components" as QuickSettingsComponents
 import "../quicksettings/vm" as QuickSettingsVm
 import "./vm" as ControlCenterVm
@@ -31,10 +32,13 @@ PanelWindow {
     readonly property int overshootRightPadding: Config.Config.controlCenter?.size?.overshootPadding
         ?? Math.max(96, Math.round(panelWidth * 0.24))
     readonly property int drawerOpenDelay: Config.Config.controlCenter?.transition?.drawerOpenDelay ?? 0
+    readonly property int wallpaperPanelWidth: Config.Config.controlCenter?.wallpaper?.panelWidth ?? 320
+    readonly property int wallpaperOvershootPadding: Config.Config.controlCenter?.wallpaper?.overshootPadding ?? 64
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
 
     property bool drawerOpen: false
+    property real wallpaperReveal: (root.state.open && root.state.wallpaperPickerOpen) ? root.wallpaperPanelWidth : 0
     property real drawerOffset: drawerOpen ? 0 : (root.panelWidth + root.overshootRightPadding)
     readonly property real revealWidth: Math.max(0, root.panelWidth - Math.max(0, drawerOffset))
     readonly property real drawerX: width - root.panelWidth + drawerOffset
@@ -58,6 +62,7 @@ PanelWindow {
     onVisibleChanged: {
         if (!visible) {
             root.drawerOpen = false;
+            root.state.wallpaperPickerOpen = false;
             openDelayTimer.stop();
             trayState.trayTooltipVisible = false;
             trayState.trayTooltipSource = null;
@@ -112,6 +117,13 @@ PanelWindow {
         }
     }
 
+    Behavior on wallpaperReveal {
+        Anim {
+            durationMs: Config.Motion.shellDuration
+            curve: Config.Motion.shellCurve
+        }
+    }
+
     QuickSettingsVm.StatusViewModel {
         id: statusVm
     }
@@ -142,7 +154,7 @@ PanelWindow {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: Math.max(0, Math.round(root.drawerX))
+        width: Math.max(0, Math.round(root.drawerX - root.wallpaperReveal))
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         onClicked: root.state.close()
     }
@@ -152,16 +164,17 @@ PanelWindow {
 
         readonly property real shadowRadius: Config.Appearance.frameBorderRounding
 
-        width: root.panelWidth + shadowRadius
+        width: root.panelWidth + root.wallpaperReveal + shadowRadius
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        x: root.drawerX - shadowRadius
-        visible: false
+        x: root.drawerX - root.wallpaperReveal - shadowRadius
+        visible: true
+        opacity: 0
 
         Rectangle {
             id: shadowBody
 
-            width: root.panelWidth
+            width: root.panelWidth + root.wallpaperReveal
             height: parent.height
             x: drawerShadowShape.shadowRadius
             color: root.surfaceColor
@@ -233,6 +246,7 @@ PanelWindow {
                 toggleSpacing: root.contentSpacing
                 materialFont: Config.Appearance.iconFontFamily
                 state: statusVm
+                controlCenterState: root.state
                 forceCollapseMenus: !root.state.open
                 Layout.fillWidth: true
                 onPowerAction: actionId => Services.PowerService.trigger(actionId)
@@ -271,6 +285,58 @@ PanelWindow {
                     tooltipTimer: tooltipTimer
                     state: trayState
                 }
+            }
+        }
+
+        Item {
+            id: wallpaperPanelContainer
+
+            z: -1
+            width: root.wallpaperPanelWidth + root.wallpaperOvershootPadding
+            anchors.top: body.top
+            anchors.bottom: body.bottom
+            x: -root.wallpaperReveal
+            clip: false
+
+            Rectangle {
+                id: wallpaperBody
+
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                width: parent.width
+                radius: 0
+                color: root.sectionColor
+            }
+
+            ControlCenterComponents.WallpaperSelectorPanel {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: root.wallpaperPanelWidth
+                open: root.state.open && root.state.wallpaperPickerOpen
+                panelWidth: root.wallpaperPanelWidth
+                visible: root.wallpaperReveal > 0
+                onApplyRequested: path => Services.WallpaperService.applyWallpaper(path)
+            }
+
+            Primitives.CornerCutout {
+                visible: root.wallpaperReveal > 0
+                radius: Config.Appearance.frameBorderRounding
+                fillColor: wallpaperBody.color
+                mirrorX: true
+                anchors.right: wallpaperBody.left
+                anchors.top: wallpaperBody.top
+            }
+
+            Primitives.CornerCutout {
+                visible: root.wallpaperReveal > 0
+                radius: Config.Appearance.frameBorderRounding
+                fillColor: wallpaperBody.color
+                mirrorX: true
+                mirrorY: true
+                anchors.right: wallpaperBody.left
+                anchors.bottom: wallpaperBody.bottom
             }
         }
 
@@ -316,5 +382,15 @@ PanelWindow {
         mirrorY: true
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+    }
+
+    Keys.onPressed: event => {
+        if (!root.state.open) {
+            return;
+        }
+        if (event.key === Qt.Key_Escape) {
+            root.state.close();
+            event.accepted = true;
+        }
     }
 }

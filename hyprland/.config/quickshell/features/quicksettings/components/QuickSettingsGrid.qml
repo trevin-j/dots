@@ -14,6 +14,7 @@ ColumnLayout {
     required property int toggleSpacing
     required property string materialFont
     required property var state
+    property var controlCenterState: null
     property bool forceCollapseMenus: false
 
     signal powerAction(string actionId)
@@ -100,7 +101,23 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
-            onToggled: root.state.darkModeEnabled = next
+            onToggled: root.state.setDarkModeEnabled(next)
+        }
+
+        Controls.QuickToggle {
+            label: "Wallpapers"
+            icon: "wallpaper"
+            iconFont: root.materialFont
+            visible: root.controlCenterState !== null
+            active: root.controlCenterState?.wallpaperPickerOpen ?? false
+            Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
+            Layout.preferredHeight: visible ? root.toggleHeight : 0
+            onToggled: {
+                if (root.controlCenterState) {
+                    root.controlCenterState.wallpaperPickerOpen = next;
+                }
+            }
         }
     }
 

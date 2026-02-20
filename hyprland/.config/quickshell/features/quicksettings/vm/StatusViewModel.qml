@@ -14,7 +14,7 @@ Item {
     id: root
 
     property bool dndEnabled: false
-    property bool darkModeEnabled: false
+    readonly property bool darkModeEnabled: Services.WallpaperService.darkModeEnabled
 
     readonly property bool nightLightEnabled: Services.NightLightService.enabled
 
@@ -66,5 +66,9 @@ Item {
 
     function setNightLightEnabled(next) {
         Services.NightLightService.setEnabled(next);
+    }
+
+    function setDarkModeEnabled(next) {
+        Services.WallpaperService.setDarkModeEnabled(next);
     }
 }

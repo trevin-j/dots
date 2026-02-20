@@ -131,6 +131,18 @@ QtObject {
         nightLight: ({
             temperature: 3500
         }),
+        wallpaper: ({
+            directory: "~/Pictures/wallpapers",
+            panelWidth: 320,
+            overshootPadding: 64,
+            itemSpacing: 12,
+            itemHeight: 132,
+            selectedItemHeight: 186,
+            thumbnailWidth: 284,
+            selectedThumbnailWidth: 292,
+            extensions: [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"],
+            preloadItems: 6
+        }),
         transition: ({
             drawerOpenDelay: 0
         })
