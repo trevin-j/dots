@@ -27,4 +27,22 @@ TestCase {
         compare(parsed.wallpaperPath, "/tmp/a.jpg");
         compare(parsed.darkModeEnabled, true);
     }
+
+    function test_normalizeFileSystemPath_fileScheme() {
+        compare(
+            RuntimeStateParsers.normalizeFileSystemPath("file:///home/user/.local/state/quickshell/runtime_state.json"),
+            "/home/user/.local/state/quickshell/runtime_state.json"
+        );
+        compare(
+            RuntimeStateParsers.normalizeFileSystemPath("file:/home/user/.local/state/quickshell/runtime_state.json"),
+            "/home/user/.local/state/quickshell/runtime_state.json"
+        );
+    }
+
+    function test_normalizeFileSystemPath_plainPath() {
+        compare(
+            RuntimeStateParsers.normalizeFileSystemPath("/home/user/.local/state/quickshell/runtime_state.json"),
+            "/home/user/.local/state/quickshell/runtime_state.json"
+        );
+    }
 }

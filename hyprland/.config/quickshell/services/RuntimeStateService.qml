@@ -17,6 +17,7 @@ Scope {
     readonly property string statePath: Quickshell.env("QS_RUNTIME_STATE_PATH")
         || (Platform.StandardPaths.writableLocation(Platform.StandardPaths.GenericStateLocation)
             + "/quickshell/runtime_state.json")
+    readonly property string stateFilePath: RuntimeStateParsers.normalizeFileSystemPath(root.statePath)
 
     property bool ready: false
     property string wallpaperPath: ""
@@ -59,7 +60,7 @@ Scope {
             wallpaperPath: root.wallpaperPath,
             darkModeEnabled: root.darkModeEnabled
         });
-        writeProcess.exec(["python3", "-c", root._writeScript, root.statePath, payload]);
+        writeProcess.exec(["python3", "-c", root._writeScript, root.stateFilePath, payload]);
     }
 
     function queueWrite() {
@@ -99,7 +100,7 @@ Scope {
     FileView {
         id: stateFile
 
-        path: root.statePath
+        path: root.stateFilePath
         watchChanges: true
         blockLoading: true
 

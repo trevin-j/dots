@@ -8,6 +8,30 @@ function sanitizeState(input) {
     });
 }
 
+function normalizeFileSystemPath(value) {
+    if (typeof value !== "string") {
+        return "";
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return "";
+    }
+
+    let normalized = trimmed;
+    if (normalized.startsWith("file://")) {
+        normalized = normalized.slice("file://".length);
+    } else if (normalized.startsWith("file:/")) {
+        normalized = normalized.slice("file:".length);
+    }
+
+    try {
+        return decodeURIComponent(normalized);
+    } catch (_error) {
+        return normalized;
+    }
+}
+
 function parseStateText(text) {
     const trimmed = (text || "").trim();
     if (!trimmed) {
