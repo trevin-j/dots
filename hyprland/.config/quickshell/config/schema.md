@@ -10,7 +10,7 @@ This document defines live-reload configuration sources used by the shell.
 ## Config runtime model
 - `ConfigStore.qml` watches `config.json` and parses overrides.
 - `ConfigRuntime.qml` deep-merges overrides on top of `ConfigData.qml` defaults.
-- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, and `controlCenter`.
+- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, `controlCenter`, and `whichKey`.
 
 ### config.json
 ```json
@@ -19,7 +19,8 @@ This document defines live-reload configuration sources used by the shell.
   "appearance": {},
   "motion": {},
   "popouts": {},
-  "controlCenter": {}
+  "controlCenter": {},
+  "whichKey": {}
 }
 ```
 
@@ -44,6 +45,43 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
     "transition": {
       "drawerOpenDelay": 0
     }
+  }
+}
+```
+
+### whichKey (example)
+```json
+{
+  "whichKey": {
+    "enabled": true,
+    "leaderKey": "SUPER",
+    "closeOnUnknown": true,
+    "panel": {
+      "width": 860,
+      "padding": 18,
+      "spacing": 12,
+      "columns": 2,
+      "columnSpacing": 12,
+      "rowSpacing": 8,
+      "itemHeight": 44,
+      "iconSize": 18,
+      "keySize": 13,
+      "maxHeightRatio": 0.72
+    },
+    "binds": [
+      {
+        "keys": "p",
+        "description": "Power",
+        "command": "tlgui power",
+        "icon": "power_settings_new"
+      },
+      {
+        "keys": "wf",
+        "description": "Fullscreen",
+        "command": "hyprctl dispatch fullscreen",
+        "icon": "fullscreen"
+      }
+    ]
   }
 }
 ```

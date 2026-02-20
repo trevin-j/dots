@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 
 import "../features/osd" as OsdFeature
+import "../features/whichkey" as WhichKeyFeature
 import "./" as App
 
 ShellRoot {
@@ -16,4 +17,5 @@ ShellRoot {
 
     OsdFeature.VolumePopupLayerFeature {}
     OsdFeature.BrightnessPopupLayerFeature {}
+    WhichKeyFeature.WhichKeyLayerFeature {}
 }

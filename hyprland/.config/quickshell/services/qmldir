@@ -5,3 +5,4 @@ singleton NightLightService NightLightService.qml
 singleton PowerService PowerService.qml
 singleton RuntimeStateService RuntimeStateService.qml
 singleton WallpaperService WallpaperService.qml
+singleton WhichKeyService WhichKeyService.qml

@@ -15,4 +15,5 @@ QtObject {
     readonly property var motion: ConfigFiles.ConfigRuntime.motion
     readonly property var popouts: ConfigFiles.ConfigRuntime.popouts
     readonly property var controlCenter: ConfigFiles.ConfigRuntime.controlCenter
+    readonly property var whichKey: ConfigFiles.ConfigRuntime.whichKey
 }

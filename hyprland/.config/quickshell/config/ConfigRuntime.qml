@@ -20,4 +20,5 @@ QtObject {
     readonly property var motion: merged.motion
     readonly property var popouts: merged.popouts
     readonly property var controlCenter: merged.controlCenter
+    readonly property var whichKey: merged.whichKey
 }

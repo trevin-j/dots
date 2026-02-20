@@ -149,4 +149,54 @@ QtObject {
             drawerOpenDelay: 0
         })
     })
+
+    readonly property var whichKey: ({
+        enabled: true,
+        leaderKey: "SUPER",
+        closeOnUnknown: true,
+        panel: ({
+            width: 860,
+            padding: 18,
+            spacing: 12,
+            columns: 2,
+            columnSpacing: 12,
+            rowSpacing: 8,
+            itemHeight: 44,
+            iconSize: 18,
+            keySize: 13,
+            maxHeightRatio: 0.72,
+            offset: 6,
+            slideDistance: 20
+        }),
+        binds: [
+            ({ keys: "p", description: "Power", command: "tlgui power", icon: "power_settings_new" }),
+            ({ keys: "w", description: "Window", icon: "web_asset" }),
+            ({ keys: "wf", description: "Fullscreen", command: "hyprctl dispatch fullscreen", icon: "fullscreen" }),
+            ({ keys: "wh", description: "Toggle floating", command: "hyprctl dispatch togglefloating", icon: "picture_in_picture_alt" }),
+            ({ keys: "wp", description: "Toggle pseudo", command: "hyprctl dispatch pseudo", icon: "splitscreen" }),
+            ({ keys: "wd", description: "Discord special workspace", command: "hyprctl dispatch togglespecialworkspace discord", icon: "forum" }),
+            ({ keys: "wo", description: "OBS special workspace", command: "hyprctl dispatch togglespecialworkspace obsstudio", icon: "videocam" }),
+            ({ keys: "l", description: "Layout", icon: "dashboard" }),
+            ({ keys: "ls", description: "Toggle split", command: "hyprctl dispatch togglesplit", icon: "call_split" }),
+            ({ keys: "lr", description: "Move to root", command: "hyprctl dispatch layoutmsg movetoroot", icon: "account_tree" }),
+            ({ keys: "lp", description: "Swap split", command: "hyprctl dispatch layoutmsg swapsplit", icon: "swap_horiz" }),
+            ({ keys: "li", description: "Pin window", command: "hyprctl dispatch pin", icon: "push_pin" }),
+            ({ keys: "u", description: "Utilities", icon: "build" }),
+            ({ keys: "ud", description: "Dictation", icon: "keyboard_voice" }),
+            ({ keys: "uds", description: "Start dictation", command: "nerd-dictation begin --simulate-input-tool=WTYPE", icon: "keyboard_voice" }),
+            ({ keys: "ude", description: "End dictation", command: "nerd-dictation end", icon: "mic_off" }),
+            ({ keys: "uw", description: "Wallpaper", icon: "wallpaper" }),
+            ({ keys: "uws", description: "Skip wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip", icon: "wallpaper" }),
+            ({ keys: "uwr", description: "Remove wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip --rm", icon: "delete" }),
+            ({ keys: "uc", description: "Color picker", command: "hyprpicker | wl-copy -n", icon: "colorize" }),
+            ({ keys: "un", description: "Notifications", command: "swaync-client -t -sw", icon: "notifications" }),
+            ({ keys: "s", description: "Search", icon: "search" }),
+            ({ keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" }),
+            ({ keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" }),
+            ({ keys: "su", description: "Usernames", command: "tlgui bitwarden --username", icon: "person" }),
+            ({ keys: "sc", description: "Clipboard history", command: "tlgui cliphist", icon: "content_paste" }),
+            ({ keys: "se", description: "Emoji picker", command: "tlgui emoji", icon: "emoji_emotions" }),
+            ({ keys: "sn", description: "Nerd font picker", command: "tlgui nerdfont", icon: "font_download" })
+        ]
+    })
 }
