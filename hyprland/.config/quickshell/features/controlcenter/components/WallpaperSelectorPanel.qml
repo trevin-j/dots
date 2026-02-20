@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 
 import "../../../config" as Config
 import "../../../services" as Services
@@ -22,10 +23,17 @@ Item {
     readonly property int selectedItemHeight: Config.Config.controlCenter?.wallpaper?.selectedItemHeight ?? 186
     readonly property int thumbnailWidth: Config.Config.controlCenter?.wallpaper?.thumbnailWidth ?? 284
     readonly property int selectedThumbnailWidth: Config.Config.controlCenter?.wallpaper?.selectedThumbnailWidth ?? 292
+    readonly property int gapNearSelected: Config.Config.controlCenter?.wallpaper?.gapNearSelected ?? 8
+    readonly property int gapRegular: Config.Config.controlCenter?.wallpaper?.gapRegular ?? 2
     readonly property int preloadItems: Config.Config.controlCenter?.wallpaper?.preloadItems ?? 6
     readonly property var wallpapers: Services.WallpaperService.wallpapers
+    readonly property int decodeWidth: Math.max(root.thumbnailWidth, root.selectedThumbnailWidth)
+    readonly property int decodeHeight: Math.max(root.itemHeight, root.selectedItemHeight)
+    readonly property real selectedScale: 1
+    readonly property real unselectedScale: Math.max(0.1, Math.min(1, root.itemHeight / Math.max(1, root.selectedItemHeight)))
 
     property int currentIndex: -1
+    property real wheelAccumulator: 0
 
     signal applyRequested(string path)
 
@@ -35,8 +43,7 @@ Item {
             return;
         }
         const initial = Services.WallpaperService.selectedIndexForCurrent();
-        root.currentIndex = Math.max(0, initial);
-        listView.positionViewAtIndex(root.currentIndex, ListView.Center);
+        root.setCurrentIndex(Math.max(0, initial), true);
     }
 
     function moveSelection(delta) {
@@ -44,7 +51,7 @@ Item {
         if (next < 0 || next === root.currentIndex) {
             return;
         }
-        root.currentIndex = next;
+        root.setCurrentIndex(next, false);
     }
 
     function selectIndex(index) {
@@ -52,7 +59,7 @@ Item {
         if (clamped < 0) {
             return;
         }
-        root.currentIndex = clamped;
+        root.setCurrentIndex(clamped, false);
     }
 
     function applyCurrent() {
@@ -62,9 +69,89 @@ Item {
         root.applyRequested(root.wallpapers[root.currentIndex]);
     }
 
+    function queueWheelDelta(deltaY) {
+        if (!Number.isFinite(deltaY) || deltaY === 0) {
+            return;
+        }
+        root.wheelAccumulator += deltaY;
+        root.flushWheelAccumulator();
+        wheelResetTimer.restart();
+    }
+
+    function delegateGapFor(index) {
+        if (root.currentIndex < 0 || index < 0) {
+            return root.gapRegular;
+        }
+        return (index === root.currentIndex || Math.abs(index - root.currentIndex) === 1)
+            ? root.gapNearSelected
+            : root.gapRegular;
+    }
+
+    function delegateVisualHeightFor(index) {
+        if (index === root.currentIndex) {
+            return root.selectedItemHeight;
+        }
+        return root.itemHeight;
+    }
+
+    function delegateHeightFor(index) {
+        return root.delegateVisualHeightFor(index) + root.delegateGapFor(index);
+    }
+
+    function flushWheelAccumulator() {
+        const threshold = 48;
+        let stepped = false;
+        while (Math.abs(root.wheelAccumulator) >= threshold) {
+            if (root.wheelAccumulator > 0) {
+                root.moveSelection(-1);
+                root.wheelAccumulator -= threshold;
+            } else {
+                root.moveSelection(1);
+                root.wheelAccumulator += threshold;
+            }
+            stepped = true;
+        }
+        if (stepped) {
+            wheelResetTimer.restart();
+        }
+    }
+
+    function clampContentY(value) {
+        const maxY = Math.max(0, listView.contentHeight - listView.height);
+        return Math.max(0, Math.min(maxY, value));
+    }
+
+    function targetContentYForIndex(index) {
+        let y = 0;
+        for (let row = 0; row < index; row += 1) {
+            y += root.delegateHeightFor(row);
+        }
+        const centerY = y + (root.delegateHeightFor(index) * 0.5);
+        return root.clampContentY(centerY - (listView.height * 0.5));
+    }
+
+    function setCurrentIndex(index, immediate) {
+        root.currentIndex = index;
+        if (index < 0) {
+            return;
+        }
+        const target = root.targetContentYForIndex(index);
+        if (immediate) {
+            scrollAnimation.stop();
+            listView.contentY = target;
+            return;
+        }
+        scrollAnimation.stop();
+        scrollAnimation.from = listView.contentY;
+        scrollAnimation.to = target;
+        scrollAnimation.start();
+    }
+
     onOpenChanged: {
         if (root.open) {
-            Services.WallpaperService.refreshWallpapers();
+            if (!Services.WallpaperService.ready || Services.WallpaperService.wallpapers.length <= 0) {
+                Services.WallpaperService.refreshWallpapers();
+            }
             root.initializeSelection();
             focusTimer.restart();
         }
@@ -77,19 +164,30 @@ Item {
         root.initializeSelection();
     }
 
-    onCurrentIndexChanged: {
-        if (root.currentIndex < 0) {
-            return;
-        }
-        listView.positionViewAtIndex(root.currentIndex, ListView.Center);
-    }
-
     Timer {
         id: focusTimer
 
         interval: 0
         repeat: false
         onTriggered: root.forceActiveFocus()
+    }
+
+    NumberAnimation {
+        id: scrollAnimation
+
+        target: listView
+        property: "contentY"
+        duration: Config.Motion.expressiveDefaultSpatialDuration
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Config.Motion.expressiveDefaultSpatialCurve
+    }
+
+    Timer {
+        id: wheelResetTimer
+
+        interval: 72
+        repeat: false
+        onTriggered: root.wheelAccumulator = 0
     }
 
     ColumnLayout {
@@ -123,63 +221,58 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: root.itemSpacing
+            spacing: 0
             model: root.wallpapers
             interactive: false
             currentIndex: root.currentIndex
-            cacheBuffer: Math.max(600, root.selectedItemHeight * root.preloadItems)
-            preferredHighlightBegin: height * 0.5 - root.selectedItemHeight * 0.5
-            preferredHighlightEnd: height * 0.5 + root.selectedItemHeight * 0.5
-            highlightRangeMode: ListView.StrictlyEnforceRange
-            snapMode: ListView.SnapToItem
+            reuseItems: true
+            cacheBuffer: Math.max(root.selectedItemHeight * 3, root.selectedItemHeight * root.preloadItems)
+            highlightRangeMode: ListView.NoHighlightRange
+            snapMode: ListView.NoSnap
+
+            onHeightChanged: {
+                if (root.currentIndex >= 0) {
+                    listView.contentY = root.targetContentYForIndex(root.currentIndex);
+                }
+            }
 
             delegate: Item {
                 id: delegateRoot
 
                 readonly property bool selected: index === root.currentIndex
-                readonly property real selectedScale: selected ? 1 : 0.84
-                readonly property real selectedOpacity: selected ? 1 : 0.7
+                readonly property real cardScale: selected ? root.selectedScale : root.unselectedScale
+                readonly property real cardOpacity: selected ? 1 : 0.76
 
                 width: listView.width
-                height: selected ? root.selectedItemHeight : root.itemHeight
-                scale: selectedScale
-                opacity: selectedOpacity
-
-                Behavior on height {
-                    Anim {
-                        durationMs: Config.Motion.expressiveDefaultSpatialDuration
-                        curve: Config.Motion.expressiveDefaultSpatialCurve
-                    }
-                }
-
-                Behavior on scale {
-                    Anim {
-                        durationMs: Config.Motion.expressiveDefaultSpatialDuration
-                        curve: Config.Motion.expressiveDefaultSpatialCurve
-                    }
-                }
-
-                Behavior on opacity {
-                    Anim {
-                        durationMs: Config.Motion.expressiveEffectsDuration
-                        curve: Config.Motion.expressiveEffectsCurve
-                    }
-                }
+                height: root.delegateHeightFor(index)
 
                 Rectangle {
-                    anchors.centerIn: parent
-                    width: selected ? root.selectedThumbnailWidth : root.thumbnailWidth
-                    height: parent.height
-                    radius: Config.Appearance.radiusMedium
+                    anchors.right: parent.right
+                    anchors.rightMargin: 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: root.selectedThumbnailWidth
+                    height: root.selectedItemHeight
+                    scale: delegateRoot.cardScale
+                    opacity: delegateRoot.cardOpacity
+                    transformOrigin: Item.Right
+                    radius: Config.Appearance.radiusLarge
+                    antialiasing: true
                     color: selected ? Config.Palette.color("primary_container") : Config.Palette.color("surface_container_high")
                     border.width: selected ? 2 : 1
                     border.color: selected ? Config.Palette.color("primary") : Config.Palette.color("outline_variant")
                     clip: true
 
-                    Behavior on width {
+                    Behavior on scale {
                         Anim {
                             durationMs: Config.Motion.expressiveDefaultSpatialDuration
                             curve: Config.Motion.expressiveDefaultSpatialCurve
+                        }
+                    }
+
+                    Behavior on opacity {
+                        Anim {
+                            durationMs: Config.Motion.expressiveEffectsDuration
+                            curve: Config.Motion.expressiveEffectsCurve
                         }
                     }
 
@@ -192,39 +285,34 @@ Item {
                     }
 
                     Image {
+                        id: wallpaperImage
+
                         anchors.fill: parent
                         source: modelData
                         asynchronous: true
                         cache: true
+                        mipmap: true
                         fillMode: Image.PreserveAspectCrop
-                        sourceSize.width: selected ? root.selectedThumbnailWidth : root.thumbnailWidth
-                        sourceSize.height: selected ? root.selectedItemHeight : root.itemHeight
+                        sourceSize.width: root.decodeWidth
+                        sourceSize.height: root.decodeHeight
                         smooth: true
+                        visible: false
                     }
 
                     Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        height: Math.max(26, Math.round(root.contentPadding * 1.8))
-                        color: selected ? Config.Palette.color("primary") : Config.Palette.color("scrim")
-                        opacity: selected ? 0.28 : 0.38
+                        id: imageMask
 
-                        Text {
-                            anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                            verticalAlignment: Text.AlignVCenter
-                            text: {
-                                const pieces = String(modelData || "").split("/");
-                                return pieces.length > 0 ? pieces[pieces.length - 1] : "";
-                            }
-                            elide: Text.ElideRight
-                            font.family: Config.Appearance.fontFamily
-                            font.weight: Config.Appearance.fontWeight
-                            font.pixelSize: Math.max(10, Math.round(Config.Appearance.fontSizeSmall))
-                            color: selected ? Config.Palette.color("on_primary_container") : Config.Palette.color("on_surface")
-                        }
+                        anchors.fill: parent
+                        radius: parent.radius
+                        color: "black"
+                        visible: false
+                    }
+
+                    OpacityMask {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        source: wallpaperImage
+                        maskSource: imageMask
                     }
 
                     MouseArea {
@@ -243,17 +331,24 @@ Item {
     }
 
     WheelHandler {
-        target: root
+        target: listView
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: event => {
             if (!root.open || root.wallpapers.length <= 0) {
                 return;
             }
-            const delta = event.angleDelta.y;
-            if (delta > 0) {
-                root.moveSelection(-1);
-            } else if (delta < 0) {
-                root.moveSelection(1);
+            let delta = 0;
+            if (event.pixelDelta.y !== 0 || event.pixelDelta.x !== 0) {
+                delta = Math.abs(event.pixelDelta.y) >= Math.abs(event.pixelDelta.x)
+                    ? event.pixelDelta.y
+                    : event.pixelDelta.x;
+            } else {
+                delta = Math.abs(event.angleDelta.y) >= Math.abs(event.angleDelta.x)
+                    ? event.angleDelta.y
+                    : event.angleDelta.x;
+                delta = (delta / 120) * 48;
             }
+            root.queueWheelDelta(delta);
             event.accepted = true;
         }
     }
