@@ -1,8 +1,20 @@
-function normalizeColonValue(output) {
+function stripAnsi(output) {
     if (!output) {
         return "";
     }
-    return output.includes(":") ? output.split(":").pop().trim() : output.trim();
+
+    return output
+        .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, "")
+        .replace(/\r/g, "")
+        .trim();
+}
+
+function normalizeColonValue(output) {
+    const sanitized = stripAnsi(output);
+    if (!sanitized) {
+        return "";
+    }
+    return sanitized.includes(":") ? sanitized.split(":").pop().trim() : sanitized.trim();
 }
 
 function parseWifiEnabled(output) {
@@ -69,7 +81,27 @@ function parseWifiSsid(output, wifiEnabled) {
 }
 
 function parseBluetoothEnabled(output) {
-    const value = normalizeColonValue(output).toLowerCase();
+    const sanitized = stripAnsi(output);
+    if (!sanitized) {
+        return false;
+    }
+
+    if (sanitized === "b true" || sanitized === "true") {
+        return true;
+    }
+    if (sanitized === "b false" || sanitized === "false") {
+        return false;
+    }
+
+    const lowered = sanitized.toLowerCase();
+    if (lowered.includes("powered: yes")) {
+        return true;
+    }
+    if (lowered.includes("powered: no")) {
+        return false;
+    }
+
+    const value = normalizeColonValue(sanitized).toLowerCase();
     return value.startsWith("enabled");
 }
 
@@ -77,10 +109,11 @@ function parseBluetoothDevices(output, bluetoothEnabled) {
     if (!bluetoothEnabled || !output) {
         return "";
     }
-    const lines = output
+    const lines = stripAnsi(output)
         .split("\n")
         .filter(Boolean)
-        .map(line => line.replace(/^Device\s+[^\s]+\s+/, ""));
+        .map(line => line.replace(/^Device\s+[^\s]+\s+/, "").trim())
+        .filter(Boolean);
     return lines.join(", ");
 }
 
