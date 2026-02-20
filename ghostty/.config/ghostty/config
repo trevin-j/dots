@@ -35,6 +35,7 @@ window-inherit-working-directory = false
 working-directory = home
 
 shell-integration-features = sudo, title, ssh-env
-#shell-integration-features = sudo, title, ssh-env, ssh-terminfo
 
 app-notifications = false
+
+gtk-single-instance = true
