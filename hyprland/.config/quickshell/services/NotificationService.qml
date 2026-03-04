@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import QtQml
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
@@ -20,11 +21,11 @@ Scope {
     property var history: []
     property var popupQueue: []
     property int unreadCount: 0
+    readonly property alias popupModel: popupVisibleModel
 
     readonly property bool hasNotifications: root.history.length > 0
-    readonly property bool hasPopups: root.popupQueue.length > 0
+    readonly property bool hasPopups: popupVisibleModel.count > 0
     readonly property int maxPopupVisible: Math.max(1, Config.Config.notifications?.popup?.maxVisible ?? 4)
-    readonly property var popupNotifications: root.popupQueue.slice(0, root.maxPopupVisible)
 
     readonly property int maxHistory: Math.max(1, Config.Config.notifications?.history?.maxEntries ?? 120)
     readonly property bool retainTransient: Config.Config.notifications?.history?.retainTransient ?? false
@@ -32,6 +33,62 @@ Scope {
 
     property int _serial: 0
     property bool _hydratedDnd: false
+
+    function _syncPopupVisibleModel() {
+        const desired = root.popupQueue.slice(0, root.maxPopupVisible);
+        const desiredIds = ({ });
+
+        for (const entry of desired) {
+            desiredIds[String(entry.id)] = true;
+        }
+
+        for (let row = popupVisibleModel.count - 1; row >= 0; row -= 1) {
+            const current = popupVisibleModel.get(row);
+            if (!desiredIds[String(current.entryId)]) {
+                popupVisibleModel.remove(row, 1);
+            }
+        }
+
+        for (let row = 0; row < desired.length; row += 1) {
+            const expected = desired[row];
+            const current = row < popupVisibleModel.count ? popupVisibleModel.get(row) : null;
+
+            if (current && current.entryId === expected.id) {
+                if (current.serial !== expected.serial) {
+                    popupVisibleModel.setProperty(row, "popupEntry", expected);
+                    popupVisibleModel.setProperty(row, "serial", expected.serial);
+                }
+                continue;
+            }
+
+            let foundRow = -1;
+            for (let probe = row + 1; probe < popupVisibleModel.count; probe += 1) {
+                if (popupVisibleModel.get(probe).entryId === expected.id) {
+                    foundRow = probe;
+                    break;
+                }
+            }
+
+            if (foundRow >= 0) {
+                popupVisibleModel.move(foundRow, row, 1);
+                const movedCurrent = popupVisibleModel.get(row);
+                if (!movedCurrent || movedCurrent.serial !== expected.serial) {
+                    popupVisibleModel.setProperty(row, "popupEntry", expected);
+                    popupVisibleModel.setProperty(row, "serial", expected.serial);
+                }
+            } else {
+                popupVisibleModel.insert(row, {
+                    entryId: expected.id,
+                    serial: expected.serial,
+                    popupEntry: expected
+                });
+            }
+        }
+
+        while (popupVisibleModel.count > desired.length) {
+            popupVisibleModel.remove(popupVisibleModel.count - 1, 1);
+        }
+    }
 
     function _urgencyText(notification) {
         return NotificationUrgency.toString(notification?.urgency);
@@ -109,6 +166,14 @@ Scope {
             root.history = root._removeById(root.history, notification.id);
             root._recountUnread();
         }
+    }
+
+    onPopupQueueChanged: root._syncPopupVisibleModel()
+    onMaxPopupVisibleChanged: root._syncPopupVisibleModel()
+
+    ListModel {
+        id: popupVisibleModel
+        dynamicRoles: true
     }
 
     function setDndEnabled(next) {

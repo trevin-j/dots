@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 
 import "../../../config" as Config
@@ -19,6 +18,8 @@ PanelWindow {
     readonly property bool popupEnabled: Config.Config.notifications?.popup?.enabled ?? true
     readonly property int popupWidth: Math.max(260, Config.Config.notifications?.popup?.width ?? 360)
     readonly property int popupSpacing: Math.max(4, Config.Config.notifications?.popup?.spacing ?? 10)
+    readonly property int slideDistance: Math.max(12, Config.Config.notifications?.popup?.slideDistance ?? 30)
+    readonly property int offscreenDistance: root.popupWidth + root.slideDistance
     readonly property int marginTopValue: Math.max(0, (Config.Config.notifications?.popup?.marginTop ?? 48) + Config.Appearance.frameReservedBarExtent)
     readonly property int marginRightValue: Math.max(0, Config.Config.notifications?.popup?.marginRight ?? 18)
 
@@ -30,31 +31,119 @@ PanelWindow {
     surfaceFormat.opaque: false
 
     anchors.top: true
+    anchors.bottom: true
     anchors.right: true
-    margins.top: root.marginTopValue
-    margins.right: root.marginRightValue
+    margins.right: 0
 
-    visible: root.popupEnabled && root.active && Services.NotificationService.hasPopups
+    visible: root.popupEnabled && root.active
 
-    implicitWidth: root.popupWidth
-    implicitHeight: toastColumn.implicitHeight
+    implicitWidth: root.popupWidth + root.marginRightValue
 
-    ColumnLayout {
-        id: toastColumn
+    mask: Region {
+        item: inputMask
+    }
 
+    Item {
+        id: inputMask
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: root.marginTopValue
+        anchors.rightMargin: root.marginRightValue
         width: root.popupWidth
+        height: toastList.contentHeight
+    }
+
+    ListView {
+        id: toastList
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.topMargin: root.marginTopValue
+        anchors.rightMargin: root.marginRightValue
+        width: root.popupWidth
+        interactive: false
+        reuseItems: false
+        clip: false
         spacing: root.popupSpacing
+        verticalLayoutDirection: ListView.TopToBottom
+        model: root.active ? Services.NotificationService.popupModel : null
 
-        Repeater {
-            model: Services.NotificationService.popupNotifications
-
-            delegate: NotificationToast {
-                required property var modelData
-
-                Layout.fillWidth: true
-                entry: modelData
-                widthValue: root.popupWidth
+        populate: Transition {
+            NumberAnimation {
+                property: "x"
+                from: root.offscreenDistance
+                to: 0
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.emphasizedDecelCurve
             }
+        }
+
+        add: Transition {
+            NumberAnimation {
+                property: "x"
+                from: root.offscreenDistance
+                to: 0
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.emphasizedDecelCurve
+            }
+        }
+
+        remove: Transition {
+            NumberAnimation {
+                property: "x"
+                from: 0
+                to: root.offscreenDistance
+                duration: Config.Motion.shortDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.emphasizedAccelCurve
+            }
+        }
+
+        addDisplaced: Transition {
+            NumberAnimation {
+                property: "y"
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.standardCurve
+            }
+        }
+
+        removeDisplaced: Transition {
+            NumberAnimation {
+                property: "y"
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.standardCurve
+            }
+        }
+
+        move: Transition {
+            NumberAnimation {
+                property: "y"
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.standardCurve
+            }
+        }
+
+        moveDisplaced: Transition {
+            NumberAnimation {
+                property: "y"
+                duration: Config.Motion.mediumDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Config.Motion.standardCurve
+            }
+        }
+
+        delegate: NotificationToast {
+            required property var popupEntry
+
+            entry: popupEntry
+            widthValue: root.popupWidth
         }
     }
 }

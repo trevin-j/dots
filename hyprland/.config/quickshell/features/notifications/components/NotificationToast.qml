@@ -59,14 +59,6 @@ Item {
     implicitWidth: root.widthValue
     implicitHeight: toastBody.implicitHeight
 
-    opacity: 1
-    Behavior on opacity {
-        Anim {
-            durationMs: Config.Motion.shortDuration
-            curve: Config.Motion.standardCurve
-        }
-    }
-
     Component.onCompleted: restartTimeout()
     onTimeoutMsChanged: restartTimeout()
 
