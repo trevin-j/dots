@@ -1,10 +1,15 @@
 {
   "bar": {},
-  "appearance": {},
+  "appearance": {
+    "shadow": {
+      "opacity": 0.22
+    }
+  },
   "motion": {},
   "popouts": {},
   "controlCenter": {
     "wallpaper": {}
   },
+  "notifications": {},
   "whichKey": {}
 }

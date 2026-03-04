@@ -10,7 +10,7 @@ This document defines live-reload configuration sources used by the shell.
 ## Config runtime model
 - `ConfigStore.qml` watches `config.json` and parses overrides.
 - `ConfigRuntime.qml` deep-merges overrides on top of `ConfigData.qml` defaults.
-- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, `controlCenter`, and `whichKey`.
+- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, `controlCenter`, `notifications`, and `whichKey`.
 
 ### config.json
 ```json
@@ -20,6 +20,7 @@ This document defines live-reload configuration sources used by the shell.
   "motion": {},
   "popouts": {},
   "controlCenter": {},
+  "notifications": {},
   "whichKey": {}
 }
 ```
@@ -82,6 +83,43 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
         "icon": "fullscreen"
       }
     ]
+  }
+}
+```
+
+### notifications (example)
+```json
+{
+  "notifications": {
+    "daemon": {
+      "actionsSupported": true,
+      "bodyMarkupSupported": false,
+      "persistenceSupported": true
+    },
+    "popup": {
+      "enabled": true,
+      "maxVisible": 4,
+      "width": 360,
+      "marginTop": 48,
+      "marginRight": 18,
+      "defaultTimeoutMs": 6000,
+      "criticalTimeoutMs": 0,
+      "pauseOnHover": true,
+      "showOnDnd": false,
+      "showCriticalOnDnd": true
+    },
+    "history": {
+      "maxEntries": 120,
+      "retainTransient": false,
+      "showReloaded": false
+    },
+    "panel": {
+      "maxVisible": 8,
+      "itemSpacing": 8,
+      "itemMinHeight": 84,
+      "showTimestamps": true,
+      "allowClearAll": true
+    }
   }
 }
 ```

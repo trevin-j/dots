@@ -20,7 +20,7 @@ function defaultBinds() {
         { keys: "uws", description: "Skip wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip", icon: "wallpaper" },
         { keys: "uwr", description: "Remove wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip --rm", icon: "delete" },
         { keys: "uc", description: "Color picker", command: "hyprpicker | wl-copy -n", icon: "colorize" },
-        { keys: "un", description: "Notifications", command: "swaync-client -t -sw", icon: "notifications" },
+        { keys: "un", description: "Notifications", command: "qs ipc call controlcenter toggle", icon: "notifications" },
         { keys: "s", description: "Search", icon: "search" },
         { keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" },
         { keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" },

@@ -79,7 +79,7 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: toggleGrid.columnWidth
             Layout.preferredHeight: root.toggleHeight
-            onToggled: root.state.dndEnabled = next
+            onToggled: root.state.setDndEnabled(next)
         }
 
         Controls.QuickToggle {

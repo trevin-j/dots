@@ -22,6 +22,7 @@ Scope {
     property bool ready: false
     property string wallpaperPath: ""
     property bool darkModeEnabled: false
+    property bool notificationsDndEnabled: false
 
     property bool _writeInFlight: false
     property bool _pendingWrite: false
@@ -38,6 +39,7 @@ Scope {
         const sanitized = RuntimeStateParsers.sanitizeState(({}));
         root.wallpaperPath = sanitized.wallpaperPath;
         root.darkModeEnabled = sanitized.darkModeEnabled;
+        root.notificationsDndEnabled = sanitized.notificationsDndEnabled;
         root.ready = true;
     }
 
@@ -45,6 +47,7 @@ Scope {
         const sanitized = RuntimeStateParsers.parseStateText(text);
         root.wallpaperPath = sanitized.wallpaperPath;
         root.darkModeEnabled = sanitized.darkModeEnabled;
+        root.notificationsDndEnabled = sanitized.notificationsDndEnabled;
         root.ready = true;
     }
 
@@ -58,7 +61,8 @@ Scope {
         root._writeInFlight = true;
         const payload = RuntimeStateParsers.stringifyState({
             wallpaperPath: root.wallpaperPath,
-            darkModeEnabled: root.darkModeEnabled
+            darkModeEnabled: root.darkModeEnabled,
+            notificationsDndEnabled: root.notificationsDndEnabled
         });
         writeProcess.exec(["python3", "-c", root._writeScript, root.stateFilePath, payload]);
     }
@@ -94,6 +98,16 @@ Scope {
         }
         root.wallpaperPath = nextPath;
         root.darkModeEnabled = nextDark;
+        root.queueWrite();
+    }
+
+    function setNotificationsDndEnabled(next) {
+        const desired = !!next;
+        if (desired === root.notificationsDndEnabled) {
+            return;
+        }
+
+        root.notificationsDndEnabled = desired;
         root.queueWrite();
     }
 

@@ -2,9 +2,13 @@ function sanitizeState(input) {
     const raw = input && typeof input === "object" ? input : ({});
     const wallpaperPath = typeof raw.wallpaperPath === "string" ? raw.wallpaperPath.trim() : "";
     const darkModeEnabled = typeof raw.darkModeEnabled === "boolean" ? raw.darkModeEnabled : false;
+    const notificationsDndEnabled = typeof raw.notificationsDndEnabled === "boolean"
+        ? raw.notificationsDndEnabled
+        : false;
     return ({
         wallpaperPath: wallpaperPath,
-        darkModeEnabled: darkModeEnabled
+        darkModeEnabled: darkModeEnabled,
+        notificationsDndEnabled: notificationsDndEnabled
     });
 }
 

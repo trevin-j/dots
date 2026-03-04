@@ -2,6 +2,7 @@ singleton BrightnessService BrightnessService.qml
 singleton ControlCenterService ControlCenterService.qml
 singleton ConnectivityAdapter adapters/ConnectivityAdapter.qml
 singleton NightLightService NightLightService.qml
+singleton NotificationService NotificationService.qml
 singleton PowerService PowerService.qml
 singleton RuntimeStateService RuntimeStateService.qml
 singleton WallpaperService WallpaperService.qml

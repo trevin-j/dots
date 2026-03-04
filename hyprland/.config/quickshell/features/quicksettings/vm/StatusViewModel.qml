@@ -13,7 +13,7 @@ import "StatusIconLogic.js" as IconLogic
 Item {
     id: root
 
-    property bool dndEnabled: false
+    readonly property bool dndEnabled: Services.NotificationService.dndEnabled
     readonly property bool darkModeEnabled: Services.WallpaperService.darkModeEnabled
 
     readonly property bool nightLightEnabled: Services.NightLightService.enabled
@@ -70,5 +70,9 @@ Item {
 
     function setDarkModeEnabled(next) {
         Services.WallpaperService.setDarkModeEnabled(next);
+    }
+
+    function setDndEnabled(next) {
+        Services.NotificationService.setDndEnabled(next);
     }
 }

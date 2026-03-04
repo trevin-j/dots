@@ -259,6 +259,19 @@ PanelWindow {
                 opacity: 0.6
             }
 
+            ControlCenterComponents.NotificationsPanel {
+                panelWidth: root.panelWidth
+                open: root.state.open
+                Layout.fillWidth: true
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: Config.Palette.color("outline_variant")
+                opacity: 0.6
+            }
+
             Text {
                 text: (SystemTray.items.values?.length ?? 0) > 0 ? "Tray" : "Tray (empty)"
                 font.family: Config.Appearance.fontFamily

@@ -150,6 +150,50 @@ QtObject {
         })
     })
 
+    readonly property var notifications: ({
+        daemon: ({
+            keepOnReload: true,
+            actionsSupported: true,
+            actionIconsSupported: false,
+            bodySupported: true,
+            bodyMarkupSupported: false,
+            bodyHyperlinksSupported: false,
+            bodyImagesSupported: false,
+            imageSupported: true,
+            persistenceSupported: true,
+            inlineReplySupported: false,
+            extraHints: []
+        }),
+        popup: ({
+            enabled: true,
+            maxVisible: 4,
+            width: 360,
+            spacing: 10,
+            marginTop: 48,
+            marginRight: 18,
+            itemPadding: 12,
+            iconSize: 22,
+            defaultTimeoutMs: 6000,
+            criticalTimeoutMs: 0,
+            ignoreTimeoutFromClients: false,
+            pauseOnHover: true,
+            showOnDnd: false,
+            showCriticalOnDnd: true
+        }),
+        history: ({
+            maxEntries: 120,
+            retainTransient: false,
+            showReloaded: false
+        }),
+        panel: ({
+            maxVisible: 8,
+            itemSpacing: 8,
+            itemMinHeight: 84,
+            showTimestamps: true,
+            allowClearAll: true
+        })
+    })
+
     readonly property var whichKey: ({
         enabled: true,
         leaderKey: "SUPER",
@@ -189,7 +233,7 @@ QtObject {
             ({ keys: "uws", description: "Skip wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip", icon: "wallpaper" }),
             ({ keys: "uwr", description: "Remove wallpaper", command: "sh ~/.config/hypr/wallcycle.sh skip --rm", icon: "delete" }),
             ({ keys: "uc", description: "Color picker", command: "hyprpicker | wl-copy -n", icon: "colorize" }),
-            ({ keys: "un", description: "Notifications", command: "swaync-client -t -sw", icon: "notifications" }),
+            ({ keys: "un", description: "Notifications", command: "qs ipc call controlcenter toggle", icon: "notifications" }),
             ({ keys: "s", description: "Search", icon: "search" }),
             ({ keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" }),
             ({ keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" }),
