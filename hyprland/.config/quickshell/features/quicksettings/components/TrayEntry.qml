@@ -23,8 +23,23 @@ Item {
 
     readonly property bool hasTrayItem: trayItem !== null && trayItem !== undefined
     readonly property string iconBaseName: TrayInteraction.iconBaseName(trayItem?.icon)
-    readonly property string trayTitle: TrayInteraction.titleFor(trayItem)
-    readonly property string trayDescription: TrayInteraction.descriptionFor(trayItem)
+    readonly property string trayReactiveKey: {
+        const iconName = trayItem?.icon || "";
+        const status = trayItem?.status || 0;
+        const title = trayItem?.title || "";
+        return `${iconName}|${status}|${title}`;
+    }
+    readonly property string trayTitle: {
+        const refresh = root.trayReactiveKey;
+        const tooltipTitle = trayItem?.tooltipTitle || "";
+        const title = trayItem?.title || "";
+        const itemId = trayItem?.id || "";
+        return tooltipTitle || title || itemId || root.iconBaseName || "";
+    }
+    readonly property string trayDescription: {
+        const refresh = root.trayReactiveKey;
+        return trayItem?.tooltipDescription || "";
+    }
     readonly property string trayTitleClean: trayTitle ? trayTitle.replace(/[\r\n]+/g, " ") : ""
     readonly property string trayDescriptionClean: trayDescription ? trayDescription.replace(/[\r\n]+/g, " ") : ""
     readonly property string resolvedIconSource: root.iconBaseName || Quickshell.iconPath("image-missing", true)

@@ -59,9 +59,8 @@ Item {
         font.pixelSize: Config.Appearance.fontSizeMedium
         color: Config.Palette.color("on_surface_variant")
         horizontalAlignment: Text.AlignHCenter
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        height: root.itemHeight
+        verticalAlignment: Text.AlignVCenter
+        anchors.centerIn: parent
         width: parent.width
     }
 }

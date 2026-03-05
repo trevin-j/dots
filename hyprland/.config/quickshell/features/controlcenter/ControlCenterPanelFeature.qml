@@ -288,9 +288,9 @@ PanelWindow {
                     spacing: root.contentSpacing
 
                     Text {
-                        text: (SystemTray.items.values?.length ?? 0) > 0 ? "Tray" : "Tray (empty)"
+                        text: "Tray"
                         font.family: Config.Appearance.fontFamily
-                        font.weight: Config.Appearance.fontWeight
+                        font.weight: Font.DemiBold
                         font.pixelSize: Config.Appearance.fontSizeMedium
                         color: Config.Palette.color("on_surface_variant")
                         Layout.fillWidth: true
