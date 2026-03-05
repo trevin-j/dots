@@ -19,6 +19,7 @@ PanelWindow {
     readonly property int popupWidth: Math.max(260, Config.Config.notifications?.popup?.width ?? 360)
     readonly property int popupSpacing: Math.max(4, Config.Config.notifications?.popup?.spacing ?? 10)
     readonly property int slideDistance: Math.max(12, Config.Config.notifications?.popup?.slideDistance ?? 30)
+    readonly property int enterOvershootPadding: Math.max(24, Math.round(root.slideDistance * 1.2))
     readonly property int offscreenDistance: root.popupWidth + root.slideDistance
     readonly property int marginTopValue: Math.max(0, (Config.Config.notifications?.popup?.marginTop ?? 48) + Config.Appearance.frameReservedBarExtent)
     readonly property int marginRightValue: Math.max(0, Config.Config.notifications?.popup?.marginRight ?? 18)
@@ -37,7 +38,7 @@ PanelWindow {
 
     visible: root.popupEnabled && root.active
 
-    implicitWidth: root.popupWidth + root.marginRightValue
+    implicitWidth: root.popupWidth + root.marginRightValue + root.enterOvershootPadding
 
     mask: Region {
         item: inputMask
@@ -77,7 +78,7 @@ PanelWindow {
                 to: 0
                 duration: Config.Motion.mediumDuration
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: Config.Motion.emphasizedDecelCurve
+                easing.bezierCurve: Config.Motion.shellCurve
             }
         }
 
@@ -88,7 +89,7 @@ PanelWindow {
                 to: 0
                 duration: Config.Motion.mediumDuration
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: Config.Motion.emphasizedDecelCurve
+                easing.bezierCurve: Config.Motion.shellCurve
             }
         }
 

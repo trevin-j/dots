@@ -38,6 +38,7 @@ PanelWindow {
     readonly property color sectionColor: Config.Palette.color("surface_container")
 
     property bool drawerOpen: false
+    property bool drawerClosingMotion: false
     property real wallpaperReveal: (root.state.open && root.state.wallpaperPickerOpen) ? root.wallpaperPanelWidth : 0
     property real drawerOffset: drawerOpen ? 0 : (root.panelWidth + root.overshootRightPadding)
     readonly property real revealWidth: Math.max(0, root.panelWidth - Math.max(0, drawerOffset))
@@ -73,6 +74,7 @@ PanelWindow {
 
     Component.onCompleted: {
         if (root.state.open) {
+            root.drawerClosingMotion = false;
             if (root.drawerOpenDelay <= 0) {
                 root.drawerOpen = true;
             } else {
@@ -86,12 +88,14 @@ PanelWindow {
 
         function onOpenChanged() {
             if (root.state.open) {
+                root.drawerClosingMotion = false;
                 if (root.drawerOpenDelay <= 0) {
                     root.drawerOpen = true;
                 } else {
                     openDelayTimer.restart();
                 }
             } else {
+                root.drawerClosingMotion = true;
                 openDelayTimer.stop();
                 root.drawerOpen = false;
             }
@@ -112,8 +116,8 @@ PanelWindow {
 
     Behavior on drawerOffset {
         Anim {
-            durationMs: Config.Motion.shellDuration
-            curve: Config.Motion.shellCurve
+            durationMs: root.drawerClosingMotion ? Config.Motion.shortDuration : Config.Motion.shellDuration
+            curve: root.drawerClosingMotion ? Config.Motion.emphasizedAccelCurve : Config.Motion.shellCurve
         }
     }
 
