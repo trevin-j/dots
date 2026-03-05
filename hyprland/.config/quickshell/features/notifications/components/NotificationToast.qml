@@ -66,8 +66,8 @@ Item {
         id: expireTimer
         repeat: false
         onTriggered: {
-            if (root.entry && root.entry.notification) {
-                root.entry.notification.expire();
+            if (root.entry) {
+                Services.NotificationService.hidePopup(root.entry);
             }
         }
     }

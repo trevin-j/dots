@@ -22,17 +22,22 @@ Scope {
     property var popupQueue: []
     property int unreadCount: 0
     readonly property alias popupModel: popupVisibleModel
+    readonly property alias activeModel: historyModel
+    readonly property alias activeVisibleModel: historyVisibleModel
 
     readonly property bool hasNotifications: root.history.length > 0
     readonly property bool hasPopups: popupVisibleModel.count > 0
     readonly property int maxPopupVisible: Math.max(1, Config.Config.notifications?.popup?.maxVisible ?? 4)
+    readonly property int actionableAutoCloseMs: Math.max(0, Config.Config.notifications?.popup?.actionableAutoCloseMs ?? 600000)
 
     readonly property int maxHistory: Math.max(1, Config.Config.notifications?.history?.maxEntries ?? 120)
+    readonly property int maxPanelVisible: Math.max(1, Config.Config.notifications?.panel?.maxVisible ?? 8)
     readonly property bool retainTransient: Config.Config.notifications?.history?.retainTransient ?? false
     readonly property bool showReloadedInHistory: Config.Config.notifications?.history?.showReloaded ?? false
 
     property int _serial: 0
     property bool _hydratedDnd: false
+    property var _actionableCloseDeadlines: ({})
 
     function _syncPopupVisibleModel() {
         const desired = root.popupQueue.slice(0, root.maxPopupVisible);
@@ -90,8 +95,168 @@ Scope {
         }
     }
 
+    function _syncHistoryModel() {
+        const desired = root.history;
+        const desiredIds = ({ });
+
+        for (const entry of desired) {
+            desiredIds[String(entry.id)] = true;
+        }
+
+        for (let row = historyModel.count - 1; row >= 0; row -= 1) {
+            const current = historyModel.get(row);
+            if (!desiredIds[String(current.entryId)]) {
+                historyModel.remove(row, 1);
+            }
+        }
+
+        for (let row = 0; row < desired.length; row += 1) {
+            const expected = desired[row];
+            const current = row < historyModel.count ? historyModel.get(row) : null;
+
+            if (current && current.entryId === expected.id) {
+                if (current.serial !== expected.serial || !!current.unseen !== !!expected.unseen) {
+                    historyModel.setProperty(row, "notificationEntry", expected);
+                    historyModel.setProperty(row, "serial", expected.serial);
+                    historyModel.setProperty(row, "unseen", !!expected.unseen);
+                }
+                continue;
+            }
+
+            let foundRow = -1;
+            for (let probe = row + 1; probe < historyModel.count; probe += 1) {
+                if (historyModel.get(probe).entryId === expected.id) {
+                    foundRow = probe;
+                    break;
+                }
+            }
+
+            if (foundRow >= 0) {
+                historyModel.move(foundRow, row, 1);
+                const movedCurrent = historyModel.get(row);
+                if (!movedCurrent || movedCurrent.serial !== expected.serial || !!movedCurrent.unseen !== !!expected.unseen) {
+                    historyModel.setProperty(row, "notificationEntry", expected);
+                    historyModel.setProperty(row, "serial", expected.serial);
+                    historyModel.setProperty(row, "unseen", !!expected.unseen);
+                }
+            } else {
+                historyModel.insert(row, {
+                    entryId: expected.id,
+                    serial: expected.serial,
+                    unseen: !!expected.unseen,
+                    notificationEntry: expected
+                });
+            }
+        }
+
+        while (historyModel.count > desired.length) {
+            historyModel.remove(historyModel.count - 1, 1);
+        }
+    }
+
+    function _syncHistoryVisibleModel() {
+        const desired = root.history.slice(0, root.maxPanelVisible);
+        const desiredIds = ({ });
+
+        for (const entry of desired) {
+            desiredIds[String(entry.id)] = true;
+        }
+
+        for (let row = historyVisibleModel.count - 1; row >= 0; row -= 1) {
+            const current = historyVisibleModel.get(row);
+            if (!desiredIds[String(current.entryId)]) {
+                historyVisibleModel.remove(row, 1);
+            }
+        }
+
+        for (let row = 0; row < desired.length; row += 1) {
+            const expected = desired[row];
+            const current = row < historyVisibleModel.count ? historyVisibleModel.get(row) : null;
+
+            if (current && current.entryId === expected.id) {
+                if (current.serial !== expected.serial || !!current.unseen !== !!expected.unseen) {
+                    historyVisibleModel.setProperty(row, "notificationEntry", expected);
+                    historyVisibleModel.setProperty(row, "serial", expected.serial);
+                    historyVisibleModel.setProperty(row, "unseen", !!expected.unseen);
+                }
+                continue;
+            }
+
+            let foundRow = -1;
+            for (let probe = row + 1; probe < historyVisibleModel.count; probe += 1) {
+                if (historyVisibleModel.get(probe).entryId === expected.id) {
+                    foundRow = probe;
+                    break;
+                }
+            }
+
+            if (foundRow >= 0) {
+                historyVisibleModel.move(foundRow, row, 1);
+                const movedCurrent = historyVisibleModel.get(row);
+                if (!movedCurrent || movedCurrent.serial !== expected.serial || !!movedCurrent.unseen !== !!expected.unseen) {
+                    historyVisibleModel.setProperty(row, "notificationEntry", expected);
+                    historyVisibleModel.setProperty(row, "serial", expected.serial);
+                    historyVisibleModel.setProperty(row, "unseen", !!expected.unseen);
+                }
+            } else {
+                historyVisibleModel.insert(row, {
+                    entryId: expected.id,
+                    serial: expected.serial,
+                    unseen: !!expected.unseen,
+                    notificationEntry: expected
+                });
+            }
+        }
+
+        while (historyVisibleModel.count > desired.length) {
+            historyVisibleModel.remove(historyVisibleModel.count - 1, 1);
+        }
+    }
+
     function _urgencyText(notification) {
         return NotificationUrgency.toString(notification?.urgency);
+    }
+
+    function _entryById(id) {
+        const key = String(id);
+        return root.history.find(candidate => candidate && String(candidate.id) === key)
+            || root.popupQueue.find(candidate => candidate && String(candidate.id) === key);
+    }
+
+    function _hasActions(entry) {
+        return !!entry && !!entry.notification && (entry.notification.actions?.length ?? 0) > 0;
+    }
+
+    function _clearActionableAutoCloseById(id) {
+        const key = String(id);
+        if (!(key in root._actionableCloseDeadlines)) {
+            return;
+        }
+
+        const next = ({ });
+        for (const [candidateKey, candidateDeadline] of Object.entries(root._actionableCloseDeadlines)) {
+            if (candidateKey === key) {
+                continue;
+            }
+            next[candidateKey] = candidateDeadline;
+        }
+        root._actionableCloseDeadlines = next;
+        actionableCloseTimer.running = Object.keys(next).length > 0;
+    }
+
+    function _scheduleActionableAutoClose(entry) {
+        if (!root._hasActions(entry) || root.actionableAutoCloseMs <= 0) {
+            return;
+        }
+
+        const key = String(entry.id);
+        const next = ({ });
+        for (const [candidateKey, candidateDeadline] of Object.entries(root._actionableCloseDeadlines)) {
+            next[candidateKey] = candidateDeadline;
+        }
+        next[key] = Date.now() + root.actionableAutoCloseMs;
+        root._actionableCloseDeadlines = next;
+        actionableCloseTimer.running = true;
     }
 
     function _entryFor(notification) {
@@ -136,6 +301,8 @@ Scope {
     }
 
     function _syncEntryArrays(entry) {
+        root._clearActionableAutoCloseById(entry.id);
+
         const nextHistory = root._replaceOrInsert(root.history, entry);
         root.history = nextHistory;
         root._trimHistory();
@@ -159,21 +326,62 @@ Scope {
         if (!notification) {
             return;
         }
+
+        root._clearActionableAutoCloseById(notification.id);
         root.popupQueue = root._removeById(root.popupQueue, notification.id);
 
-        const reasonText = NotificationCloseReason.toString(reason || NotificationCloseReason.CloseRequested).toLowerCase();
-        if (reasonText.indexOf("dismissed") >= 0) {
-            root.history = root._removeById(root.history, notification.id);
-            root._recountUnread();
-        }
+        root.history = root._removeById(root.history, notification.id);
+        root._recountUnread();
     }
 
+    onHistoryChanged: {
+        root._syncHistoryModel();
+        root._syncHistoryVisibleModel();
+    }
     onPopupQueueChanged: root._syncPopupVisibleModel()
     onMaxPopupVisibleChanged: root._syncPopupVisibleModel()
+    onMaxPanelVisibleChanged: root._syncHistoryVisibleModel()
 
     ListModel {
         id: popupVisibleModel
         dynamicRoles: true
+    }
+
+    ListModel {
+        id: historyModel
+        dynamicRoles: true
+    }
+
+    ListModel {
+        id: historyVisibleModel
+        dynamicRoles: true
+    }
+
+    Timer {
+        id: actionableCloseTimer
+
+        interval: 1000
+        repeat: true
+        running: false
+        onTriggered: {
+            const now = Date.now();
+            const remaining = ({ });
+
+            for (const [idKey, deadlineMs] of Object.entries(root._actionableCloseDeadlines)) {
+                if (deadlineMs > now) {
+                    remaining[idKey] = deadlineMs;
+                    continue;
+                }
+
+                const entry = root._entryById(idKey);
+                if (entry) {
+                    root.dismiss(entry);
+                }
+            }
+
+            root._actionableCloseDeadlines = remaining;
+            running = Object.keys(remaining).length > 0;
+        }
     }
 
     function setDndEnabled(next) {
@@ -226,14 +434,16 @@ Scope {
             return;
         }
 
+        root._clearActionableAutoCloseById(entry.id);
         entry.notification.dismiss();
     }
 
     function dismissById(id) {
-        const entry = root.history.find(candidate => candidate && candidate.id === id)
-            || root.popupQueue.find(candidate => candidate && candidate.id === id);
+        const entry = root._entryById(id);
         if (entry) {
             root.dismiss(entry);
+        } else {
+            root._clearActionableAutoCloseById(id);
         }
     }
 
@@ -249,7 +459,7 @@ Scope {
                 continue;
             }
             seen[key] = true;
-            entry.notification.dismiss();
+            root.dismiss(entry);
         }
     }
 
@@ -303,7 +513,19 @@ Scope {
         if (!entry || !action) {
             return;
         }
+
+        root._clearActionableAutoCloseById(entry.id);
         action.invoke();
+        root.dismiss(entry);
+    }
+
+    function hidePopup(entry) {
+        if (!entry) {
+            return;
+        }
+
+        root.popupQueue = root._removeById(root.popupQueue, entry.id);
+        root._scheduleActionableAutoClose(entry);
     }
 
     NotificationServer {
@@ -339,6 +561,7 @@ Scope {
             if (keepHistory) {
                 root._syncEntryArrays(entry);
             } else {
+                root._clearActionableAutoCloseById(entry.id);
                 const popupAllowed = NotificationLogic.shouldShowPopup({
                     enabled: Config.Config.notifications?.popup?.enabled ?? true,
                     lastGeneration: !!notification.lastGeneration,

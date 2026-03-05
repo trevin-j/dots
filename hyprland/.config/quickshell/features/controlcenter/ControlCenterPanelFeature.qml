@@ -259,10 +259,16 @@ PanelWindow {
                 opacity: 0.6
             }
 
-            ControlCenterComponents.NotificationsPanel {
-                panelWidth: root.panelWidth
-                open: root.state.open
+            Item {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: 2
+
+                ControlCenterComponents.NotificationsPanel {
+                    anchors.fill: parent
+                    panelWidth: root.panelWidth
+                    open: root.state.open
+                }
             }
 
             Rectangle {
@@ -272,31 +278,42 @@ PanelWindow {
                 opacity: 0.6
             }
 
-            Text {
-                text: (SystemTray.items.values?.length ?? 0) > 0 ? "Tray" : "Tray (empty)"
-                font.family: Config.Appearance.fontFamily
-                font.weight: Config.Appearance.fontWeight
-                font.pixelSize: Config.Appearance.fontSizeMedium
-                color: Config.Palette.color("on_surface_variant")
-                Layout.fillWidth: true
-            }
-
-            Rectangle {
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: Config.Appearance.radiusMedium
-                color: root.sectionColor
-                clip: true
+                Layout.preferredHeight: 1
 
-                QuickSettingsComponents.TrayList {
+                ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: root.contentPadding
-                    itemHeight: root.trayItemHeight
-                    iconSize: Math.max(18, Math.round(root.toggleHeight * 0.38))
-                    spacing: root.traySectionSpacing
-                    tooltipLayer: trayTooltipLayer
-                    tooltipTimer: tooltipTimer
-                    state: trayState
+                    spacing: root.contentSpacing
+
+                    Text {
+                        text: (SystemTray.items.values?.length ?? 0) > 0 ? "Tray" : "Tray (empty)"
+                        font.family: Config.Appearance.fontFamily
+                        font.weight: Config.Appearance.fontWeight
+                        font.pixelSize: Config.Appearance.fontSizeMedium
+                        color: Config.Palette.color("on_surface_variant")
+                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Config.Appearance.radiusMedium
+                        color: root.sectionColor
+                        clip: true
+
+                        QuickSettingsComponents.TrayList {
+                            anchors.fill: parent
+                            anchors.margins: root.contentPadding
+                            itemHeight: root.trayItemHeight
+                            iconSize: Math.max(18, Math.round(root.toggleHeight * 0.38))
+                            spacing: root.traySectionSpacing
+                            tooltipLayer: trayTooltipLayer
+                            tooltipTimer: tooltipTimer
+                            state: trayState
+                        }
+                    }
                 }
             }
         }

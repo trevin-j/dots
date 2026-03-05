@@ -176,6 +176,7 @@ QtObject {
             iconSize: 22,
             defaultTimeoutMs: 6000,
             criticalTimeoutMs: 0,
+            actionableAutoCloseMs: 600000,
             ignoreTimeoutFromClients: false,
             pauseOnHover: true,
             showOnDnd: false,
