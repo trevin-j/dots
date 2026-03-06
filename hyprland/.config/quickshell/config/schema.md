@@ -124,6 +124,39 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
 }
 ```
 
+### popouts.volume.sound
+
+`popouts.volume.sound` configures the feedback sound played when volume changes up or down.
+
+- Built-in sounds: `"warm"` (default), `"bouncy"`, `"chime"`
+- Custom sound: absolute path to an audio file (for example `"/home/you/sounds/my-volume.wav"`)
+- `popouts.volume.suppressWhenMicActive` (default `true`) skips playback while any app is actively recording from microphone (`pactl list source-outputs short`).
+
+Example:
+
+```json
+{
+  "popouts": {
+    "volume": {
+      "sound": "warm",
+      "suppressWhenMicActive": true
+    }
+  }
+}
+```
+
+Custom path example:
+
+```json
+{
+  "popouts": {
+    "volume": {
+      "sound": "/home/you/sounds/custom-volume.ogg"
+    }
+  }
+}
+```
+
 ## palette.json
 ```
 {

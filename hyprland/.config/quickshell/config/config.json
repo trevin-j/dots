@@ -6,7 +6,12 @@
     }
   },
   "motion": {},
-  "popouts": {},
+  "popouts": {
+    "volume": {
+      "sound": "warm",
+      "suppressWhenMicActive": true
+    }
+  },
   "controlCenter": {
     "wallpaper": {}
   },

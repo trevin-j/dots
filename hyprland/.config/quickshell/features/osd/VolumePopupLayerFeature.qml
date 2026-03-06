@@ -4,6 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 
 import "../../config" as Config
+import "../../services" as Services
 import "./components" as OsdComponents
 
 /*
@@ -17,6 +18,8 @@ Scope {
     property bool isInteracting: false
     property real volumeLevel: Pipewire.defaultAudioSink?.audio?.volume ?? 0
     property bool volumeMuted: Pipewire.defaultAudioSink?.audio?.muted ?? false
+    property bool hasTrackedVolume: false
+    property real previousVolumeLevel: 0
 
     function monitorKey(monitor) {
         if (!monitor) {
@@ -54,7 +57,22 @@ Scope {
         hideTimer.restart();
     }
 
-    onVolumeLevelChanged: showOsd()
+    function handleVolumeLevelChanged() {
+        const nextLevel = root.volumeLevel;
+        if (!root.hasTrackedVolume) {
+            root.previousVolumeLevel = nextLevel;
+            root.hasTrackedVolume = true;
+            root.showOsd();
+            return;
+        }
+
+        const delta = nextLevel - root.previousVolumeLevel;
+        root.previousVolumeLevel = nextLevel;
+        root.showOsd();
+        Services.VolumeFeedbackService.playForDelta(delta);
+    }
+
+    onVolumeLevelChanged: handleVolumeLevelChanged()
     onVolumeMutedChanged: showOsd()
 
     Timer {
