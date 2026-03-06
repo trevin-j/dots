@@ -4,6 +4,7 @@ import Quickshell
 
 import "../../config" as Config
 import "../../design/primitives" as Primitives
+import "../../services" as Services
 import "./components" as BarComponents
 
 /*
@@ -197,6 +198,7 @@ PanelWindow {
                         barHeight: root.thickness - root.padding * 2
                         iconFont: Config.Appearance.iconFontFamily
                         active: root.controlCenterState?.open ?? false
+                        hasPendingNotifications: Services.NotificationService.hasNotifications
                         Layout.fillHeight: true
                         onClicked: root.controlCenterState.toggle()
                     }
