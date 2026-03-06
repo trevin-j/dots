@@ -34,12 +34,15 @@ PanelWindow {
     readonly property int drawerOpenDelay: Config.Config.controlCenter?.transition?.drawerOpenDelay ?? 0
     readonly property int wallpaperPanelWidth: Config.Config.controlCenter?.wallpaper?.panelWidth ?? 320
     readonly property int wallpaperOvershootPadding: Config.Config.controlCenter?.wallpaper?.overshootPadding ?? 64
+    readonly property int panelOpenDurationMs: Config.Motion.shellDuration
+    readonly property int panelCloseDurationMs: Config.Motion.shortDuration
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
 
     property bool drawerOpen: false
     property bool drawerClosingMotion: false
     property real wallpaperReveal: (root.state.open && root.state.wallpaperPickerOpen) ? root.wallpaperPanelWidth : 0
+    readonly property bool wallpaperRevealClosingMotion: !(root.state.open && root.state.wallpaperPickerOpen)
     property real drawerOffset: drawerOpen ? 0 : (root.panelWidth + root.overshootRightPadding)
     readonly property real revealWidth: Math.max(0, root.panelWidth - Math.max(0, drawerOffset))
     readonly property real drawerX: width - root.panelWidth + drawerOffset
@@ -116,15 +119,17 @@ PanelWindow {
 
     Behavior on drawerOffset {
         Anim {
-            durationMs: root.drawerClosingMotion ? Config.Motion.shortDuration : Config.Motion.shellDuration
+            durationMs: root.drawerClosingMotion ? root.panelCloseDurationMs : root.panelOpenDurationMs
             curve: root.drawerClosingMotion ? Config.Motion.emphasizedAccelCurve : Config.Motion.shellCurve
         }
     }
 
     Behavior on wallpaperReveal {
         Anim {
-            durationMs: Config.Motion.shellDuration
-            curve: Config.Motion.shellCurve
+            durationMs: root.wallpaperRevealClosingMotion ? root.panelOpenDurationMs : root.panelCloseDurationMs
+            curve: root.state.open && root.state.wallpaperPickerOpen
+                ? Config.Motion.emphasizedAccelCurve
+                : Config.Motion.shellCurve
         }
     }
 
