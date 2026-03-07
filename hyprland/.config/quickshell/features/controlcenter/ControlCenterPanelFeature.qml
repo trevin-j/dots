@@ -6,7 +6,6 @@ import Quickshell.Services.SystemTray
 import "../../config" as Config
 import "../../design/primitives" as Primitives
 import "../../services" as Services
-import "../../utils"
 import "./components" as ControlCenterComponents
 import "../quicksettings/components" as QuickSettingsComponents
 import "../quicksettings/vm" as QuickSettingsVm
@@ -17,10 +16,9 @@ import "./vm" as ControlCenterVm
   Full-height right-edge control center drawer for quick settings and tray entries.
   Required properties: panelScreen, state.
 */
-PanelWindow {
+Primitives.SlideOutPanelWindow {
     id: root
 
-    required property ShellScreen panelScreen
     required property ControlCenterVm.ControlCenterState state
 
     readonly property int panelWidth: Config.Config.controlCenter?.size?.width ?? 420
@@ -39,99 +37,9 @@ PanelWindow {
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
 
-    property bool drawerOpen: false
-    property bool drawerClosingMotion: false
-    property real wallpaperReveal: (root.state.open && root.state.wallpaperPickerOpen) ? root.wallpaperPanelWidth : 0
-    readonly property bool wallpaperRevealClosingMotion: !(root.state.open && root.state.wallpaperPickerOpen)
-    property real drawerOffset: drawerOpen ? 0 : (root.panelWidth + root.overshootRightPadding)
-    readonly property real revealWidth: Math.max(0, root.panelWidth - Math.max(0, drawerOffset))
-    readonly property real drawerX: width - root.panelWidth + drawerOffset
-
-    screen: root.panelScreen
-    aboveWindows: true
+    open: root.state.open
+    closeDurationMs: root.panelCloseDurationMs
     focusable: true
-    color: "transparent"
-    surfaceFormat.opaque: false
-    exclusiveZone: 0
-
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    visible: root.state.open || root.drawerOpen || drawerOffset < (root.panelWidth + root.overshootRightPadding)
-
-    onDrawerOffsetChanged: root.state.edgeInset = Math.round(revealWidth)
-
-    onVisibleChanged: {
-        if (!visible) {
-            root.drawerOpen = false;
-            root.state.wallpaperPickerOpen = false;
-            openDelayTimer.stop();
-            trayState.trayTooltipVisible = false;
-            trayState.trayTooltipSource = null;
-            trayState.trayTooltipPending = null;
-            tooltipTimer.stop();
-        }
-    }
-
-    Component.onCompleted: {
-        if (root.state.open) {
-            root.drawerClosingMotion = false;
-            if (root.drawerOpenDelay <= 0) {
-                root.drawerOpen = true;
-            } else {
-                openDelayTimer.restart();
-            }
-        }
-    }
-
-    Connections {
-        target: root.state
-
-        function onOpenChanged() {
-            if (root.state.open) {
-                root.drawerClosingMotion = false;
-                if (root.drawerOpenDelay <= 0) {
-                    root.drawerOpen = true;
-                } else {
-                    openDelayTimer.restart();
-                }
-            } else {
-                root.drawerClosingMotion = true;
-                openDelayTimer.stop();
-                root.drawerOpen = false;
-            }
-        }
-    }
-
-    Timer {
-        id: openDelayTimer
-
-        interval: root.drawerOpenDelay
-        repeat: false
-        onTriggered: {
-            if (root.state.open) {
-                root.drawerOpen = true;
-            }
-        }
-    }
-
-    Behavior on drawerOffset {
-        Anim {
-            durationMs: root.drawerClosingMotion ? root.panelCloseDurationMs : root.panelOpenDurationMs
-            curve: root.drawerClosingMotion ? Config.Motion.emphasizedAccelCurve : Config.Motion.shellCurve
-        }
-    }
-
-    Behavior on wallpaperReveal {
-        Anim {
-            durationMs: root.wallpaperRevealClosingMotion ? root.panelOpenDurationMs : root.panelCloseDurationMs
-            curve: root.state.open && root.state.wallpaperPickerOpen
-                ? Config.Motion.emphasizedAccelCurve
-                : Config.Motion.shellCurve
-        }
-    }
 
     QuickSettingsVm.StatusViewModel {
         id: statusVm
@@ -143,6 +51,7 @@ PanelWindow {
 
     Timer {
         id: tooltipTimer
+
         interval: trayState.trayTooltipDelay
         repeat: false
         onTriggered: {
@@ -159,86 +68,83 @@ PanelWindow {
         }
     }
 
+    onVisibleChanged: {
+        if (!visible) {
+            root.state.wallpaperPickerOpen = false;
+            trayState.trayTooltipVisible = false;
+            trayState.trayTooltipSource = null;
+            trayState.trayTooltipPending = null;
+            tooltipTimer.stop();
+        }
+    }
+
+    Keys.onPressed: event => {
+        if (!root.state.open) {
+            return;
+        }
+
+        if (event.key === Qt.Key_Escape) {
+            root.state.close();
+            event.accepted = true;
+        }
+    }
+
     MouseArea {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: Math.max(0, Math.round(root.drawerX - root.wallpaperReveal))
+        width: Math.max(0, Math.round(mainPanel.visibleSurfaceX - wallpaperPanel.edgeInset))
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        enabled: root.state.open
         onClicked: root.state.close()
     }
 
-    Item {
-        id: drawerShadowShape
+    Primitives.SlideOutPanelSurface {
+        id: wallpaperPanel
 
-        readonly property real shadowRadius: Config.Appearance.frameBorderRounding
+        z: 0
+        anchors.fill: parent
+        attachedEdge: "right"
+        attachedInset: root.panelWidth
+        primaryExtent: root.wallpaperPanelWidth
+        overshootPadding: root.wallpaperOvershootPadding
+        openDelay: 0
+        active: root.presentationOpen
+        open: root.state.wallpaperPickerOpen
+        renderWhenClosed: false
+        surfaceColor: root.sectionColor
+        openDurationMs: root.panelOpenDurationMs
+        closeDurationMs: root.panelCloseDurationMs
+        openCurve: Config.Motion.shellCurve
+        closeCurve: Config.Motion.emphasizedAccelCurve
 
-        width: root.panelWidth + root.wallpaperReveal + shadowRadius
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        x: root.drawerX - root.wallpaperReveal - shadowRadius
-        visible: true
-        opacity: 0
-
-        Rectangle {
-            id: shadowBody
-
-            width: root.panelWidth + root.wallpaperReveal
-            height: parent.height
-            x: drawerShadowShape.shadowRadius
-            color: root.surfaceColor
-        }
-
-        Primitives.CornerCutout {
-            visible: drawerShadowShape.shadowRadius > 0
-            radius: drawerShadowShape.shadowRadius
-            fillColor: root.surfaceColor
-            mirrorX: true
-            anchors.right: shadowBody.left
-            anchors.top: shadowBody.top
-        }
-
-        Primitives.CornerCutout {
-            visible: drawerShadowShape.shadowRadius > 0
-            radius: drawerShadowShape.shadowRadius
-            fillColor: root.surfaceColor
-            mirrorX: true
-            mirrorY: true
-            anchors.right: shadowBody.left
-            anchors.bottom: shadowBody.bottom
-        }
-    }
-
-    Primitives.SurfaceShadow {
-        source: drawerShadowShape
-        enabled: root.revealWidth > 0 && Config.Appearance.shadowEnabled
-    }
-
-    Item {
-        id: drawer
-
-        width: root.panelWidth + root.overshootRightPadding
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        x: root.drawerX
-        clip: false
-
-        Rectangle {
-            id: body
-
+        ControlCenterComponents.WallpaperSelectorPanel {
             anchors.fill: parent
-            radius: 0
-            color: root.surfaceColor
+            open: wallpaperPanel.open
+            panelWidth: root.wallpaperPanelWidth
+            visible: wallpaperPanel.edgeInset > 0
+            onApplyRequested: path => Services.WallpaperService.applyWallpaper(path)
         }
+    }
+
+    Primitives.SlideOutPanelSurface {
+        id: mainPanel
+
+        z: 1
+        anchors.fill: parent
+        attachedEdge: "right"
+        primaryExtent: root.panelWidth
+        overshootPadding: root.overshootRightPadding
+        openDelay: root.drawerOpenDelay
+        active: root.presentationOpen
+        open: root.open
+        surfaceColor: root.surfaceColor
+
+        onEdgeInsetChanged: root.state.edgeInset = edgeInset
 
         ColumnLayout {
-            anchors.left: body.left
-            anchors.top: body.top
-            anchors.bottom: body.bottom
-            anchors.leftMargin: root.contentPadding
-            anchors.topMargin: root.contentPadding
-            anchors.bottomMargin: root.contentPadding
-            width: Math.max(0, root.panelWidth - root.contentPadding * 2)
+            anchors.fill: parent
+            anchors.margins: root.contentPadding
             spacing: root.contentSpacing
 
             Text {
@@ -256,7 +162,7 @@ PanelWindow {
                 materialFont: Config.Appearance.iconFontFamily
                 state: statusVm
                 controlCenterState: root.state
-                forceCollapseMenus: !root.state.open
+                forceCollapseMenus: !root.presentationOpen
                 Layout.fillWidth: true
                 onPowerAction: actionId => Services.PowerService.trigger(actionId)
             }
@@ -276,7 +182,7 @@ PanelWindow {
                 ControlCenterComponents.NotificationsPanel {
                     anchors.fill: parent
                     panelWidth: root.panelWidth
-                    open: root.state.open
+                    open: root.presentationOpen
                 }
             }
 
@@ -326,100 +232,22 @@ PanelWindow {
                 }
             }
         }
-
-        Item {
-            id: wallpaperPanelContainer
-
-            z: -1
-            width: root.wallpaperPanelWidth + root.wallpaperOvershootPadding
-            anchors.top: body.top
-            anchors.bottom: body.bottom
-            x: -root.wallpaperReveal
-            clip: false
-
-            Rectangle {
-                id: wallpaperBody
-
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                width: parent.width
-                radius: 0
-                color: root.sectionColor
-            }
-
-            ControlCenterComponents.WallpaperSelectorPanel {
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: root.wallpaperPanelWidth
-                open: root.state.open && root.state.wallpaperPickerOpen
-                panelWidth: root.wallpaperPanelWidth
-                visible: root.wallpaperReveal > 0
-                onApplyRequested: path => Services.WallpaperService.applyWallpaper(path)
-            }
-
-            Primitives.CornerCutout {
-                visible: root.wallpaperReveal > 0
-                radius: Config.Appearance.frameBorderRounding
-                fillColor: wallpaperBody.color
-                mirrorX: true
-                anchors.right: wallpaperBody.left
-                anchors.top: wallpaperBody.top
-            }
-
-            Primitives.CornerCutout {
-                visible: root.wallpaperReveal > 0
-                radius: Config.Appearance.frameBorderRounding
-                fillColor: wallpaperBody.color
-                mirrorX: true
-                mirrorY: true
-                anchors.right: wallpaperBody.left
-                anchors.bottom: wallpaperBody.bottom
-            }
-        }
-
-        Primitives.CornerCutout {
-            visible: root.revealWidth > 0
-            radius: Config.Appearance.frameBorderRounding
-            fillColor: body.color
-            mirrorX: true
-            anchors.right: body.left
-            anchors.top: body.top
-        }
-
-        Primitives.CornerCutout {
-            visible: root.revealWidth > 0
-            radius: Config.Appearance.frameBorderRounding
-            fillColor: body.color
-            mirrorX: true
-            mirrorY: true
-            anchors.right: body.left
-            anchors.bottom: body.bottom
-        }
-
-        Item {
-            id: trayTooltipLayer
-            anchors.left: body.left
-            anchors.top: body.top
-            anchors.bottom: body.bottom
-            width: root.panelWidth
-
-            QuickSettingsComponents.TrayTooltip {
-                anchors.fill: parent
-                state: trayState
-                maxWidth: Math.max(180, Math.round(root.panelWidth - root.contentPadding * 3))
-            }
-        }
     }
 
-    Keys.onPressed: event => {
-        if (!root.state.open) {
-            return;
-        }
-        if (event.key === Qt.Key_Escape) {
-            root.state.close();
-            event.accepted = true;
+    Item {
+        id: trayTooltipLayer
+
+        z: 2
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: root.panelWidth
+        x: mainPanel.visibleSurfaceX
+
+        QuickSettingsComponents.TrayTooltip {
+            anchors.fill: parent
+            state: trayState
+            maxWidth: Math.max(180, Math.round(root.panelWidth - root.contentPadding * 3))
         }
     }
 }
