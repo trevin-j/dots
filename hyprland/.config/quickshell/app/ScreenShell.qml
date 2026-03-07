@@ -3,7 +3,6 @@ import Quickshell
 
 import "../services" as Services
 import "../features/bar" as BarFeature
-import "../features/chrome" as ChromeFeature
 import "../features/controlcenter" as ControlCenterFeature
 import "../features/controlcenter/vm" as ControlCenterVm
 
@@ -22,6 +21,7 @@ Item {
     }
 
     Component.onCompleted: Services.ControlCenterService.registerScreenState(root.panelScreen, controlCenterState)
+
     Component.onDestruction: Services.ControlCenterService.unregisterScreenState(controlCenterState)
 
     BarFeature.BarPanelFeature {
@@ -32,9 +32,5 @@ Item {
     ControlCenterFeature.ControlCenterPanelFeature {
         panelScreen: root.panelScreen
         state: controlCenterState
-    }
-
-    ChromeFeature.BottomCornerCutoutsFeature {
-        panelScreen: root.panelScreen
     }
 }

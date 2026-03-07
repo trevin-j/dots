@@ -413,16 +413,6 @@ PanelWindow {
         }
     }
 
-    Primitives.CornerCutout {
-        visible: root.revealWidth > 0
-        radius: Config.Appearance.frameBorderRounding
-        fillColor: Config.Appearance.cutoutBlack
-        mirrorX: true
-        mirrorY: true
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-    }
-
     Keys.onPressed: event => {
         if (!root.state.open) {
             return;

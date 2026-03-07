@@ -1,12 +1,13 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 
 import "../../config" as Config
 import "../../design/primitives" as Primitives
 
 /*
-  BottomCornerCutoutsFeature
-  Renders only bottom screen corner cutouts without reserving space.
+  ScreenCornerCutoutsFeature
+  Renders all screen corner cutouts in one top-most shell layer.
 */
 PanelWindow {
     id: root
@@ -21,6 +22,8 @@ PanelWindow {
     color: "transparent"
     surfaceFormat.opaque: false
     exclusiveZone: 0
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.namespace: "quickshell-screen-corners"
 
     mask: Region {
         item: inputPassthrough

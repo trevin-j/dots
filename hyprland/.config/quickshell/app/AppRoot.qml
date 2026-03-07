@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 
+import "../features/chrome" as ChromeFeature
 import "../features/osd" as OsdFeature
 import "../features/notifications" as NotificationFeature
 import "../features/whichkey" as WhichKeyFeature
@@ -20,4 +21,5 @@ ShellRoot {
     OsdFeature.BrightnessPopupLayerFeature {}
     NotificationFeature.NotificationPopupLayerFeature {}
     WhichKeyFeature.WhichKeyLayerFeature {}
+    ChromeFeature.ScreenCornerCutoutsLayerFeature {}
 }
