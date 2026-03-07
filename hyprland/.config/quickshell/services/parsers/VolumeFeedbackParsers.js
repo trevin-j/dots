@@ -5,6 +5,11 @@ const BUILTIN_FILENAMES = {
 };
 
 const DEFAULT_BUILTIN = "warm";
+const DISABLED_CHOICES = {
+    off: true,
+    none: true,
+    disabled: true
+};
 const DELTA_THRESHOLD = 0.0005;
 
 function normalizeSoundChoice(value) {
@@ -68,6 +73,10 @@ function resolveSoundPath(configValue, builtinBasePath, homeDir) {
     const normalized = normalizeSoundChoice(configValue);
     if (!normalized) {
         return builtinPath(builtinBasePath, homeDir, DEFAULT_BUILTIN);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(DISABLED_CHOICES, normalized)) {
+        return "";
     }
 
     if (Object.prototype.hasOwnProperty.call(BUILTIN_FILENAMES, normalized)) {

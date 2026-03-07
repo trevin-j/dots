@@ -101,7 +101,7 @@ QtObject {
             trackHeight: 6,
             thumbSize: 16,
             hideDelay: 1500,
-            sound: "warm",
+            sound: "off",
             suppressWhenMicActive: true,
             slideDistance: 20,
             offset: 6

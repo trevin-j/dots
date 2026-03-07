@@ -40,6 +40,14 @@ TestCase {
         );
     }
 
+    function test_resolveSoundPathCanDisablePlayback() {
+        const home = "/home/tester";
+        const base = "/tmp/builtin/";
+        compare(VolumeFeedbackParsers.resolveSoundPath("off", base, home), "");
+        compare(VolumeFeedbackParsers.resolveSoundPath("none", base, home), "");
+        compare(VolumeFeedbackParsers.resolveSoundPath("disabled", base, home), "");
+    }
+
     function test_resolveSoundPathCustomAbsoluteAndHome() {
         const home = "/home/tester";
         compare(
