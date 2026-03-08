@@ -152,6 +152,28 @@ QtObject {
         })
     })
 
+    readonly property var appDrawer: ({
+        size: ({
+            rows: 3,
+            columns: 10,
+            padding: 18,
+            spacing: 14,
+            pageControlHeight: 36,
+            tileHeight: 104,
+            iconSize: 38,
+            tileSpacing: 10,
+            searchHeight: 44,
+            searchHorizontalPadding: 18,
+            overshootPadding: 84
+        }),
+        behavior: ({
+            drawerOpenDelay: 0,
+            pageSwipeThreshold: 0.5,
+            horizontalScrollSensitivity: 2.4
+        }),
+        favorites: []
+    })
+
     readonly property var notifications: ({
         daemon: ({
             keepOnReload: true,
@@ -217,6 +239,7 @@ QtObject {
             slideDistance: 20
         }),
         binds: [
+            ({ keys: "<enter>", description: "App drawer", command: "qs ipc call appdrawer toggle", icon: "apps" }),
             ({ keys: "p", description: "Power", command: "tlgui power", icon: "power_settings_new" }),
             ({ keys: "w", description: "Window", icon: "web_asset" }),
             ({ keys: "wf", description: "Fullscreen", command: "hyprctl dispatch fullscreen", icon: "fullscreen" }),

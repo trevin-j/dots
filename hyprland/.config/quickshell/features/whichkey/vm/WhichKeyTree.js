@@ -1,5 +1,6 @@
 function defaultBinds() {
     return [
+        { keys: "<enter>", description: "App drawer", command: "qs ipc call appdrawer toggle", icon: "apps" },
         { keys: "p", description: "Power", command: "tlgui power", icon: "power_settings_new" },
         { keys: "w", description: "Window", icon: "web_asset" },
         { keys: "wf", description: "Fullscreen", command: "hyprctl dispatch fullscreen", icon: "fullscreen" },
@@ -40,15 +41,53 @@ function emptyTree() {
     });
 }
 
-function sanitizeKeySequence(value) {
+function keyTokenLabel(token) {
+    if (token === "<enter>") {
+        return "keyboard_return";
+    }
+
+    return typeof token === "string" ? token.toUpperCase() : "";
+}
+
+function parseKeySequence(value) {
     if (typeof value !== "string") {
-        return "";
+        return [];
     }
+
     const normalized = value.trim().toLowerCase();
-    if (!normalized || !/^[a-z0-9]+$/.test(normalized)) {
-        return "";
+    if (!normalized) {
+        return [];
     }
-    return normalized;
+
+    const tokens = [];
+    let index = 0;
+    while (index < normalized.length) {
+        const current = normalized[index];
+        if (current === "<") {
+            const end = normalized.indexOf(">", index);
+            if (end < 0) {
+                return [];
+            }
+
+            const token = normalized.slice(index, end + 1);
+            if (token !== "<enter>") {
+                return [];
+            }
+
+            tokens.push(token);
+            index = end + 1;
+            continue;
+        }
+
+        if (!/[a-z0-9]/.test(current)) {
+            return [];
+        }
+
+        tokens.push(current);
+        index += 1;
+    }
+
+    return tokens;
 }
 
 function normalizeBinds(rawBinds) {
@@ -59,17 +98,18 @@ function normalizeBinds(rawBinds) {
         if (!entry || typeof entry !== "object") {
             continue;
         }
-        const keys = sanitizeKeySequence(entry.keys);
-        if (!keys || seen[keys]) {
+        const tokens = parseKeySequence(entry.keys);
+        const keyPath = tokens.join(" ");
+        if (tokens.length === 0 || seen[keyPath]) {
             continue;
         }
-        seen[keys] = true;
+        seen[keyPath] = true;
 
         const description = typeof entry.description === "string" ? entry.description.trim() : "";
         const command = typeof entry.command === "string" ? entry.command.trim() : "";
         const icon = typeof entry.icon === "string" ? entry.icon.trim() : "";
         result.push({
-            keys: keys,
+            keys: tokens,
             description: description || (command ? "Action" : "Group"),
             command: command,
             icon: icon
@@ -152,7 +192,7 @@ function entriesForPath(tree, path) {
         const childCount = Object.keys(entry.children || ({})).length;
         return ({
             key: key,
-            label: key.toUpperCase(),
+            label: keyTokenLabel(key),
             description: entry.description || (childCount > 0 ? "Group" : "Action"),
             icon: entry.icon || inferIcon(path, key, entry),
             command: entry.command || "",

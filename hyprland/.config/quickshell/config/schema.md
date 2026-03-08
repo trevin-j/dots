@@ -10,7 +10,7 @@ This document defines live-reload configuration sources used by the shell.
 ## Config runtime model
 - `ConfigStore.qml` watches `config.json` and parses overrides.
 - `ConfigRuntime.qml` deep-merges overrides on top of `ConfigData.qml` defaults.
-- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, `controlCenter`, `notifications`, and `whichKey`.
+- `Config.qml` exposes effective values via `bar`, `appearance`, `motion`, `popouts`, `controlCenter`, `appDrawer`, `notifications`, and `whichKey`.
 
 ### config.json
 ```json
@@ -20,6 +20,7 @@ This document defines live-reload configuration sources used by the shell.
   "motion": {},
   "popouts": {},
   "controlCenter": {},
+  "appDrawer": {},
   "notifications": {},
   "whichKey": {}
 }
@@ -71,6 +72,12 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
     },
     "binds": [
       {
+        "keys": "<enter>",
+        "description": "App drawer",
+        "command": "qs ipc call appdrawer toggle",
+        "icon": "apps"
+      },
+      {
         "keys": "p",
         "description": "Power",
         "command": "tlgui power",
@@ -86,6 +93,43 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
   }
 }
 ```
+
+### appDrawer (example)
+```json
+{
+  "appDrawer": {
+    "size": {
+      "rows": 3,
+      "columns": 10,
+      "padding": 18,
+      "spacing": 14,
+      "tileHeight": 104,
+      "iconSize": 38,
+      "tileSpacing": 10,
+      "searchHeight": 44,
+      "searchHorizontalPadding": 18,
+      "pageControlHeight": 36,
+      "overshootPadding": 84
+    },
+    "behavior": {
+      "drawerOpenDelay": 0,
+      "pageSwipeThreshold": 0.5,
+      "horizontalScrollSensitivity": 2.4
+    },
+    "favorites": [
+      "firefox.desktop",
+      "org.wezfurlong.wezterm.desktop"
+    ]
+  }
+}
+```
+
+- `size.rows` and `size.columns` define page size (`rows * columns`).
+- Drawer height is derived from `rows`, tile sizing, search bar size, and paddings.
+- The drawer body always spans the full screen width; only height is configurable.
+- Favorites always sort first, then remaining apps are ranked by frecency.
+- `behavior.pageSwipeThreshold` controls how far a swipe/scroll must travel before the drawer commits to the next page.
+- `behavior.horizontalScrollSensitivity` scales horizontal wheel and touchpad scroll distance for page swiping.
 
 ### notifications (example)
 ```json

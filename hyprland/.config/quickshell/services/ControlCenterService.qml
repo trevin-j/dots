@@ -5,6 +5,8 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 
+import "./" as Services
+
 /*
   ControlCenterService
   Tracks per-screen control center state and exposes IPC controls.
@@ -100,10 +102,17 @@ Scope {
     }
 
     function toggle() {
-        root.withTargetState(state => state.toggle());
+        if (root.isOpen()) {
+            root.close();
+            return;
+        }
+
+        Services.AppDrawerService.close();
+        root.open();
     }
 
     function open() {
+        Services.AppDrawerService.close();
         root.withTargetState(state => state.openPanel());
     }
 
@@ -129,9 +138,11 @@ Scope {
     }
 
     function swipeUp() {
+        Services.AppDrawerService.swipeUp();
     }
 
     function swipeDown() {
+        Services.AppDrawerService.close();
     }
 
     IpcHandler {

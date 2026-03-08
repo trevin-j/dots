@@ -40,6 +40,11 @@ PanelWindow {
         if (!event) {
             return "";
         }
+
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            return "<enter>";
+        }
+
         const text = typeof event.text === "string" ? event.text.trim().toLowerCase() : "";
         if (/^[a-z0-9]$/.test(text)) {
             return text;
@@ -254,6 +259,7 @@ PanelWindow {
                                 readonly property string bindDescription: modelData.description || ""
                                 readonly property string bindIcon: modelData.icon || "bolt"
                                 readonly property bool bindHasChildren: modelData.hasChildren ?? false
+                                readonly property bool bindLabelIsIcon: bindKey === "<enter>"
 
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: root.itemHeight
@@ -276,8 +282,8 @@ PanelWindow {
                                     }
 
                                     Rectangle {
-                                        Layout.preferredWidth: 28
-                                        Layout.preferredHeight: 22
+                                        Layout.preferredWidth: delegateRoot.bindLabelIsIcon ? 34 : 28
+                                        Layout.preferredHeight: delegateRoot.bindLabelIsIcon ? 24 : 22
                                         radius: 6
                                         color: Config.Palette.color("surface_container_high")
                                         border.width: 1
@@ -287,9 +293,13 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: delegateRoot.bindLabel
                                             color: Config.Palette.color("on_surface")
-                                            font.family: Config.Appearance.fontFamily
-                                            font.pixelSize: root.keySize
-                                            font.weight: Font.DemiBold
+                                            font.family: delegateRoot.bindLabelIsIcon
+                                                ? Config.Appearance.iconFontFamily
+                                                : Config.Appearance.fontFamily
+                                            font.pixelSize: delegateRoot.bindLabelIsIcon
+                                                ? Math.max(root.keySize + 1, 16)
+                                                : root.keySize
+                                            font.weight: delegateRoot.bindLabelIsIcon ? Font.Medium : Font.DemiBold
                                         }
                                     }
 

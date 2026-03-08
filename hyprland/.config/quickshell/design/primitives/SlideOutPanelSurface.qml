@@ -27,6 +27,9 @@ Item {
     property var openCurve: Config.Motion.shellCurve
     property var closeCurve: Config.Motion.emphasizedAccelCurve
     property bool shadowEnabled: Config.Appearance.shadowEnabled
+    property real shadowOffsetX: 0
+    property real shadowOffsetY: Config.Appearance.shadowOffsetY
+    readonly property bool presentationOpen: root.active || root._retainVisible
 
     readonly property bool horizontal: attachedEdge === "left" || attachedEdge === "right"
     readonly property bool attachedRight: attachedEdge === "right"
@@ -36,7 +39,7 @@ Item {
     readonly property int totalExtent: primaryExtent + overshootPadding
     readonly property int cornerRadius: Config.Appearance.frameBorderRounding
     readonly property int edgeInset: Math.round(Math.max(0, primaryExtent - Math.max(0, drawerOffset)))
-    readonly property bool shouldRenderSurface: root.active
+    readonly property bool shouldRenderSurface: root.presentationOpen
         && (root.renderWhenClosed || root.edgeInset > 0 || root.drawerOpen || root.open)
     readonly property real drawerX: attachedRight
         ? width - attachedInset - primaryExtent + drawerOffset
@@ -67,8 +70,9 @@ Item {
     property bool drawerOpen: false
     property bool drawerClosingMotion: false
     property real drawerOffset: drawerOpen ? 0 : primaryExtent
+    property bool _retainVisible: false
 
-    visible: root.active || root.drawerOpen || root.drawerOffset < root.primaryExtent
+    visible: root.presentationOpen || root.drawerOpen || root.drawerOffset < root.primaryExtent
 
     onVisibleChanged: {
         if (!visible) {
@@ -77,7 +81,29 @@ Item {
         }
     }
 
+    onActiveChanged: {
+        if (root.active) {
+            closeRetainTimer.stop();
+            root._retainVisible = true;
+            root.drawerClosingMotion = false;
+            if (root.open) {
+                if (root.openDelay <= 0) {
+                    root.drawerOpen = true;
+                } else {
+                    openDelayTimer.restart();
+                }
+            }
+        } else {
+            root._retainVisible = true;
+            closeRetainTimer.restart();
+            root.drawerClosingMotion = true;
+            openDelayTimer.stop();
+            root.drawerOpen = false;
+        }
+    }
+
     Component.onCompleted: {
+        root._retainVisible = root.active;
         if (root.active) {
             root.drawerClosingMotion = false;
             if (root.open && root.openDelay <= 0) {
@@ -88,22 +114,12 @@ Item {
         }
     }
 
-    onActiveChanged: {
-        if (!root.active) {
-            root.drawerClosingMotion = true;
-            openDelayTimer.stop();
-            root.drawerOpen = false;
-            return;
-        }
+    property Timer closeRetainTimer: Timer {
+        id: closeRetainTimer
 
-        root.drawerClosingMotion = false;
-        if (root.open) {
-            if (root.openDelay <= 0) {
-                root.drawerOpen = true;
-            } else {
-                openDelayTimer.restart();
-            }
-        }
+        interval: Math.max(0, root.closeDurationMs)
+        repeat: false
+        onTriggered: root._retainVisible = false
     }
 
     onOpenChanged: {
@@ -250,6 +266,8 @@ Item {
     Primitives.SurfaceShadow {
         source: shadowShape
         enabled: root.edgeInset > 0 && root.shadowEnabled
+        offsetX: root.shadowOffsetX
+        offsetY: root.shadowOffsetY
     }
 
     Item {

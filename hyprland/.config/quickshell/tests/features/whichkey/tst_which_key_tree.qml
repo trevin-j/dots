@@ -12,6 +12,7 @@ TestCase {
             closeOnUnknown: false,
             title: "Leader",
             binds: [
+                { keys: "<enter>", description: "App drawer", command: "qs ipc call appdrawer toggle" },
                 { keys: "Wf", description: "Fullscreen", command: "cmd" },
                 { keys: "w-", description: "Invalid", command: "bad" },
                 { keys: "wf", description: "Duplicate", command: "dup" }
@@ -20,13 +21,15 @@ TestCase {
 
         compare(normalized.enabled, true);
         compare(normalized.closeOnUnknown, false);
-        compare(normalized.binds.length, 1);
-        compare(normalized.binds[0].keys, "wf");
+        compare(normalized.binds.length, 2);
+        compare(normalized.binds[0].keys[0], "<enter>");
+        compare(normalized.binds[1].keys.join(""), "wf");
     }
 
     function test_buildTreeAndEntries() {
         const config = WhichKeyTree.normalizeConfig({
             binds: [
+                { keys: "<enter>", description: "App drawer", command: "qs ipc call appdrawer toggle" },
                 { keys: "w", description: "Window" },
                 { keys: "wf", description: "Fullscreen", command: "hyprctl dispatch fullscreen" }
             ]
@@ -34,9 +37,12 @@ TestCase {
         const tree = WhichKeyTree.buildTree(config.binds);
 
         const rootEntries = WhichKeyTree.entriesForPath(tree, []);
-        compare(rootEntries.length, 1);
-        compare(rootEntries[0].key, "w");
-        compare(rootEntries[0].hasChildren, true);
+        compare(rootEntries.length, 2);
+        compare(rootEntries[0].key, "<enter>");
+        compare(rootEntries[0].label, "Enter");
+        compare(rootEntries[0].command, "qs ipc call appdrawer toggle");
+        compare(rootEntries[1].key, "w");
+        compare(rootEntries[1].hasChildren, true);
 
         const windowEntries = WhichKeyTree.entriesForPath(tree, ["w"]);
         compare(windowEntries.length, 1);

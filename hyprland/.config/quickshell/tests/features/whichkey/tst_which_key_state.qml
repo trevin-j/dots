@@ -13,6 +13,7 @@ TestCase {
             enabled: true,
             closeOnUnknown: true,
             binds: [
+                { keys: "<enter>", description: "App drawer", command: "qs ipc call appdrawer toggle" },
                 { keys: "w", description: "Window" },
                 { keys: "wf", description: "Fullscreen", command: "hyprctl dispatch fullscreen" }
             ]
@@ -65,5 +66,13 @@ TestCase {
         state.openLeader();
         state.activateEntry("x");
         compare(state.open, false);
+    }
+
+    function test_enterBindAtLeaderRoot() {
+        state.openLeader();
+        state.activateEntry("<enter>");
+
+        compare(state.open, false);
+        compare(lastCommand, "qs ipc call appdrawer toggle");
     }
 }

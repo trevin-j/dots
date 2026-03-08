@@ -86,7 +86,7 @@ QtObject {
             return;
         }
         const normalizedKey = key.toLowerCase();
-        if (!/^[a-z0-9]$/.test(normalizedKey)) {
+        if (!/^[a-z0-9]$/.test(normalizedKey) && normalizedKey !== "<enter>") {
             if (root.closeOnUnknown) {
                 root.close();
             }
