@@ -224,11 +224,6 @@ export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
 # Flutter
 export PATH="$HOME/.flutter/flutter/bin:$PATH"
 
-# Local env settings! Add your local settings to ~/.localrc.
-if [[ -f ~/.localrc ]]; then
-    source ~/.localrc
-fi
-
 # Dart completions
 [[ -f ~/.dart-cli-completion/zsh-config.zsh ]] && . ~/.dart-cli-completion/zsh-config.zsh || true
 

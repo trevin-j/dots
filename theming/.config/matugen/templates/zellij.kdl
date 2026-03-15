@@ -3,10 +3,10 @@ themes {
         text_unselected {
             base {{colors.on_surface_variant.default.red}} {{colors.on_surface_variant.default.green}} {{colors.on_surface_variant.default.blue}}
             background {{colors.surface.default.red}} {{colors.surface.default.green}} {{colors.surface.default.blue}}
-            emphasis_0 {{colors.tertiary.default.red}} {{colors.tertiary.default.green}} {{colors.tertiary.default.blue}}
+            emphasis_0 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
             emphasis_1 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
-            emphasis_2 {{colors.secondary.default.red}} {{colors.secondary.default.green}} {{colors.secondary.default.blue}}
-            emphasis_3 {{colors.secondary_fixed_dim.default.red}} {{colors.secondary_fixed_dim.default.green}} {{colors.secondary_fixed_dim.default.blue}}
+            emphasis_2 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
+            emphasis_3 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
         }
         text_selected {
             base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
@@ -19,10 +19,10 @@ themes {
         ribbon_unselected {
             base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
             background {{colors.surface_container.default.red}} {{colors.surface_container.default.green}} {{colors.surface_container.default.blue}}
-            emphasis_0 {{colors.tertiary.default.red}} {{colors.tertiary.default.green}} {{colors.tertiary.default.blue}}
-            emphasis_1 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
-            emphasis_2 {{colors.secondary.default.red}} {{colors.secondary.default.green}} {{colors.secondary.default.blue}}
-            emphasis_3 {{colors.secondary_fixed_dim.default.red}} {{colors.secondary_fixed_dim.default.green}} {{colors.secondary_fixed_dim.default.blue}}
+            emphasis_0 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
+            emphasis_1 {{colors.surface_container.default.red}} {{colors.surface_container.default.green}} {{colors.surface_container.default.blue}}
+            emphasis_2 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
+            emphasis_3 {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
         }
         ribbon_selected {
             base {{colors.on_primary.default.red}} {{colors.on_primary.default.green}} {{colors.on_primary.default.blue}}

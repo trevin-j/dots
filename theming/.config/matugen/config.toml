@@ -33,11 +33,6 @@ input_path = 'templates/zellij.kdl'
 output_path = '~/.config/zellij/themes/matugen.kdl'
 post_hook = 'touch ~/.config/zellij/config.kdl'
 
-# [templates.terminals]
-# input_path = "templates/update_terminals.sh"
-# output_path = '~/.cache/update_terminals.sh'
-# post_hook = 'sh ~/.cache/update_terminals.sh'
-
 [templates.quickshell]
 input_path = "templates/quickshell.json"
 output_path = "~/.config/quickshell/config/palette.json"
@@ -51,6 +46,11 @@ post_hook = 'hyprctl setcursor "{{ mode | replace: "light", "Bibata-Modern-Ice" 
 input_path = "templates/ghostty"
 output_path = "~/.config/ghostty/colors"
 post_hook = "kill -s USR2 $(pgrep ghostty)"
+
+[templates.foot]
+input_path = "templates/foot.ini"
+output_path = "~/.config/foot/colors.ini"
+post_hook = "python3 ~/.config/matugen/push_term_colors.py ~/.config/foot/colors.ini"
 
 [templates.materialized-web]
 input_path = "templates/materialized-web.json"

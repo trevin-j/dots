@@ -1,4 +1,4 @@
-export requires=(ghostty theming tl waybar)
+export requires=(foot theming waybar)
 export require_aur="true"
 export deps=(
     sudo bash coreutils
