@@ -136,6 +136,7 @@ keybinds clear-defaults=true {
             }
             SwitchToMode "locked"
         }
+        bind "x" { Quit; }
         bind "w" {
             LaunchOrFocusPlugin "session-manager" {
                 floating true
@@ -398,7 +399,7 @@ pane_frames false
 //   - true (default)
 //   - false
 // 
-// session_serialization false
+session_serialization false
  
 // Whether pane viewports are serialized along with the session, default is false
 // Options:
@@ -500,7 +501,7 @@ show_startup_tips false
  
 // Whether to enable mouse hover effects and pane grouping functionality
 // default is true
-// advanced_mouse_actions false
+advanced_mouse_actions false
  
 // The ip address the web server should listen on when it starts
 // Default: "127.0.0.1"

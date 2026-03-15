@@ -49,12 +49,12 @@ themes {
             emphasis_3 {{colors.secondary_fixed_dim.default.red}} {{colors.secondary_fixed_dim.default.green}} {{colors.secondary_fixed_dim.default.blue}}
         }
         table_cell_selected {
-            base {{colors.on_primary.default.red}} {{colors.on_primary.default.green}} {{colors.on_primary.default.blue}}
-            background {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
-            emphasis_0 {{colors.tertiary_fixed.default.red}} {{colors.tertiary_fixed.default.green}} {{colors.tertiary_fixed.default.blue}}
-            emphasis_1 {{colors.primary_fixed.default.red}} {{colors.primary_fixed.default.green}} {{colors.primary_fixed.default.blue}}
-            emphasis_2 {{colors.secondary_fixed.default.red}} {{colors.secondary_fixed.default.green}} {{colors.secondary_fixed.default.blue}}
-            emphasis_3 {{colors.secondary_fixed.default.red}} {{colors.secondary_fixed.default.green}} {{colors.secondary_fixed.default.blue}}
+            base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            background {{colors.surface_container_high.default.red}} {{colors.surface_container_high.default.green}} {{colors.surface_container_high.default.blue}}
+            emphasis_0 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_1 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_2 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_3 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
         }
         list_unselected {
             base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
@@ -65,12 +65,12 @@ themes {
             emphasis_3 {{colors.secondary_fixed_dim.default.red}} {{colors.secondary_fixed_dim.default.green}} {{colors.secondary_fixed_dim.default.blue}}
         }
         list_selected {
-            base {{colors.on_primary.default.red}} {{colors.on_primary.default.green}} {{colors.on_primary.default.blue}}
-            background {{colors.primary.default.red}} {{colors.primary.default.green}} {{colors.primary.default.blue}}
-            emphasis_0 {{colors.tertiary_fixed.default.red}} {{colors.tertiary_fixed.default.green}} {{colors.tertiary_fixed.default.blue}}
-            emphasis_1 {{colors.primary_fixed.default.red}} {{colors.primary_fixed.default.green}} {{colors.primary_fixed.default.blue}}
-            emphasis_2 {{colors.secondary_fixed.default.red}} {{colors.secondary_fixed.default.green}} {{colors.secondary_fixed.default.blue}}
-            emphasis_3 {{colors.secondary_fixed.default.red}} {{colors.secondary_fixed.default.green}} {{colors.secondary_fixed.default.blue}}
+            base {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            background {{colors.surface_container_high.default.red}} {{colors.surface_container_high.default.green}} {{colors.surface_container_high.default.blue}}
+            emphasis_0 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_1 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_2 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
+            emphasis_3 {{colors.on_surface.default.red}} {{colors.on_surface.default.green}} {{colors.on_surface.default.blue}}
         }
         frame_unselected {
             base {{colors.outline_variant.default.red}} {{colors.outline_variant.default.green}} {{colors.outline_variant.default.blue}}
