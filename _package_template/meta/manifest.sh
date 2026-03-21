@@ -7,17 +7,7 @@ export pacman_deps=()
 # System dependencies installed via an AUR helper
 export aur_deps=()
 
-# Pre-download hook
-# pre_dl() {
-#     # Code to run before downloading dependencies
-# }
-
-# Pre-stow hook
-# pre_stow() {
-#     # Code to run before stowing config
-# }
-
-# Post-stow hook
-# post_stow() {
-#     # Code to run after stowing config
-# }
+# Optional hook scripts (must be executable):
+#   meta/pre_dl      runs before dependency installation
+#   meta/pre_stow    runs before stowing
+#   meta/post_stow   runs after stowing

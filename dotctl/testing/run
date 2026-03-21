@@ -230,9 +230,9 @@ test_repeat_add_merges_non_folded_directory() {
 
 test_install_resolves_dependencies_once() {
     setup_sandbox
-    make_package c $'export requires=()\nexport deps=(legacy-c)' 
-    make_package b $'export requires=(c)\nexport aur_deps=(aur-b)' 
-    make_package a $'export requires=(b c)\nexport pacman_deps=(pkg-a)' 
+    make_package c $'export requires=()\nexport pacman_deps=(legacy-c)'
+    make_package b $'export requires=(c)\nexport aur_deps=(aur-b)'
+    make_package a $'export requires=(b c)\nexport pacman_deps=(pkg-a)'
 
     "$DOTCTL_SCRIPT" install a
 
@@ -268,6 +268,38 @@ test_install_consumes_global_flags() {
     assert_file_contains "$SANDBOX_LOG/stow.log" 'stow demo'
 }
 
+test_hook_file_runs_pre_stow() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    printf 'echo pre_stow_ran >> "%s/hook.log"\n' "$SANDBOX_LOG" >"$DOTDIR/demo/meta/pre_stow"
+    chmod +x "$DOTDIR/demo/meta/pre_stow"
+
+    "$DOTCTL_SCRIPT" install demo
+
+    assert_file_contains "$SANDBOX_LOG/hook.log" 'pre_stow_ran'
+}
+
+test_hook_file_runs_post_stow() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    printf 'echo post_stow_ran >> "%s/hook.log"\n' "$SANDBOX_LOG" >"$DOTDIR/demo/meta/post_stow"
+    chmod +x "$DOTDIR/demo/meta/post_stow"
+
+    "$DOTCTL_SCRIPT" install demo
+
+    assert_file_contains "$SANDBOX_LOG/hook.log" 'post_stow_ran'
+}
+
+test_missing_hook_does_not_error() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+
+    output=$("$DOTCTL_SCRIPT" install demo)
+
+    assert_output_contains "$output" 'Installing packages: demo'
+    assert_output_contains "$output" 'Finished installing demo.'
+}
+
 test_upgrade_consumes_no_pull_flag() {
     setup_sandbox
     make_package demo $'export requires=()'
@@ -300,6 +332,9 @@ run_case 'repeat add merges non-folded dir' test_repeat_add_merges_non_folded_di
 run_case 'install resolves dependencies once' test_install_resolves_dependencies_once
 run_case 'install detects dependency cycles' test_install_detects_cycles
 run_case 'install consumes global flags' test_install_consumes_global_flags
+run_case 'hook file runs pre_stow' test_hook_file_runs_pre_stow
+run_case 'hook file runs post_stow' test_hook_file_runs_post_stow
+run_case 'missing hook does not error' test_missing_hook_does_not_error
 run_case 'upgrade consumes no-pull flag' test_upgrade_consumes_no_pull_flag
 run_case 'installed symlink works' test_installed_symlink_works
 

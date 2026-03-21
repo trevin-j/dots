@@ -51,6 +51,12 @@
   - Why it matters: it leaves temp state behind and is harder to repeat cleanly.
   - Fix pattern: use a proper temp directory and clean it up automatically.
 
+## Resolved
+
+- ~~**Flag parsing is brittle**~~ — fixed in commit `dddf023`; replaced ad hoc detection with a proper argument parse loop.
+- ~~**Manifest loading is too coupled to shell execution**~~ — fixed; `load_manifest` now parses manifests line-by-line without `source`, hooks moved to executable files at `meta/pre_dl`, `meta/pre_stow`, `meta/post_stow`, executed as isolated subprocesses via `run_pkg_hook`.
+- ~~**Help output lags the actual feature set**~~ — fixed in commit `dddf023`; help now documents all commands and global flags.
+
 ## Testing Notes
 
 - The current shell test suite passed, but it only covers six cases and misses the riskiest edges.

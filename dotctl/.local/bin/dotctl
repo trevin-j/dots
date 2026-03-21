@@ -91,32 +91,56 @@ normalize_path() {
     realpath -m -s "$1"
 }
 
-reset_manifest_context() {
-    require_aur="false"
+load_manifest() {
+    local manifest="$1"
+    local line key value
+
     requires=()
-    deps=()
     pacman_deps=()
     aur_deps=()
 
-    pre_dl() { :; }
-    pre_stow() { :; }
-    post_stow() { :; }
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line=${line#"${line%%[![:space:]]*}"}
+        [[ -z "$line" || "$line" == \#* ]] && continue
+
+        if [[ "$line" =~ ^export\ (requires|pacman_deps|aur_deps|deps)= ]]; then
+            key="${line#export }"
+            key="${key%%=*}"
+            value="${line#*=\(}"
+            value="${value%\)}"
+            value="${value//[\'\"]/}"
+
+            if [[ "$key" == "deps" ]]; then
+                continue
+            fi
+
+            read -ra parts <<< "$value"
+            for part in "${parts[@]}"; do
+                [[ -z "$part" ]] && continue
+                case "$key" in
+                    requires)   requires+=("$part") ;;
+                    pacman_deps) pacman_deps+=("$part") ;;
+                    aur_deps)    aur_deps+=("$part") ;;
+                esac
+            done
+        fi
+    done < "$manifest"
 }
 
-load_manifest() {
-    local manifest="$1"
+run_pkg_hook() {
+    local pkg="$1"
+    local pkgdir="$2"
+    local hook_name="$3"
+    local hook_file="$pkgdir/meta/$hook_name"
 
-    reset_manifest_context
-    # shellcheck disable=SC1090
-    source "$manifest"
+    [[ -x "$hook_file" ]] || return 0
 
-    if [[ ${#deps[@]} -gt 0 ]]; then
-        if [[ "$require_aur" == "true" ]]; then
-            aur_deps+=("${deps[@]}")
-        else
-            pacman_deps+=("${deps[@]}")
-        fi
-    fi
+    DOTDIR="$DOTDIR" \
+    DATADIR="$DATADIR" \
+    PACKAGE="$pkg" \
+    PACKAGE_DIR="$pkgdir" \
+    HOME="$HOME" \
+    "$hook_file"
 }
 
 handle_deps() {
@@ -224,14 +248,14 @@ perform_install_pkg() {
 
     echo
     echo "=== Installing $pkg ==="
-    pre_dl
+    run_pkg_hook "$pkg" "$pkgdir" pre_dl
     handle_deps pacman "${pacman_deps[@]}"
     handle_deps aur "${aur_deps[@]}"
-    pre_stow
+    run_pkg_hook "$pkg" "$pkgdir" pre_stow
     backup_conflicts "$pkg"
     echo "Stowing $pkg..."
     stow --dir="$DOTDIR" --target="$HOME" --no-folding "$pkg"
-    post_stow
+    run_pkg_hook "$pkg" "$pkgdir" post_stow
     echo "Finished installing $pkg."
 
     if [[ -n "$current_commit" ]]; then
