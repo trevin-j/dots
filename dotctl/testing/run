@@ -300,6 +300,68 @@ test_missing_hook_does_not_error() {
     assert_output_contains "$output" 'Finished installing demo.'
 }
 
+test_conflict_detection_reports_existing_file() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.config/demo"
+    printf 'existing\n' >"$HOME/.config/demo/config"
+
+    output=$("$DOTCTL_SCRIPT" install demo -y 2>&1 || true)
+
+    assert_output_contains "$output" 'Conflicts detected in package '\''demo'\'''
+    assert_output_contains "$output" '~/.config/demo/config'
+}
+
+test_conflict_detection_skips_managed_symlink() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$DOTDIR/demo/.config/demo"
+    printf 'managed\n' >"$DOTDIR/demo/.config/demo/config"
+    mkdir -p "$HOME/.config/demo"
+    ln -s "$DOTDIR/demo/.config/demo/config" "$HOME/.config/demo/config"
+
+    output=$("$DOTCTL_SCRIPT" install demo -y 2>&1 || true)
+
+    assert_output_not_contains "$output" 'Conflicts detected'
+}
+
+test_conflict_detection_reports_broken_symlink() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.config/demo"
+    ln -s "$DOTDIR/nonexistent" "$HOME/.config/demo/config"
+
+    output=$("$DOTCTL_SCRIPT" install demo -y 2>&1 || true)
+
+    assert_output_contains "$output" 'Conflicts detected in package '\''demo'\'''
+}
+
+test_conflict_backup_and_install_succeeds() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.config/demo"
+    printf 'to-be-backed-up\n' >"$HOME/.config/demo/config"
+
+    output=$("$DOTCTL_SCRIPT" install demo -y)
+
+    assert_output_contains "$output" 'Backing up'
+    assert_output_contains "$output" 'Finished installing demo.'
+    assert_file_contains "$SANDBOX_LOG/stow.log" 'stow demo'
+}
+
+test_conflict_aborts_without_confirmation() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.config/demo"
+    printf 'conflict\n' >"$HOME/.config/demo/config"
+
+    if "$DOTCTL_SCRIPT" install demo 2>/dev/null; then
+        fail 'Expected install to fail due to conflict'
+    fi
+
+    assert_not_exists "$SANDBOX_LOG/stow.log"
+}
+
 test_upgrade_consumes_no_pull_flag() {
     setup_sandbox
     make_package demo $'export requires=()'
@@ -335,6 +397,11 @@ run_case 'install consumes global flags' test_install_consumes_global_flags
 run_case 'hook file runs pre_stow' test_hook_file_runs_pre_stow
 run_case 'hook file runs post_stow' test_hook_file_runs_post_stow
 run_case 'missing hook does not error' test_missing_hook_does_not_error
+run_case 'conflict detection reports existing file' test_conflict_detection_reports_existing_file
+run_case 'conflict detection skips managed symlink' test_conflict_detection_skips_managed_symlink
+run_case 'conflict detection reports broken symlink' test_conflict_detection_reports_broken_symlink
+run_case 'conflict backup and install succeeds' test_conflict_backup_and_install_succeeds
+run_case 'conflict aborts without confirmation' test_conflict_aborts_without_confirmation
 run_case 'upgrade consumes no-pull flag' test_upgrade_consumes_no_pull_flag
 run_case 'installed symlink works' test_installed_symlink_works
 

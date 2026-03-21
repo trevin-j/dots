@@ -32,6 +32,12 @@ assert_output_contains() {
     [[ "$output" == *"$needle"* ]] || fail "Expected output to contain '$needle'"
 }
 
+assert_output_not_contains() {
+    local output="$1"
+    local needle="$2"
+    [[ "$output" != *"$needle"* ]] || fail "Expected output to not contain '$needle'"
+}
+
 assert_equals() {
     local expected="$1"
     local actual="$2"

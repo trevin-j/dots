@@ -91,6 +91,86 @@ normalize_path() {
     realpath -m -s "$1"
 }
 
+is_managed_symlink() {
+    local path="$1"
+
+    [[ -L "$path" ]] || return 1
+
+    local real_dest
+    real_dest=$(realpath "$path" 2>/dev/null) || return 1
+
+    [[ -e "$real_dest" ]] || return 1
+
+    path_is_within "$real_dest" "$DOTDIR"
+}
+
+detect_package_conflicts() {
+    local pkg="$1"
+    local pkgdir="$DOTDIR/$pkg"
+
+    mapfile -t conflicts < <(
+        while IFS= read -r item; do
+            [[ -f "$item" ]] || continue
+
+            local rel_path="${item#$pkgdir/}"
+            local target="$HOME/$rel_path"
+
+            if [[ -d "$target" ]]; then
+                continue
+            fi
+
+            if [[ -e "$target" || -L "$target" ]]; then
+                if ! is_managed_symlink "$target"; then
+                    printf '%s\n' "$rel_path"
+                fi
+            fi
+        done < <(find "$pkgdir" -type f 2>/dev/null)
+    )
+
+    if ((${#conflicts[@]} == 0)); then
+        return
+    fi
+
+    echo "Conflicts detected in package '$pkg':"
+    local conflict
+    for conflict in "${conflicts[@]}"; do
+        echo "  ~/$conflict"
+    done
+
+    local should_proceed="false"
+    if [[ "$YES" == "true" ]]; then
+        should_proceed="true"
+    elif confirm "Back up conflicting files and replace?"; then
+        should_proceed="true"
+    fi
+
+    if [[ "$should_proceed" != "true" ]]; then
+        die "Aborting."
+    fi
+
+    for conflict in "${conflicts[@]}"; do
+        local backup="$HOME/$conflict.backup.$(date +%s)"
+        echo "Backing up ~/$conflict -> $backup"
+        mv "$HOME/$conflict" "$backup"
+    done
+}
+
+check_stow_sanity() {
+    local pkg="$1"
+
+    local unexpected
+    mapfile -t unexpected < <(
+        stow --dir="$DOTDIR" --target="$HOME" --no-folding -nv "$pkg" 2>&1 \
+            | sed -n 's/.*existing target \(.*\) since.*/\1/p'
+    )
+
+    if ((${#unexpected[@]} != 0)); then
+        echo "Unexpected conflicts remain after backup:" >&2
+        printf '  %s\n' "${unexpected[@]}" >&2
+        die "Sanity check failed. Aborting to avoid data loss."
+    fi
+}
+
 load_manifest() {
     local manifest="$1"
     local line key value
@@ -169,30 +249,8 @@ backup_conflicts() {
     local pkg="$1"
 
     echo "Checking for conflicts..."
-    mapfile -t conflicts < <(
-        stow --dir="$DOTDIR" --target="$HOME" --no-folding -nv "$pkg" 2>&1 \
-            | sed -n 's/.*existing target \(.*\) since.*/\1/p'
-    )
-
-    if (( ${#conflicts[@]} == 0 )); then
-        return
-    fi
-
-    echo "Conflicts detected in package '$pkg':"
-    local conflict
-    for conflict in "${conflicts[@]}"; do
-        echo "  ~/$conflict"
-    done
-
-    if ! confirm "Back up conflicting files and replace?"; then
-        die "Aborting."
-    fi
-
-    for conflict in "${conflicts[@]}"; do
-        local backup="$HOME/$conflict.backup.$(date +%s)"
-        echo "Backing up ~/$conflict -> $backup"
-        mv "$HOME/$conflict" "$backup"
-    done
+    detect_package_conflicts "$pkg"
+    check_stow_sanity "$pkg"
 }
 
 resolve_pkg_plan() {
