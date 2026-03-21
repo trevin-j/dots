@@ -465,12 +465,58 @@ process_track_pkg() {
     stow --dir="$DOTDIR" --target="$HOME" --no-folding "$package"
 }
 
-process_upgrade_pkg() {
-    if [[ "$NOPULL" != "true" ]]; then
-        echo "Pulling git repo..."
-        git -C "$DOTDIR" pull
+sync_repo() {
+    if ! git -C "$DOTDIR" diff-index --quiet HEAD -- 2>/dev/null; then
+        echo "Uncommitted changes detected in $DOTDIR." >&2
+        echo "Commit or stash your changes before syncing." >&2
+        echo "To stash: cd $DOTDIR && git stash" >&2
+        echo "To restore: cd $DOTDIR && git stash pop" >&2
+        return 1
     fi
 
+    if ! git -C "$DOTDIR" symbolic-ref -q HEAD >/dev/null 2>&1; then
+        echo "Detached HEAD detected in $DOTDIR." >&2
+        echo "Check out a branch before syncing (e.g., git checkout master)." >&2
+        return 1
+    fi
+
+    local current_branch
+    current_branch=$(git -C "$DOTDIR" symbolic-ref --short HEAD 2>/dev/null)
+    echo "Syncing $DOTDIR (branch: $current_branch)..."
+
+    if ! git -C "$DOTDIR" pull --ff-only; then
+        echo "Fast-forward only failed. The local branch has diverged from remote." >&2
+        echo "Resolve the divergence manually: cd $DOTDIR && git status" >&2
+        return 1
+    fi
+
+    echo "Sync complete."
+}
+
+process_sync() {
+    if ! sync_repo; then
+        die "Sync failed."
+    fi
+}
+
+process_update_pkg() {
+    echo "Syncing repo..."
+    if ! sync_repo; then
+        die "Sync failed. Aborting update."
+    fi
+
+    echo
+    echo "Upgrading installed packages..."
+    while read -r pkg_file; do
+        local pkg
+        pkg=$(basename "$pkg_file")
+        pkg=${pkg%.commit}
+        echo "Upgrading $pkg..."
+        perform_install_pkg "$pkg"
+    done < <(find "$DATADIR" -type f -name '*.commit')
+}
+
+process_upgrade_pkg() {
     while read -r pkg_file; do
         local pkg
         pkg=$(basename "$pkg_file")
@@ -488,8 +534,9 @@ Usage:
   dotctl [--force] [-y] install [PKG|PKG PKG|all]
   dotctl [--force] [-y] track [PACKAGE] [...PATH]
   dotctl [--force] [-y] add [PACKAGE] [...PATH]
-  dotctl [--no-pull] upgrade
-  dotctl [--no-pull] update
+  dotctl upgrade
+  dotctl sync
+  dotctl update
   dotctl ls
   dotctl list
   dotctl help
@@ -498,8 +545,9 @@ Commands:
   install     Install one or more packages
   track       Track an existing config into a package
   add         Alias for track
-  upgrade     Pull the dotfiles repo and reinstall installed packages
-  update      Alias for upgrade
+  upgrade     Reinstall all installed packages (no repo sync)
+  sync        Pull the dotfiles repo safely (ff-only, clean state required)
+  update      Sync the repo then upgrade installed packages
   ls          List installed and not installed packages
   list        Alias for ls
   help        Show this help
@@ -507,7 +555,6 @@ Commands:
 Global options:
   --force     Reinstall packages even when the tracked commit is unchanged
   -y          Answer yes to confirmation prompts
-  --no-pull   Skip the git pull step during upgrade/update
 EOF
 }
 
@@ -518,7 +565,6 @@ fi
 
 DOTCTL_FORCE="false"
 YES="false"
-NOPULL="false"
 
 cmd=""
 declare -a cmd_args=()
@@ -545,13 +591,6 @@ while [[ $# -gt 0 ]]; do
                 continue
             fi
             ;;
-        --no-pull)
-            if [[ "$parse_globals" == "true" ]]; then
-                NOPULL="true"
-                shift
-                continue
-            fi
-            ;;
     esac
 
     if [[ -z "$cmd" ]]; then
@@ -564,7 +603,6 @@ done
 
 export DOTCTL_FORCE
 export YES
-export NOPULL
 
 [[ -n "$cmd" ]] || die "Specify a command."
 set -- "${cmd_args[@]}"
@@ -603,8 +641,19 @@ case "$cmd" in
     help|--help|-h)
         show_help
         ;;
-    upgrade|update)
+    upgrade)
+        if [[ "${1:-}" == "--no-pull" ]]; then
+            echo "error: --no-pull is no longer supported for upgrade." >&2
+            echo "upgrade no longer syncs the repo; use sync or update instead." >&2
+            exit 1
+        fi
         process_upgrade_pkg
+        ;;
+    sync)
+        process_sync
+        ;;
+    update)
+        process_update_pkg
         ;;
     ls|list)
         mapfile -t all_pkgs < <(

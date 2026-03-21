@@ -88,23 +88,44 @@ EOF
 
     cat >"$SANDBOX_BIN/git" <<'EOF'
 #!/usr/bin/env bash
-set -euo pipefail
 
 LOG_DIR=${DOTCTL_TEST_LOG_DIR:?}
+GIT_STUB_DIRTY=${GIT_STUB_DIRTY:-0}
 
 if [[ "$1" == "-C" ]]; then
     shift 2
 fi
 
+GIT_DIR=${DOTDIR:-.}
+
 case "$1" in
     log)
-        printf 'fake-%s\n' "${@: -1}"
+        printf 'current-%s\n' "${@: -1}"
         ;;
     pull)
         printf 'git pull\n' >>"$LOG_DIR/git.log"
         ;;
     clone)
         printf 'git clone %s\n' "$2" >>"$LOG_DIR/git.log"
+        ;;
+    diff-index)
+        if [[ "$GIT_STUB_DIRTY" == "1" ]]; then
+            exit 1
+        fi
+        exit 0
+        ;;
+    symbolic-ref)
+        if [[ "$*" == *"symbolic-ref -q HEAD"* ]]; then
+            exit 0
+        fi
+        if [[ "$*" == *"symbolic-ref --short HEAD"* ]]; then
+            printf 'master\n'
+            exit 0
+        fi
+        exit 1
+        ;;
+    stash)
+        printf 'git stash %s\n' "${2:-}" >>"$LOG_DIR/git.log"
         ;;
     *)
         printf 'git %s\n' "$*" >>"$LOG_DIR/git.log"
@@ -362,16 +383,52 @@ test_conflict_aborts_without_confirmation() {
     assert_not_exists "$SANDBOX_LOG/stow.log"
 }
 
-test_upgrade_consumes_no_pull_flag() {
+test_upgrade_rejects_no_pull_flag() {
     setup_sandbox
     make_package demo $'export requires=()'
     mkdir -p "$HOME/.local/share/dotctl"
     printf 'fake-demo\n' >"$HOME/.local/share/dotctl/demo.commit"
 
-    output=$("$DOTCTL_SCRIPT" upgrade --no-pull)
+    output=$("$DOTCTL_SCRIPT" upgrade --no-pull 2>&1 || true)
 
+    assert_output_contains "$output" '--no-pull is no longer supported for upgrade'
+    assert_output_contains "$output" 'use sync or update instead'
+}
+
+test_sync_succeeds_on_clean_repo() {
+    setup_sandbox
+    export GIT_STUB_DIRTY=0
+
+    output=$("$DOTCTL_SCRIPT" sync)
+
+    assert_output_contains "$output" 'Syncing'
+    assert_output_contains "$output" 'Sync complete.'
+}
+
+test_sync_fails_on_dirty_repo() {
+    setup_sandbox
+    export GIT_STUB_DIRTY=1
+
+    if output=$("$DOTCTL_SCRIPT" sync 2>&1); then
+        fail 'Expected sync to fail on dirty repo'
+    fi
+
+    assert_output_contains "$output" 'Uncommitted changes detected'
+    assert_output_contains "$output" 'Commit or stash'
+}
+
+test_update_combines_sync_and_upgrade() {
+    setup_sandbox
+    export GIT_STUB_DIRTY=0
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.local/share/dotctl"
+    printf 'fake-demo\n' >"$HOME/.local/share/dotctl/demo.commit"
+
+    output=$("$DOTCTL_SCRIPT" update)
+
+    assert_output_contains "$output" 'Syncing'
     assert_output_contains "$output" 'Upgrading demo...'
-    assert_not_exists "$SANDBOX_LOG/git.log"
+    assert_output_contains "$output" 'Finished installing demo.'
 }
 
 test_installed_symlink_works() {
@@ -383,7 +440,8 @@ test_installed_symlink_works() {
 
     assert_output_contains "$output" 'dotctl - manage your dotfiles'
     assert_output_contains "$output" 'dotctl [--force] [-y] add [PACKAGE] [...PATH]'
-    assert_output_contains "$output" '--no-pull   Skip the git pull step during upgrade/update'
+    assert_output_contains "$output" 'sync        Pull the dotfiles repo safely'
+    assert_output_contains "$output" 'update      Sync the repo then upgrade installed packages'
 }
 
 trap cleanup_sandbox EXIT
@@ -402,7 +460,10 @@ run_case 'conflict detection skips managed symlink' test_conflict_detection_skip
 run_case 'conflict detection reports broken symlink' test_conflict_detection_reports_broken_symlink
 run_case 'conflict backup and install succeeds' test_conflict_backup_and_install_succeeds
 run_case 'conflict aborts without confirmation' test_conflict_aborts_without_confirmation
-run_case 'upgrade consumes no-pull flag' test_upgrade_consumes_no_pull_flag
+run_case 'upgrade rejects no-pull flag' test_upgrade_rejects_no_pull_flag
+run_case 'sync succeeds on clean repo' test_sync_succeeds_on_clean_repo
+run_case 'sync fails on dirty repo' test_sync_fails_on_dirty_repo
+run_case 'update combines sync and upgrade' test_update_combines_sync_and_upgrade
 run_case 'installed symlink works' test_installed_symlink_works
 
 echo "All $TEST_COUNT dotctl tests passed."
