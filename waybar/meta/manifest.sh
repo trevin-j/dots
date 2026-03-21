@@ -1,3 +1,3 @@
 export requires=(fonts)
-export require_aur="false"
-export deps=(waybar)
+export pacman_deps=(waybar)
+export aur_deps=()

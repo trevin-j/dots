@@ -1,11 +1,11 @@
 # Required packages to have already been installed from this repo
 export requires=()
 
-# Do any dependencies need to be installed via AUR?
-export require_aur="true"
+# System dependencies installed via pacman
+export pacman_deps=()
 
-# System dependencies (to be installed via pacman or aur helper)
-export deps=(opencode-bin)
+# System dependencies installed via an AUR helper
+export aur_deps=(opencode-bin)
 
 # Pre-download hook
 # pre_dl() {

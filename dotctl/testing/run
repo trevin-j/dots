@@ -1,0 +1,281 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+PACKAGE_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd -P)
+REPO_ROOT=$(cd -- "$PACKAGE_DIR/.." && pwd -P)
+DOTCTL_SCRIPT="$PACKAGE_DIR/.local/bin/dotctl"
+
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/assert.sh"
+
+TEST_COUNT=0
+
+cleanup_sandbox() {
+    if [[ -n "${TEST_ROOT:-}" && -d "$TEST_ROOT" ]]; then
+        rm -rf "$TEST_ROOT"
+    fi
+}
+
+create_stub_commands() {
+    cat >"$SANDBOX_BIN/stow" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOG_DIR=${DOTCTL_TEST_LOG_DIR:?}
+
+dir=""
+target=""
+dry_run="false"
+pkg=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dir=*) dir=${1#--dir=} ;;
+        --target=*) target=${1#--target=} ;;
+        --dir)
+            shift
+            dir="$1"
+            ;;
+        --target)
+            shift
+            target="$1"
+            ;;
+        -n|-nv|-vn)
+            dry_run="true"
+            ;;
+        --no-folding|-v)
+            ;;
+        *)
+            pkg="$1"
+            ;;
+    esac
+    shift
+done
+
+if [[ "$dry_run" == "true" ]]; then
+    printf 'stow-dry-run %s\n' "$pkg" >>"$LOG_DIR/stow-dry-run.log"
+    exit 0
+fi
+
+printf 'stow %s\n' "$pkg" >>"$LOG_DIR/stow.log"
+
+link_tree() {
+    local src_root="$1"
+    local dst_root="$2"
+    mkdir -p "$dst_root"
+
+    local src_item base dst_item
+    for src_item in "$src_root"/* "$src_root"/.[!.]* "$src_root"/..?*; do
+        [[ -e "$src_item" || -L "$src_item" ]] || continue
+        base=$(basename "$src_item")
+        dst_item="$dst_root/$base"
+
+        if [[ -d "$src_item" && ! -L "$src_item" ]]; then
+            rm -rf "$dst_item"
+            mkdir -p "$dst_item"
+            link_tree "$src_item" "$dst_item"
+        else
+            mkdir -p "$(dirname "$dst_item")"
+            rm -rf "$dst_item"
+            ln -s "$src_item" "$dst_item"
+        fi
+    done
+}
+
+link_tree "$dir/$pkg" "$target"
+EOF
+
+    cat >"$SANDBOX_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOG_DIR=${DOTCTL_TEST_LOG_DIR:?}
+
+if [[ "$1" == "-C" ]]; then
+    shift 2
+fi
+
+case "$1" in
+    log)
+        printf 'fake-%s\n' "${@: -1}"
+        ;;
+    pull)
+        printf 'git pull\n' >>"$LOG_DIR/git.log"
+        ;;
+    clone)
+        printf 'git clone %s\n' "$2" >>"$LOG_DIR/git.log"
+        ;;
+    *)
+        printf 'git %s\n' "$*" >>"$LOG_DIR/git.log"
+        ;;
+esac
+EOF
+
+    cat >"$SANDBOX_BIN/sudo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$@"
+EOF
+
+    cat >"$SANDBOX_BIN/pacman" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'pacman %s\n' "$*" >>"${DOTCTL_TEST_LOG_DIR:?}/pacman.log"
+EOF
+
+    cat >"$SANDBOX_BIN/paru" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'paru %s\n' "$*" >>"${DOTCTL_TEST_LOG_DIR:?}/aur.log"
+EOF
+
+    cat >"$SANDBOX_BIN/yay" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'yay %s\n' "$*" >>"${DOTCTL_TEST_LOG_DIR:?}/aur.log"
+EOF
+
+    chmod +x "$SANDBOX_BIN"/*
+}
+
+setup_sandbox() {
+    cleanup_sandbox
+    TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotctl-test.XXXXXX")
+    SANDBOX_HOME="$TEST_ROOT/home"
+    SANDBOX_DOTDIR="$TEST_ROOT/dotdir"
+    SANDBOX_BIN="$TEST_ROOT/bin"
+    SANDBOX_LOG="$TEST_ROOT/log"
+
+    mkdir -p "$SANDBOX_HOME" "$SANDBOX_DOTDIR" "$SANDBOX_BIN" "$SANDBOX_LOG"
+    cp -r "$REPO_ROOT/_package_template" "$SANDBOX_DOTDIR/_package_template"
+    cp -r "$REPO_ROOT/dotctl" "$SANDBOX_DOTDIR/dotctl"
+
+    create_stub_commands
+
+    export HOME="$SANDBOX_HOME"
+    export DOTDIR="$SANDBOX_DOTDIR"
+    export PATH="$SANDBOX_BIN:$PATH"
+    export DOTCTL_TEST_LOG_DIR="$SANDBOX_LOG"
+}
+
+make_package() {
+    local name="$1"
+    local manifest_body="$2"
+
+    mkdir -p "$DOTDIR/$name/meta" "$DOTDIR/$name/.config/$name"
+    printf '%s\n' "$manifest_body" >"$DOTDIR/$name/meta/manifest.sh"
+    printf '%s\n' "$name" >"$DOTDIR/$name/.config/$name/config"
+}
+
+run_case() {
+    local name="$1"
+    shift
+
+    TEST_COUNT=$((TEST_COUNT + 1))
+    printf '[%02d] %s... ' "$TEST_COUNT" "$name"
+    "$@"
+    echo 'ok'
+}
+
+test_add_alias_tracks_path() {
+    setup_sandbox
+    mkdir -p "$HOME/.config/demo"
+    printf 'hello\n' >"$HOME/.config/demo/config.ini"
+
+    "$DOTCTL_SCRIPT" add demo "$HOME/.config/demo"
+
+    assert_file_exists "$DOTDIR/demo/.config/demo/config.ini"
+    assert_file_exists "$HOME/.config/demo"
+    assert_is_symlink "$HOME/.config/demo/config.ini"
+    assert_not_exists "$DOTDIR/demo/.dots"
+}
+
+test_repeat_track_skips_nested_retrack() {
+    setup_sandbox
+    mkdir -p "$HOME/.config/demo"
+    printf 'hello\n' >"$HOME/.config/demo/config.ini"
+
+    "$DOTCTL_SCRIPT" track demo "$HOME/.config/demo"
+    printf 'new\n' >"$HOME/.config/demo/new.ini"
+    "$DOTCTL_SCRIPT" add demo "$HOME/.config/demo"
+
+    assert_file_exists "$DOTDIR/demo/.config/demo/new.ini"
+    assert_is_symlink "$HOME/.config/demo/new.ini"
+    assert_not_exists "$DOTDIR/demo/.dots"
+    assert_not_exists "$DOTDIR/demo/home"
+}
+
+test_repeat_add_merges_non_folded_directory() {
+    setup_sandbox
+    mkdir -p "$DOTDIR/zellij/meta" "$DOTDIR/zellij/.config/zellij"
+    printf 'export requires=()\n' >"$DOTDIR/zellij/meta/manifest.sh"
+    printf 'layout\n' >"$DOTDIR/zellij/.config/zellij/config.kdl"
+    mkdir -p "$HOME/.config/zellij"
+    stow --dir="$DOTDIR" --target="$HOME" --no-folding zellij
+
+    mkdir -p "$HOME/.config/zellij/scripts"
+    printf 'one\n' >"$HOME/.config/zellij/scripts/rename-session.sh"
+
+    output=$("$DOTCTL_SCRIPT" add zellij "$HOME/.config/zellij/scripts")
+
+    printf 'two\n' >"$HOME/.config/zellij/scripts/new.sh"
+    "$DOTCTL_SCRIPT" add zellij "$HOME/.config/zellij/scripts"
+
+    assert_output_contains "$output" 'Stowing zellij...'
+    assert_file_exists "$DOTDIR/zellij/.config/zellij/scripts/new.sh"
+    assert_is_symlink "$HOME/.config/zellij/scripts/new.sh"
+    assert_not_exists "$DOTDIR/zellij/.dots"
+}
+
+test_install_resolves_dependencies_once() {
+    setup_sandbox
+    make_package c $'export requires=()\nexport deps=(legacy-c)' 
+    make_package b $'export requires=(c)\nexport aur_deps=(aur-b)' 
+    make_package a $'export requires=(b c)\nexport pacman_deps=(pkg-a)' 
+
+    "$DOTCTL_SCRIPT" install a
+
+    assert_file_contains "$SANDBOX_LOG/stow.log" 'stow c'
+    assert_file_contains "$SANDBOX_LOG/stow.log" 'stow b'
+    assert_file_contains "$SANDBOX_LOG/stow.log" 'stow a'
+    order=$(tr '\n' ' ' <"$SANDBOX_LOG/stow.log")
+    assert_output_contains "$order" 'stow c stow b stow a'
+    assert_file_contains "$SANDBOX_LOG/pacman.log" 'legacy-c'
+    assert_file_contains "$SANDBOX_LOG/pacman.log" 'pkg-a'
+    assert_file_contains "$SANDBOX_LOG/aur.log" 'aur-b'
+}
+
+test_install_detects_cycles() {
+    setup_sandbox
+    make_package x $'export requires=(y)' 
+    make_package y $'export requires=(x)' 
+
+    if output=$("$DOTCTL_SCRIPT" install x 2>&1); then
+        fail 'Expected cycle detection to fail'
+    fi
+
+    assert_output_contains "$output" "Dependency cycle detected"
+}
+
+test_installed_symlink_works() {
+    setup_sandbox
+    mkdir -p "$HOME/.local/bin"
+    ln -s "$DOTCTL_SCRIPT" "$HOME/.local/bin/dotctl"
+
+    output=$(PATH="$HOME/.local/bin:$PATH" "$HOME/.local/bin/dotctl" help)
+
+    assert_output_contains "$output" 'dotctl - manage your dotfiles'
+    assert_output_contains "$output" 'dotctl add [PACKAGE] [...PATH]'
+}
+
+trap cleanup_sandbox EXIT
+
+run_case 'add alias tracks path' test_add_alias_tracks_path
+run_case 'repeat track avoids nesting' test_repeat_track_skips_nested_retrack
+run_case 'repeat add merges non-folded dir' test_repeat_add_merges_non_folded_directory
+run_case 'install resolves dependencies once' test_install_resolves_dependencies_once
+run_case 'install detects dependency cycles' test_install_detects_cycles
+run_case 'installed symlink works' test_installed_symlink_works
+
+echo "All $TEST_COUNT dotctl tests passed."

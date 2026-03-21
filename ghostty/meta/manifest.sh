@@ -1,11 +1,11 @@
 # Required packages to have already been installed from this repo
 export requires=()
 
-# Do any dependencies need to be installed via AUR?
-export require_aur="false"
+# System dependencies installed via pacman
+export pacman_deps=(ghostty otf-monaspace-nerdfonts)
 
-# System dependencies (to be installed via pacman or aur helper)
-export deps=(ghostty otf-monaspace-nerdfonts)
+# System dependencies installed via an AUR helper
+export aur_deps=()
 
 # Pre-download hook
 # pre_dl() {

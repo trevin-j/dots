@@ -1,0 +1,501 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${DOTDIR:="$HOME/.dots"}"
+DATADIR="$HOME/.local/share/dotctl"
+mkdir -p "$DATADIR"
+
+declare -a INSTALL_PLAN=()
+declare -A RESOLVED_PACKAGES=()
+declare -A VISITING_PACKAGES=()
+
+contains() {
+    local needle="$1"
+    shift
+
+    local value
+    for value in "$@"; do
+        [[ "$value" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+die() {
+    echo "$*" >&2
+    exit 1
+}
+
+pkg_commit() {
+    git -C "$DOTDIR" log -1 --format=%H -- "$1"
+}
+
+installed_commit_file() {
+    echo "$DATADIR/$1.commit"
+}
+
+get_installed_commit() {
+    local file
+    file=$(installed_commit_file "$1")
+    [[ -f "$file" ]] && <"$file" tr -d '\n' || echo ""
+}
+
+set_installed_commit() {
+    printf '%s\n' "$2" >"$(installed_commit_file "$1")"
+}
+
+confirm() {
+    if [[ "$YES" == "true" ]]; then
+        return 0
+    fi
+
+    local prompt="$1"
+    local answer
+    read -r -p "$prompt [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]]
+}
+
+pick_aur_helper() {
+    if command -v paru >/dev/null 2>&1; then
+        echo "paru"
+        return
+    fi
+
+    if command -v yay >/dev/null 2>&1; then
+        echo "yay"
+        return
+    fi
+
+    echo "No AUR helper found."
+    if confirm "Install paru?"; then
+        sudo pacman -S --needed --noconfirm base-devel
+        mkdir -p "$HOME/tmp"
+        pushd "$HOME/tmp" >/dev/null
+        git clone https://aur.archlinux.org/paru.git
+        cd paru
+        makepkg -si
+        popd >/dev/null
+        echo "paru"
+    else
+        echo ""
+    fi
+}
+
+path_is_within() {
+    local path="$1"
+    local parent="$2"
+
+    [[ "$path" == "$parent" || "$path" == "$parent"/* ]]
+}
+
+normalize_path() {
+    realpath -m -s "$1"
+}
+
+reset_manifest_context() {
+    require_aur="false"
+    requires=()
+    deps=()
+    pacman_deps=()
+    aur_deps=()
+
+    pre_dl() { :; }
+    pre_stow() { :; }
+    post_stow() { :; }
+}
+
+load_manifest() {
+    local manifest="$1"
+
+    reset_manifest_context
+    # shellcheck disable=SC1090
+    source "$manifest"
+
+    if [[ ${#deps[@]} -gt 0 ]]; then
+        if [[ "$require_aur" == "true" ]]; then
+            aur_deps+=("${deps[@]}")
+        else
+            pacman_deps+=("${deps[@]}")
+        fi
+    fi
+}
+
+handle_deps() {
+    local manager="$1"
+    shift
+    local deps=("$@")
+
+    [[ ${#deps[@]} -eq 0 ]] && return
+
+    local installer=(sudo pacman -S --needed --noconfirm)
+    if [[ "$manager" == "aur" ]]; then
+        local helper
+        helper=$(pick_aur_helper)
+        if [[ -z "$helper" ]]; then
+            echo "Cannot install AUR deps without helper. Skipping deps."
+            return
+        fi
+        installer=("$helper" -S --needed --noconfirm)
+    fi
+
+    echo "Installing ${manager} deps: ${deps[*]}"
+    "${installer[@]}" "${deps[@]}"
+}
+
+backup_conflicts() {
+    local pkg="$1"
+
+    echo "Checking for conflicts..."
+    mapfile -t conflicts < <(
+        stow --dir="$DOTDIR" --target="$HOME" --no-folding -nv "$pkg" 2>&1 \
+            | sed -n 's/.*existing target \(.*\) since.*/\1/p'
+    )
+
+    if (( ${#conflicts[@]} == 0 )); then
+        return
+    fi
+
+    echo "Conflicts detected in package '$pkg':"
+    local conflict
+    for conflict in "${conflicts[@]}"; do
+        echo "  ~/$conflict"
+    done
+
+    if ! confirm "Back up conflicting files and replace?"; then
+        die "Aborting."
+    fi
+
+    for conflict in "${conflicts[@]}"; do
+        local backup="$HOME/$conflict.backup.$(date +%s)"
+        echo "Backing up ~/$conflict -> $backup"
+        mv "$HOME/$conflict" "$backup"
+    done
+}
+
+resolve_pkg_plan() {
+    local pkg="$1"
+    local pkgdir="$DOTDIR/$pkg"
+    local manifest="$pkgdir/meta/manifest.sh"
+
+    if [[ -n "${RESOLVED_PACKAGES[$pkg]:-}" ]]; then
+        return
+    fi
+
+    if [[ -n "${VISITING_PACKAGES[$pkg]:-}" ]]; then
+        die "Dependency cycle detected while resolving '$pkg'."
+    fi
+
+    [[ -d "$pkgdir" ]] || die "Package $pkg not found."
+    [[ -f "$manifest" ]] || die "No manifest for $pkg. Aborting."
+
+    VISITING_PACKAGES[$pkg]=1
+    load_manifest "$manifest"
+
+    local req
+    for req in "${requires[@]}"; do
+        resolve_pkg_plan "$req"
+    done
+
+    unset 'VISITING_PACKAGES[$pkg]'
+    RESOLVED_PACKAGES[$pkg]=1
+    INSTALL_PLAN+=("$pkg")
+}
+
+perform_install_pkg() {
+    local pkg="$1"
+    local pkgdir="$DOTDIR/$pkg"
+    local manifest="$pkgdir/meta/manifest.sh"
+    local force="${DOTCTL_FORCE:-false}"
+    local current_commit installed_commit
+
+    current_commit=$(pkg_commit "$pkg")
+    installed_commit=$(get_installed_commit "$pkg")
+
+    echo "Current commit: $current_commit"
+    echo "Installed commit: $installed_commit"
+
+    if [[ "$force" != "true" ]] \
+        && [[ -n "$current_commit" ]] \
+        && [[ "$current_commit" == "$installed_commit" ]]; then
+        echo "Skipping $pkg (no changes)"
+        return 0
+    fi
+
+    load_manifest "$manifest"
+
+    echo
+    echo "=== Installing $pkg ==="
+    pre_dl
+    handle_deps pacman "${pacman_deps[@]}"
+    handle_deps aur "${aur_deps[@]}"
+    pre_stow
+    backup_conflicts "$pkg"
+    echo "Stowing $pkg..."
+    stow --dir="$DOTDIR" --target="$HOME" --no-folding "$pkg"
+    post_stow
+    echo "Finished installing $pkg."
+
+    if [[ -n "$current_commit" ]]; then
+        set_installed_commit "$pkg" "$current_commit"
+    fi
+}
+
+ensure_package_exists() {
+    local package="$1"
+    local pkgdir="$DOTDIR/$package"
+    local template_dir="$DOTDIR/_package_template"
+
+    if [[ -d "$pkgdir" ]]; then
+        return
+    fi
+
+    [[ -d "$template_dir" ]] || die "Template package not found: $template_dir"
+
+    echo "Creating new package '$package' from template..."
+    cp -r "$template_dir" "$pkgdir"
+}
+
+path_home_relative() {
+    local absolute_path="$1"
+
+    path_is_within "$absolute_path" "$HOME" || die "Path must live inside $HOME: $absolute_path"
+    [[ "$absolute_path" != "$HOME" ]] || die "Refusing to track your home directory root."
+
+    echo "${absolute_path#"$HOME"/}"
+}
+
+path_is_already_tracked() {
+    local absolute_path="$1"
+
+    if [[ ! -e "$absolute_path" && ! -L "$absolute_path" ]]; then
+        return 1
+    fi
+
+    local resolved_path
+    resolved_path=$(realpath "$absolute_path")
+    path_is_within "$resolved_path" "$DOTDIR"
+}
+
+same_realpath() {
+    local left="$1"
+    local right="$2"
+
+    [[ -e "$left" || -L "$left" ]] || return 1
+    [[ -e "$right" || -L "$right" ]] || return 1
+    [[ "$(realpath "$left")" == "$(realpath "$right")" ]]
+}
+
+merge_directory_into_destination() {
+    local source_dir="$1"
+    local destination_dir="$2"
+    local source_entry destination_entry
+
+    mkdir -p "$destination_dir"
+
+    shopt -s dotglob nullglob
+    for source_entry in "$source_dir"/*; do
+        [[ -e "$source_entry" || -L "$source_entry" ]] || continue
+        destination_entry="$destination_dir/$(basename "$source_entry")"
+
+        if [[ -L "$source_entry" ]] && same_realpath "$source_entry" "$destination_entry"; then
+            continue
+        fi
+
+        if [[ -d "$source_entry" && ! -L "$source_entry" ]]; then
+            if [[ -e "$destination_entry" || -L "$destination_entry" ]]; then
+                if [[ -d "$destination_entry" && ! -L "$destination_entry" ]]; then
+                    merge_directory_into_destination "$source_entry" "$destination_entry"
+                    rmdir "$source_entry" 2>/dev/null || true
+                    continue
+                fi
+
+                die "Destination already exists in package '$package': $destination_entry"
+            fi
+
+            mv "$source_entry" "$destination_entry"
+            continue
+        fi
+
+        if [[ -e "$destination_entry" || -L "$destination_entry" ]]; then
+            if same_realpath "$source_entry" "$destination_entry"; then
+                continue
+            fi
+
+            die "Destination already exists in package '$package': $destination_entry"
+        fi
+
+        mv "$source_entry" "$destination_entry"
+    done
+    shopt -u dotglob nullglob
+}
+
+track_one_path() {
+    local package="$1"
+    local raw_path="$2"
+    local pkgdir="$DOTDIR/$package"
+    local absolute_path relative_path destination
+
+    absolute_path=$(normalize_path "$raw_path")
+    path_is_within "$absolute_path" "$DOTDIR" && die "Refusing to track a path inside DOTDIR: $absolute_path"
+    relative_path=$(path_home_relative "$absolute_path")
+
+    if path_is_already_tracked "$absolute_path"; then
+        echo "Skipping already tracked path: ~/$relative_path"
+        return
+    fi
+
+    if [[ ! -e "$absolute_path" && ! -L "$absolute_path" ]]; then
+        die "Path does not exist: $absolute_path"
+    fi
+
+    destination="$pkgdir/$relative_path"
+    if [[ -e "$destination" || -L "$destination" ]]; then
+        if [[ -d "$absolute_path" && ! -L "$absolute_path" && -d "$destination" && ! -L "$destination" ]]; then
+            merge_directory_into_destination "$absolute_path" "$destination"
+            return
+        fi
+
+        if same_realpath "$absolute_path" "$destination"; then
+            echo "Skipping already tracked path: ~/$relative_path"
+            return
+        fi
+
+        die "Destination already exists in package '$package': $destination"
+    fi
+
+    mkdir -p "$(dirname "$destination")"
+    mv "$absolute_path" "$destination"
+}
+
+process_track_pkg() {
+    local package="$1"
+    shift
+
+    [[ $# -gt 0 ]] || die "Usage: dotctl track [package] [...paths]"
+
+    ensure_package_exists "$package"
+
+    local path
+    for path in "$@"; do
+        track_one_path "$package" "$path"
+    done
+
+    echo "Stowing $package..."
+    stow --dir="$DOTDIR" --target="$HOME" --no-folding "$package"
+}
+
+process_upgrade_pkg() {
+    if [[ "$NOPULL" != "true" ]]; then
+        echo "Pulling git repo..."
+        git -C "$DOTDIR" pull
+    fi
+
+    while read -r pkg_file; do
+        local pkg
+        pkg=$(basename "$pkg_file")
+        pkg=${pkg%.commit}
+        echo "Upgrading $pkg..."
+        perform_install_pkg "$pkg"
+    done < <(find "$DATADIR" -type f -name '*.commit')
+}
+
+show_help() {
+    cat <<'EOF'
+dotctl - manage your dotfiles
+
+Usage:
+  dotctl install [PKG|PKG PKG|all]    Install one or more packages
+  dotctl track [PACKAGE] [...PATH]    Track an existing config into a package
+  dotctl add [PACKAGE] [...PATH]      Alias for track
+  dotctl help                         Show this help
+EOF
+}
+
+if [[ $# -lt 1 ]]; then
+    show_help
+    exit 1
+fi
+
+DOTCTL_FORCE="false"
+if contains "--force" "$@"; then
+    DOTCTL_FORCE="true"
+fi
+export DOTCTL_FORCE
+
+YES="false"
+if contains "-y" "$@"; then
+    YES="true"
+fi
+export YES
+
+NOPULL="false"
+if contains "--no-pull" "$@"; then
+    NOPULL="true"
+fi
+export NOPULL
+
+cmd="$1"
+shift || true
+
+case "$cmd" in
+    install)
+        [[ $# -gt 0 ]] || die "Specify packages or 'all'"
+
+        if [[ "$1" == "all" ]]; then
+            mapfile -t requested_pkgs < <(
+                find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d \
+                    -not -name ".*" -not -name "_*" \
+                    | xargs -n1 basename
+            )
+        else
+            requested_pkgs=("$@")
+        fi
+
+        INSTALL_PLAN=()
+        RESOLVED_PACKAGES=()
+        VISITING_PACKAGES=()
+
+        for requested_pkg in "${requested_pkgs[@]}"; do
+            resolve_pkg_plan "$requested_pkg"
+        done
+
+        echo "Installing packages: ${INSTALL_PLAN[*]}"
+        for requested_pkg in "${INSTALL_PLAN[@]}"; do
+            perform_install_pkg "$requested_pkg"
+        done
+        ;;
+    track|add)
+        [[ $# -ge 2 ]] || die "Usage: dotctl $cmd [package] [...paths]"
+        process_track_pkg "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    upgrade|update)
+        process_upgrade_pkg
+        ;;
+    ls|list)
+        mapfile -t all_pkgs < <(
+            find "$DOTDIR" -mindepth 1 -maxdepth 1 -type d \
+                -not -name ".*" -not -name "_*" | xargs -n1 basename
+        )
+
+        echo "Installed configs:"
+        while read -r pkg_file; do
+            pkg=$(basename "$pkg_file")
+            pkg=${pkg%.commit}
+            echo "$pkg"
+        done < <(find "$DATADIR" -type f -name '*.commit')
+
+        echo
+        echo "Not installed:"
+        for pkg in "${all_pkgs[@]}"; do
+            [[ -f "$DATADIR/$pkg.commit" ]] && continue
+            echo "$pkg"
+        done
+        ;;
+    *)
+        echo "Unknown command: $cmd"
+        show_help
+        exit 1
+        ;;
+esac

@@ -5,7 +5,7 @@ It is mostly configuration and scripts (not a single app binary).
 
 ## What This Repo Contains
 
-- `bin/`: install/management tooling (`dotctl`) for stowing packages and installing dependencies.
+- `dotctl/`: install/management tooling (`dotctl`) for stowing packages and installing dependencies.
 - `fonts/`: font assets (Nerd Fonts and related files) used by terminals/UI components.
 - `foot/`: minimal `foot` terminal config.
 - `ghostty/`: Ghostty terminal config, including font stack and runtime color include.
@@ -24,9 +24,10 @@ It is mostly configuration and scripts (not a single app binary).
 - Top-level folders are installable stow packages unless prefixed with `_`.
 - Each package usually has `meta/manifest.sh` with:
   - `requires`: package-level dependencies within this repo.
-  - `deps`: system package dependencies.
+  - `pacman_deps` / `aur_deps`: system package dependencies.
+  - legacy `deps` plus `require_aur` is still supported.
   - optional hooks: `pre_dl`, `pre_stow`, `post_stow`.
-- `bin/.local/bin/dotctl` is the main package installer/orchestrator.
+- `dotctl/.local/bin/dotctl` is the main package installer/orchestrator.
 - No single global build tool exists for all packages.
 
 ## Build, Lint, and Test Commands
@@ -75,13 +76,13 @@ Working directory: `theming/tintterm`
 ### Dotfiles Package Management
 
 - Install one package:
-  - `bin/.local/bin/dotctl install <package>`
+  - `dotctl/.local/bin/dotctl install <package>`
 - Install all packages:
-  - `bin/.local/bin/dotctl install all`
+  - `dotctl/.local/bin/dotctl install all`
 - Upgrade installed packages from git commits:
-  - `bin/.local/bin/dotctl upgrade`
+  - `dotctl/.local/bin/dotctl upgrade`
 - List installed vs not installed:
-  - `bin/.local/bin/dotctl ls`
+  - `dotctl/.local/bin/dotctl ls`
 
 ## Testing Guidance
 

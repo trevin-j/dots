@@ -1,3 +1,3 @@
 export requires=(fonts)
-export require_aur="false"
-export deps=(git eza fzf)
+export pacman_deps=(git eza fzf)
+export aur_deps=()

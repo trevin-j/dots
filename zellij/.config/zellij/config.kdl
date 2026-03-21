@@ -129,6 +129,14 @@ keybinds clear-defaults=true {
             }
             SwitchToMode "locked"
         }
+        bind "r" {
+            Run "sh" ".config/zellij/scripts/rename-session.sh" {
+                floating true
+                close_on_exit true
+                name "Rename session"
+            }
+            SwitchToMode "locked"
+        }
         bind "s" {
             LaunchOrFocusPlugin "zellij:share" {
                 floating true

@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly NEW_SESSION_LABEL='[New Session]'
+readonly CREATE_PREFIX='[Create] '
+
+list_sessions() {
+    zellij list-sessions --short 2>/dev/null || true
+}
+
+print_candidates() {
+    local query="${1-}"
+    local exact_match="false"
+    local filtered_sessions
+    local session
+
+    mapfile -t sessions < <(list_sessions)
+
+    if [[ -z "$query" ]]; then
+        printf '%s\n' "$NEW_SESSION_LABEL"
+        if ((${#sessions[@]} > 0)); then
+            printf '%s\n' "${sessions[@]}"
+        fi
+        return
+    fi
+
+    for session in "${sessions[@]}"; do
+        if [[ "$session" == "$query" ]]; then
+            exact_match="true"
+            break
+        fi
+    done
+
+    if [[ "$exact_match" == "true" ]]; then
+        printf '%s\n' "$query"
+    else
+        printf '%s%s\n' "$CREATE_PREFIX" "$query"
+    fi
+
+    if ((${#sessions[@]} == 0)); then
+        return
+    fi
+
+    filtered_sessions="$(printf '%s\n' "${sessions[@]}" | fzf --filter="$query" || true)"
+
+    if [[ -z "$filtered_sessions" ]]; then
+        return
+    fi
+
+    while IFS= read -r session; do
+        [[ -z "$session" ]] && continue
+        [[ "$session" == "$query" ]] && continue
+        printf '%s\n' "$session"
+    done <<< "$filtered_sessions"
+}
+
+main() {
+    local script_path
+    local selection
+    local query
+    local target
+
+    if [[ "${1-}" == "--candidates" ]]; then
+        print_candidates "${2-}"
+        return
+    fi
+
+    if [[ -n "${ZELLIJ:-}" ]]; then
+        printf 'Already inside Zellij. Use the built-in session manager for switching.\n' >&2
+        return 1
+    fi
+
+    if ! command -v zellij >/dev/null 2>&1; then
+        printf 'zellij is required but was not found in PATH.\n' >&2
+        return 1
+    fi
+
+    if ! command -v fzf >/dev/null 2>&1; then
+        printf 'fzf is required but was not found in PATH.\n' >&2
+        return 1
+    fi
+
+    script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+    selection="$(print_candidates '' | fzf \
+        --disabled \
+        --prompt='Session> ' \
+        --header='Enter attaches. [New Session] starts random. Type a new name to create it.' \
+        --layout=reverse \
+        --bind "change:reload:$script_path --candidates {q}" \
+        --print-query)" || return 0
+
+    query="$(printf '%s\n' "$selection" | sed -n '1p')"
+    target="$(printf '%s\n' "$selection" | sed -n '2p')"
+
+    if [[ -z "$target" || "$target" == "$NEW_SESSION_LABEL" ]]; then
+        exec zellij
+    fi
+
+    if [[ "$target" == "$CREATE_PREFIX"* ]]; then
+        target="${target#"$CREATE_PREFIX"}"
+    fi
+
+    if [[ -n "$query" && "$target" == "$NEW_SESSION_LABEL" ]]; then
+        target="$query"
+    fi
+
+    if [[ -z "$target" ]]; then
+        exec zellij
+    fi
+
+    exec zellij attach -c "$target"
+}
+
+main "$@"

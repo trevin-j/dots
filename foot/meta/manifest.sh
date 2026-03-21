@@ -1,3 +1,3 @@
 export requires=( fonts )
-export require_aur="false"
-export deps=( foot )
+export pacman_deps=( foot )
+export aur_deps=()

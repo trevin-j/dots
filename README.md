@@ -25,11 +25,11 @@ I am super stoked about theming in this setup. I worked hard to create a cohesiv
 
 ## Installation
 
-There is a handy installation script in the bin package! It allows easy installation of the dotfiles and management. Documentation isn't great on it yet but first `git clone https://github.com/trevin-j/dots .dots` (you can change the .dots to whatever you like, but if you do, make sure to set the env var DOTDIR to where you installed them to) you can install the script to path by running `bin/.local/bin/dotctl install bin` from within the repo. e.g.:
+There is a handy installation script in the `dotctl` package. It allows easy installation of the dotfiles and management. Documentation isn't great on it yet but first `git clone https://github.com/trevin-j/dots .dots` (you can change the `.dots` to whatever you like, but if you do, make sure to set the env var `DOTDIR` to where you installed them to) you can install the script to path by running `dotctl/.local/bin/dotctl install dotctl` from within the repo. e.g.:
 
 ```bash
 git clone https://github.com/trevin-j/dots .dots
-bin/.local/bin/dotctl install bin
+dotctl/.local/bin/dotctl install dotctl
 ```
 
 From here you can now install any/all of the configs you want by running `dotctl install <config>` or `dotctl install all` to install all of them. The script also does some dependency management (but assumes you are on an Arch based system!!), but this is WIP and not all dependencies are listed yet.
@@ -45,4 +45,3 @@ If you are not on an Arch based system, or you want to install manually, you can
 ## License
 
 MIT. Do whatever you want (within the rights of MIT). Freedom is beautiful.
-
