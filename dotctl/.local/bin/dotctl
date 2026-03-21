@@ -403,10 +403,29 @@ show_help() {
 dotctl - manage your dotfiles
 
 Usage:
-  dotctl install [PKG|PKG PKG|all]    Install one or more packages
-  dotctl track [PACKAGE] [...PATH]    Track an existing config into a package
-  dotctl add [PACKAGE] [...PATH]      Alias for track
-  dotctl help                         Show this help
+  dotctl [--force] [-y] install [PKG|PKG PKG|all]
+  dotctl [--force] [-y] track [PACKAGE] [...PATH]
+  dotctl [--force] [-y] add [PACKAGE] [...PATH]
+  dotctl [--no-pull] upgrade
+  dotctl [--no-pull] update
+  dotctl ls
+  dotctl list
+  dotctl help
+
+Commands:
+  install     Install one or more packages
+  track       Track an existing config into a package
+  add         Alias for track
+  upgrade     Pull the dotfiles repo and reinstall installed packages
+  update      Alias for upgrade
+  ls          List installed and not installed packages
+  list        Alias for ls
+  help        Show this help
+
+Global options:
+  --force     Reinstall packages even when the tracked commit is unchanged
+  -y          Answer yes to confirmation prompts
+  --no-pull   Skip the git pull step during upgrade/update
 EOF
 }
 
@@ -416,25 +435,57 @@ if [[ $# -lt 1 ]]; then
 fi
 
 DOTCTL_FORCE="false"
-if contains "--force" "$@"; then
-    DOTCTL_FORCE="true"
-fi
-export DOTCTL_FORCE
-
 YES="false"
-if contains "-y" "$@"; then
-    YES="true"
-fi
-export YES
-
 NOPULL="false"
-if contains "--no-pull" "$@"; then
-    NOPULL="true"
-fi
+
+cmd=""
+declare -a cmd_args=()
+parse_globals="true"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --)
+            parse_globals="false"
+            shift
+            continue
+            ;;
+        --force)
+            if [[ "$parse_globals" == "true" ]]; then
+                DOTCTL_FORCE="true"
+                shift
+                continue
+            fi
+            ;;
+        -y)
+            if [[ "$parse_globals" == "true" ]]; then
+                YES="true"
+                shift
+                continue
+            fi
+            ;;
+        --no-pull)
+            if [[ "$parse_globals" == "true" ]]; then
+                NOPULL="true"
+                shift
+                continue
+            fi
+            ;;
+    esac
+
+    if [[ -z "$cmd" ]]; then
+        cmd="$1"
+    else
+        cmd_args+=("$1")
+    fi
+    shift
+done
+
+export DOTCTL_FORCE
+export YES
 export NOPULL
 
-cmd="$1"
-shift || true
+[[ -n "$cmd" ]] || die "Specify a command."
+set -- "${cmd_args[@]}"
 
 case "$cmd" in
     install)

@@ -258,6 +258,28 @@ test_install_detects_cycles() {
     assert_output_contains "$output" "Dependency cycle detected"
 }
 
+test_install_consumes_global_flags() {
+    setup_sandbox
+    make_package demo $'export requires=()\nexport pacman_deps=(demo-pkg)'
+
+    output=$("$DOTCTL_SCRIPT" install demo --force)
+
+    assert_output_contains "$output" 'Installing packages: demo'
+    assert_file_contains "$SANDBOX_LOG/stow.log" 'stow demo'
+}
+
+test_upgrade_consumes_no_pull_flag() {
+    setup_sandbox
+    make_package demo $'export requires=()'
+    mkdir -p "$HOME/.local/share/dotctl"
+    printf 'fake-demo\n' >"$HOME/.local/share/dotctl/demo.commit"
+
+    output=$("$DOTCTL_SCRIPT" upgrade --no-pull)
+
+    assert_output_contains "$output" 'Upgrading demo...'
+    assert_not_exists "$SANDBOX_LOG/git.log"
+}
+
 test_installed_symlink_works() {
     setup_sandbox
     mkdir -p "$HOME/.local/bin"
@@ -266,7 +288,8 @@ test_installed_symlink_works() {
     output=$(PATH="$HOME/.local/bin:$PATH" "$HOME/.local/bin/dotctl" help)
 
     assert_output_contains "$output" 'dotctl - manage your dotfiles'
-    assert_output_contains "$output" 'dotctl add [PACKAGE] [...PATH]'
+    assert_output_contains "$output" 'dotctl [--force] [-y] add [PACKAGE] [...PATH]'
+    assert_output_contains "$output" '--no-pull   Skip the git pull step during upgrade/update'
 }
 
 trap cleanup_sandbox EXIT
@@ -276,6 +299,8 @@ run_case 'repeat track avoids nesting' test_repeat_track_skips_nested_retrack
 run_case 'repeat add merges non-folded dir' test_repeat_add_merges_non_folded_directory
 run_case 'install resolves dependencies once' test_install_resolves_dependencies_once
 run_case 'install detects dependency cycles' test_install_detects_cycles
+run_case 'install consumes global flags' test_install_consumes_global_flags
+run_case 'upgrade consumes no-pull flag' test_upgrade_consumes_no_pull_flag
 run_case 'installed symlink works' test_installed_symlink_works
 
 echo "All $TEST_COUNT dotctl tests passed."
