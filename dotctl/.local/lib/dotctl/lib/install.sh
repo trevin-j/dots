@@ -198,6 +198,11 @@ perform_install_pkg() {
         return 0
     fi
 
+    if [[ ! -f "$manifest" ]]; then
+        echo "warning: package '$pkg' has no manifest (may have been removed from repo). Skipping."
+        return 0
+    fi
+
     load_manifest "$manifest"
 
     echo
@@ -215,6 +220,28 @@ perform_install_pkg() {
     if [[ -n "$current_commit" ]]; then
         set_installed_commit "$pkg" "$current_commit"
     fi
+}
+
+prune_stale_commits() {
+    local stale=()
+    while read -r pkg_file; do
+        local pkg="${pkg_file%.commit}"
+        pkg="${pkg##*/}"
+        if [[ ! -f "$DOTDIR/$pkg/meta/manifest.sh" ]]; then
+            stale+=("$pkg")
+        fi
+    done < <(find "$DATADIR" -type f -name '*.commit')
+
+    if ((${#stale[@]} == 0)); then
+        return
+    fi
+
+    echo "Removing stale commit records for packages no longer in repo:"
+    local pkg
+    for pkg in "${stale[@]}"; do
+        echo "  ~/$pkg (will not be upgraded)"
+        rm -f "$DATADIR/$pkg.commit"
+    done
 }
 
 cmd_install_help() {

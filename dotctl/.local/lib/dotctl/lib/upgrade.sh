@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 process_upgrade_pkg() {
+    prune_stale_commits
+
     while read -r pkg_file; do
         local pkg
         pkg=$(basename "$pkg_file")

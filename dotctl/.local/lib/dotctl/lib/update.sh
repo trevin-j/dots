@@ -7,14 +7,7 @@ process_update_pkg() {
     fi
 
     echo
-    echo "Upgrading installed packages..."
-    while read -r pkg_file; do
-        local pkg
-        pkg=$(basename "$pkg_file")
-        pkg=${pkg%.commit}
-        echo "Upgrading $pkg..."
-        perform_install_pkg "$pkg"
-    done < <(find "$DATADIR" -type f -name '*.commit')
+    process_upgrade_pkg
 }
 
 cmd_update_help() {

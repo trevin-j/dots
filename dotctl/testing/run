@@ -395,6 +395,19 @@ test_upgrade_rejects_no_pull_flag() {
     assert_output_contains "$output" 'use sync or update instead'
 }
 
+test_upgrade_prunes_stale_package() {
+    setup_sandbox
+    mkdir -p "$HOME/.local/share/dotctl"
+    printf 'stale-commit\n' >"$HOME/.local/share/dotctl/stale.commit"
+
+    output=$("$DOTCTL_SCRIPT" upgrade 2>&1)
+
+    assert_output_contains "$output" 'Removing stale commit records'
+    assert_output_contains "$output" 'stale'
+    assert_not_exists "$HOME/.local/share/dotctl/stale.commit"
+    assert_not_exists "$SANDBOX_LOG/stow.log"
+}
+
 test_sync_succeeds_on_clean_repo() {
     setup_sandbox
     export GIT_STUB_DIRTY=0
@@ -461,6 +474,7 @@ run_case 'conflict detection reports broken symlink' test_conflict_detection_rep
 run_case 'conflict backup and install succeeds' test_conflict_backup_and_install_succeeds
 run_case 'conflict aborts without confirmation' test_conflict_aborts_without_confirmation
 run_case 'upgrade rejects no-pull flag' test_upgrade_rejects_no_pull_flag
+run_case 'upgrade prunes stale package' test_upgrade_prunes_stale_package
 run_case 'sync succeeds on clean repo' test_sync_succeeds_on_clean_repo
 run_case 'sync fails on dirty repo' test_sync_fails_on_dirty_repo
 run_case 'update combines sync and upgrade' test_update_combines_sync_and_upgrade
