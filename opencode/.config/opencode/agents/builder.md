@@ -4,8 +4,8 @@ mode: subagent
 hidden: true
 license: MIT
 author: DevTrev
-permissions:
-  edit: true
+permission:
+  edit: allow
   bash:
     # Default deny - specific rules override below
     "*": deny

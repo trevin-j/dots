@@ -3,8 +3,8 @@ description: Orchestrates deep code reviews using review-slave subagents. Synthe
 mode: all
 license: MIT
 author: DevTrev
-permissions:
-  edit: false
+permission:
+  edit: deny
   bash:
     # Default deny - specific rules override below
     "*": deny

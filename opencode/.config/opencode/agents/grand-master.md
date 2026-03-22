@@ -3,9 +3,9 @@ description: Top-level orchestrator over plan, build, review, and debug workflow
 mode: primary
 license: MIT
 author: DevTrev
-permissions:
-  question: true
-  edit: true
+permission:
+  question: allow
+  edit: allow
   bash:
     # Default deny - specific rules override below
     "*": deny

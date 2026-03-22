@@ -3,8 +3,8 @@ description: Documents features and implementations.
 mode: subagent
 license: MIT
 author: DevTrev
-permissions:
-  edit: true
+permission:
+  edit: allow
   bash:
     # Default deny - specific rules override below
     "*": deny

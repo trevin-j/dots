@@ -3,8 +3,8 @@ description: Verifies that an implementation works and did not obviously break n
 mode: subagent
 license: MIT
 author: DevTrev
-permissions:
-  edit: false
+permission:
+  edit: deny
   bash:
     # Default deny - specific rules override below
     "*": deny

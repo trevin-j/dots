@@ -3,9 +3,9 @@ description: Orchestrates implementation using the builder subagent. Executes pl
 mode: all
 license: MIT
 author: DevTrev
-permissions:
-  question: true
-  edit: true
+permission:
+  question: allow
+  edit: allow
   bash:
     # Default deny - specific rules override below
     "*": deny

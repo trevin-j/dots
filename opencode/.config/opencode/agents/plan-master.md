@@ -3,9 +3,9 @@ description: Orchestrates planning subagents and synthesizes findings into actio
 mode: all
 license: MIT
 author: DevTrev
-permissions:
-  edit: false
-  question: true
+permission:
+  edit: deny
+  question: allow
   bash:
     # Default deny - specific rules override below
     "*": deny

@@ -3,8 +3,8 @@ description: Subagent for precisely debugging and determining the root cause of 
 mode: subagent
 license: MIT
 author: DevTrev
-permissions:
-  edit: false
+permission:
+  edit: deny
   bash:
     # Default deny - specific rules override below
     "*": deny
