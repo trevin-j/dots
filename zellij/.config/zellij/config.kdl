@@ -204,15 +204,19 @@ keybinds clear-defaults=true {
                 move_mod "alt"
             }
         }
+        bind "Alt Shift h" "Alt Shift left" { MovePane "left"; }
+        bind "Alt Shift j" "Alt Shift down" { MovePane "down"; }
+        bind "Alt Shift k" "Alt Shift up" { MovePane "up"; }
+        bind "Alt Shift l" "Alt Shift right" { MovePane "right"; }
         bind "Alt +" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
         bind "Alt =" { Resize "Increase"; }
-        bind "Alt [" { PreviousSwapLayout; }
-        bind "Alt ]" { NextSwapLayout; }
+        bind "Alt [" { GoToPreviousTab; }
+        bind "Alt ]" { GoToNextTab; }
         bind "Alt f" { ToggleFloatingPanes; }
-        bind "Alt i" { MoveTab "left"; }
         bind "Alt n" { NewPane; }
-        bind "Alt o" { MoveTab "right"; }
+        bind "Alt Shift [" { MoveTab "left"; }
+        bind "Alt Shift ]" { MoveTab "right"; }
         bind "Alt p" { TogglePaneInGroup; }
         bind "Alt Shift p" { ToggleGroupMarking; }
     }
