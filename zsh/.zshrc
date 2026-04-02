@@ -30,7 +30,6 @@ ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 [ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
 [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 source "${ZINIT_HOME}/zinit.zsh"
-ZINIT[COMPINIT_OPTS]=-C
 
 # Better vim mode config
 ZVM_INIT_MODE=sourcing # Fix overriding binds that are specified later
@@ -43,9 +42,8 @@ GIT_AUTO_FETCH_INTERVAL=300 # 5 minutes
 
 # Plugins that need immediate loading
 zi light-mode depth"1" for \
-    jeffreytse/zsh-vi-mode \
     romkatv/powerlevel10k \
-    trevin-j/azaleas \
+    jeffreytse/zsh-vi-mode \
 
 # Any commands or binds that should override any plugin options
 # These are technically run after every individual plugin is loaded, which isn't great
@@ -59,7 +57,6 @@ override_cmds()
 # Asynchronous plugin loading
 zi wait lucid light-mode atload"override_cmds" for \
     OMZP::colored-man-pages/colored-man-pages.plugin.zsh \
-    OMZP::command-not-found/command-not-found.plugin.zsh \
     OMZP::copybuffer/copybuffer.plugin.zsh \
     Aloxaf/fzf-tab \
     hlissner/zsh-autopair \
@@ -72,12 +69,6 @@ zi wait lucid light-mode atload"override_cmds" for \
         zsh-users/zsh-syntax-highlighting \
     atload"!_zsh_autosuggest_start" \
         zsh-users/zsh-autosuggestions \
-
-# commant-not-found
-# -------------------------------------------------------
-# Suggest how to install missing commands. Requires a command-not-found package for your distro.
-# For Arch, this is pkgfile. Install it and run `sudo pkgfile -u` to update the database.
-# Add pkgfile updates to systemd by `sudo systemctl enable pkgfile-update.timer`
 
 # copy plugins
 # -------------------------------------------------------
@@ -92,8 +83,8 @@ zstyle ':completion:*:git-checkout:*' sort false        # disable sort when comp
 zstyle ':completion:*:descriptions' format '[%d]'       # set descriptions format to enable group support
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}   # set list-colors to enable filename colorizing
 zstyle ':completion:*' menu no                          # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
-if command -v "exa" &>/dev/null; then
-    zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'  # preview directory's content with eza when completing cd
+if command -v "eza" &>/dev/null; then
+    zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'  # preview directory's content with eza when completing cd
 fi
 zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept   # custom fzf flags
 zstyle ':fzf-tab:*' use-fzf-default-opts yes            # To make fzf-tab follow FZF_DEFAULT_OPTS.
@@ -108,113 +99,55 @@ export KEYTIMEOUT=5
 # Bind reverse search (obsolete if fzf is installed)
 bindkey "^R" history-incremental-search-backward
 
-# General aliases - don't have any dependencies
-typeset -A ALIAS_REGISTRY=(
-    ls "ls --color=auto"
-    grep "grep --color=auto"
-    less "less -R"
-    .. "cd .."
-)
+# Useful aliases
+alias '..'='cd ..'
+alias less='less -R'
 
-azaleas_register
+if command -v eza &>/dev/null; then
+    alias ls='eza --icons=auto --color=auto --group-directories-first'
+    alias la='ls -a'
+    alias ll='ls -lh --git --git-repos'
+else
+    alias ls='ls --color=auto'
+    alias la='ls -a'
+    alias ll='ls -lh'
+fi
 
-# Misc aliases with dependencies
-typeset -a SINGLES_ALIASES=(
-    "nvim:v:nvim"
-    "lazygit:lg:lazygit"
-    "bat:cat:bat --style=plain"
-    "rg:grep:rg"
-)
+if command -v bat &>/dev/null; then
+    alias cat='bat --style=plain'
+fi
 
-# Misc commands that must run on startup with dependencies
-typeset -a SINGLES_COMMANDS=(
-    "thefuck:eval \"\$(thefuck -a fuck)\"" # Type `fuck` and it will suggest a fix
-    "zoxide:eval \"\$(zoxide init --cmd cd zsh)\""
-    "fzf:source <(fzf --zsh)"
-)
+if command -v trash &>/dev/null; then
+    alias rm='trash'
+fi
 
-azaleas_register_singles
+if command -v nvim &>/dev/null; then
+    alias v='nvim'
+fi
 
-typeset -A ALIAS_REGISTRY=(
-    ls 'eza --icons=auto --color=auto --group-directories-first'
-    lsf "ls -f"
-    lsd "ls -D"
-    lsa "ls -a"
-    lsaf "lsa -f"
-    lsad "lsa -D"
-    lsl "ls -lh --git --git-repos"
-    lslf "lsl -f"
-    lsld "lsl -D"
-    lsla "lsl -a"
-    lsal "lsl -a"
-    lslaf "lsla -f"
-    lslad "lsla -D"
-    lsls "lsl --total-size"
-    lslas "lsls -a"
-    lst "ls -T --level=2"
-    lstf "lst -f"
-    lstd "lst -D"
-    lsta "lst -a"
-    lstaf "lsta -f"
-    lstad "lsta -D"
-)
+if command -v lazygit &>/dev/null; then
+    alias lg='lazygit'
+fi
 
-azaleas_register eza
+if command -v thefuck &>/dev/null; then
+    eval "$(thefuck -a fuck)"
+fi
 
-# pnpm aliases
-typeset -A ALIAS_REGISTRY=(
-    # local
-    pn "pnpm"
-    pnx "pnpm dlx"
-    pna "pnpm add"
-    pnad "pnpm add --save-dev"
-    pnap "pnpm add --save-peer"
-    pnrm "pnpm remove"
-    pni "pnpm install"
-    pnu "pnpm uninstall"
-    pnl "pnpm list"
-    pnup "pnpm update --interactive --latest"
-    pno "pnpm outdated"
-    pnc "pnpm create"
-    pnau "pnpm audit"
-    pnw "pnpm why"
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init --cmd cd zsh)"
+fi
 
-    # global
-    pnga "pnpm add --global"
-    pngl "pnpm list --global"
-    pngr "pnpm remove --global"
-    pngu "pnpm update --global"
-
-    # scripts
-    pnr "pnpm run"
-    pnrd "pnpm run dev"
-    pnrb "pnpm run build"
-    pnrl "pnpm run lint"
-    pnrlf "pnpm run lint --fix"
-    pnrs "pnpm run serve"
-    pndoc "pnpm run doc"
-    pnt "pnpm test"
-    pntc "pnpm test --coverage"
-)
-
-azaleas_register pnpm
-
-# If yazi exists
-if command -v yazi &>/dev/null; then
-    function y() {
-        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-        yazi "$@" --cwd-file="$tmp"
-        if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-            builtin cd -- "$cwd"
-        fi
-        rm -f -- "$tmp"
-    }
+if command -v fzf &>/dev/null; then
+    source <(fzf --zsh)
 fi
 
 # If lf exists
 if command -v lf &>/dev/null; then
     function l() {
-        cd "$(lf -print-last-dir)"
+        emulate -L zsh
+        local dir
+        dir="$(lf -print-last-dir "$@")" || return
+        [[ -n "$dir" && "$dir" != "$PWD" && -d "$dir" ]] && builtin cd -- "$dir"
     }
 fi
 
@@ -230,7 +163,13 @@ export PATH="$HOME/.flutter/flutter/bin:$PATH"
 
 # nvm
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use # This loads nvm
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    nvm() {
+        unset -f nvm
+        . "$NVM_DIR/nvm.sh" --no-use
+        nvm "$@"
+    }
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
