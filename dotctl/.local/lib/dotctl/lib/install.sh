@@ -2,36 +2,64 @@
 
 load_manifest() {
     local manifest="$1"
-    local line key value
+    local line key value in_array
 
     requires=()
     pacman_deps=()
     aur_deps=()
+    in_array=""
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         line=${line#"${line%%[![:space:]]*}"}
         [[ -z "$line" || "$line" == \#* ]] && continue
 
-        if [[ "$line" =~ ^export\ (requires|pacman_deps|aur_deps|deps)= ]]; then
+        if [[ "$line" =~ ^export\ (requires|pacman_deps|aur_deps|deps)=\( ]]; then
             key="${line#export }"
             key="${key%%=*}"
-            value="${line#*=\(}"
-            value="${value%\)}"
-            value="${value//[\'\"]/}"
+            in_array="$key"
+            # If same-line format like "export requires=(foo bar)", process now
+            if [[ "$line" == *")"* ]]; then
+                value="${line%)*}"
+                value="${value//[\'\"]/}"
+                read -ra parts <<< "$value"
+                for part in "${parts[@]}"; do
+                    [[ -z "$part" ]] && continue
+                    case "$in_array" in
+                        requires)   requires+=("$part") ;;
+                        pacman_deps) pacman_deps+=("$part") ;;
+                        aur_deps)    aur_deps+=("$part") ;;
+                    esac
+                done
+                in_array=""
+            fi
+            continue
+        fi
 
-            if [[ "$key" == "deps" ]]; then
+        if [[ -n "$in_array" ]]; then
+            if [[ "$line" == ")" ]]; then
+                in_array=""
                 continue
             fi
-
+            # Handle same-line closing paren: "foo bar)" or "(foo bar)"
+            if [[ "$line" == *")"* ]]; then
+                value="${line%)*}"
+            else
+                value="$line"
+            fi
+            value="${value//[\'\"]/}"
             read -ra parts <<< "$value"
             for part in "${parts[@]}"; do
                 [[ -z "$part" ]] && continue
-                case "$key" in
+                case "$in_array" in
                     requires)   requires+=("$part") ;;
                     pacman_deps) pacman_deps+=("$part") ;;
                     aur_deps)    aur_deps+=("$part") ;;
                 esac
             done
+            # If same-line closing paren, done with this array
+            if [[ "$line" == *")"* ]]; then
+                in_array=""
+            fi
         fi
     done < "$manifest"
 }
@@ -246,7 +274,7 @@ prune_stale_commits() {
 
 cmd_install_help() {
     cat <<'EOF'
-dotctl [--force] [-y] install [PKG|PKG PKG|all]
+dotctl [--force] [--local] [-y] install [PKG|PKG PKG|all]
   Install one or more packages.
 EOF
 }
