@@ -87,15 +87,13 @@ export KEYTIMEOUT=5
 alias '..'='cd ..'
 alias less='less -R'
 
+alias ls='ls --color=auto'
 if command -v eza &>/dev/null; then
-    alias ls='eza --icons=auto --color=auto --group-directories-first'
-    alias la='ls -a'
-    alias ll='ls -lh --git --git-repos'
-else
-    alias ls='ls --color=auto'
-    alias la='ls -a'
-    alias ll='ls -lh'
+    alias ls='eza --icons=auto --group-directories-first'
 fi
+alias la='ls -a'
+alias ll='ls -lh'
+
 
 if command -v bat &>/dev/null; then
     alias cat='bat --style=plain'
@@ -105,13 +103,7 @@ if command -v trash &>/dev/null; then
     alias rm='trash'
 fi
 
-if command -v nvim &>/dev/null; then
-    alias v='nvim'
-fi
-
-if command -v lazygit &>/dev/null; then
-    alias lg='lazygit'
-fi
+alias lg='lazygit'
 
 if command -v thefuck &>/dev/null; then
     eval "$(thefuck -a fuck)"
