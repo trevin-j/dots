@@ -120,10 +120,11 @@ fi
 
 # If lf exists
 if command -v lf &>/dev/null; then
-    function l() {
+    lfpath="$(which lf)"
+    function lf() {
         emulate -L zsh
         local dir
-        dir="$(lf -print-last-dir "$@")" || return
+        dir="$($lfpath -print-last-dir "$@")" || return
         [[ -n "$dir" && "$dir" != "$PWD" && -d "$dir" ]] && builtin cd -- "$dir"
     }
 fi
