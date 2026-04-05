@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Local Material Theme Injector
 // @namespace    local-mat-theme
-// @version      0.2
+// @version      0.1.0
 // @author       DevTrev
 // @license      MIT
 // @description  Fetch CSS from local materialized-web server and inject into current page
