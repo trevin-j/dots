@@ -28,6 +28,10 @@ It is mostly configuration and scripts (not a single app binary).
 - `dotctl/.local/bin/dotctl` is the main package installer/orchestrator.
 - No single global build tool exists for all packages.
 
+## Git Workflow
+
+This repository uses a simple git workflow: direct commits to the `master` branch are acceptable for this personal dotfiles repo. There is no need to create feature branches for routine updates. However, always ensure changes are minimal and focused.
+
 ## Build, Lint, and Test Commands
 
 Run commands from repo root unless noted otherwise.
