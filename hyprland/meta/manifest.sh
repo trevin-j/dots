@@ -4,7 +4,6 @@ export pacman_deps=(
     firefox
     brightnessctl
     wl-clipboard
-    swaync
     hyprpolkitagent
     hyprland
     kdeconnect
@@ -12,6 +11,7 @@ export pacman_deps=(
     grim slurp
     quickshell
     ttf-material-symbols-variable
+    xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-kde
 )
 export aur_deps=(
     bibata-cursor-theme-bin
