@@ -87,9 +87,9 @@ export KEYTIMEOUT=5
 alias '..'='cd ..'
 alias less='less -R'
 
-alias ls='ls --color=auto'
+alias ls='ls --color=auto -l'
 if command -v eza &>/dev/null; then
-    alias ls='eza --icons=auto --group-directories-first'
+    alias ls='eza -l --color=auto --icons=auto --group-directories-first'
 fi
 alias la='ls -alh'
 
