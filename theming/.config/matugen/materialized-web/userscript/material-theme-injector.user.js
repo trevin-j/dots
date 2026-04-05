@@ -10,6 +10,7 @@
 // @match        *://chatgpt.com/*
 // @match        *://www.reddit.com/*
 // @match        *://www.youtube.com/*
+// @match        *://monkeytype.com/*
 // @updateURL    https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
 // @downloadURL  https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
 // @grant        GM_xmlhttpRequest
