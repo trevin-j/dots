@@ -19,7 +19,8 @@ load_manifest() {
             in_array="$key"
             # If same-line format like "export requires=(foo bar)", process now
             if [[ "$line" == *")"* ]]; then
-                value="${line%)*}"
+                value="${line#*(}"
+                value="${value%)}"
                 value="${value//[\'\"]/}"
                 read -ra parts <<< "$value"
                 for part in "${parts[@]}"; do
