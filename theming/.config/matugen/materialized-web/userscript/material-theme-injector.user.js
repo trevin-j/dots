@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Local Material Theme Injector
 // @namespace    local-mat-theme
-// @version      0.1.0
+// @version      0.2.0
 // @author       DevTrev
 // @license      MIT
 // @description  Fetch CSS from local materialized-web server and inject into current page
 // @homepageURL  https://github.com/trevin-j/dots
 // @match        *://github.com/*
 // @match        *://chatgpt.com/*
+// @match        *://www.reddit.com/*
+// @match        *://www.youtube.com/*
 // @updateURL    https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
 // @downloadURL  https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
 // @grant        GM_xmlhttpRequest
