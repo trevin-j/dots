@@ -91,9 +91,7 @@ alias ls='ls --color=auto'
 if command -v eza &>/dev/null; then
     alias ls='eza --icons=auto --group-directories-first'
 fi
-alias la='ls -a'
-alias ll='ls -lh'
-
+alias la='ls -alh'
 
 if command -v bat &>/dev/null; then
     alias cat='bat --style=plain'

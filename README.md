@@ -17,8 +17,6 @@ Being the huge linux nerd that I am, I use Arch (btw). Therefore this was built 
 
 I tried Sway for a short amount of time, but ultimately I came back to Hyprland. It is just too good.
 
-I am currently working on my own desktop shell in [ignis](https://ignis-sh.github.io/ignis/stable/index.html), but that is time consuming and not ready. So it is not included here. But that is why the only other shell-type config here is a somewhat half-baked waybar that I considered "good enough" when I first created it.
-
 ## Theming
 
 I am super stoked about theming in this setup. I worked hard to create a cohesive theming system that works across apps. It uses **Matugen** and **swww/awww** to apply wallpaper-generated material-you themes to qt, gtk, *any* terminal emulator (yes, ***any***!), zellij, etc. It is super cool. Currently, it is linked to the hyprland config such that every 5 minutes or so, the wallpaper changes and the themes are live-updated. That script is a little iffy at the moment and when my shell gets closer to complete, the shell will handle wallpaper changing and the like.
