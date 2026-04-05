@@ -8,8 +8,8 @@
 // @homepageURL  https://github.com/trevin-j/dots
 // @match        *://github.com/*
 // @match        *://chatgpt.com/*
-// @updateURL    https://raw.githubusercontent.com/trevin-j/dots/main/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
-// @downloadURL  https://raw.githubusercontent.com/trevin-j/dots/main/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
+// @updateURL    https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
+// @downloadURL  https://raw.githubusercontent.com/trevin-j/dots/master/theming/.config/matugen/materialized-web/userscript/material-theme-injector.user.js
 // @grant        GM_xmlhttpRequest
 // @connect      127.0.0.1
 // ==/UserScript==
