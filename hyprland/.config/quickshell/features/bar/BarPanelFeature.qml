@@ -202,6 +202,11 @@ PanelWindow {
                         Layout.fillHeight: true
                         onClicked: root.controlCenterState.toggle()
                     }
+
+                    BarComponents.KeyboardToggle {
+                        barHeight: root.thickness - root.padding * 2
+                        Layout.fillHeight: true
+                    }
                 }
             }
         }
