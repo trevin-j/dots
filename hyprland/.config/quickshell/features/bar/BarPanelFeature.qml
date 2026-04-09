@@ -194,6 +194,13 @@ PanelWindow {
                         Layout.fillHeight: true
                     }
 
+                    BarComponents.KeyboardToggle {
+                        barHeight: root.thickness - root.padding * 2
+                        iconFont: Config.Appearance.iconFontFamily
+                        Layout.fillHeight: true
+                        onClicked: Services.KeyboardService.toggle()
+                    }
+
                     BarComponents.ControlCenterButton {
                         barHeight: root.thickness - root.padding * 2
                         iconFont: Config.Appearance.iconFontFamily
@@ -201,11 +208,6 @@ PanelWindow {
                         hasPendingNotifications: Services.NotificationService.hasNotifications
                         Layout.fillHeight: true
                         onClicked: root.controlCenterState.toggle()
-                    }
-
-                    BarComponents.KeyboardToggle {
-                        barHeight: root.thickness - root.padding * 2
-                        Layout.fillHeight: true
                     }
                 }
             }
