@@ -16,4 +16,5 @@ export pacman_deps=(
 )
 export aur_deps=(
     bibata-cursor-theme-bin
+    wvkbd-git
 )
