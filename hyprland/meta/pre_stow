@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+systemctl --user enable --now pipewire pipewire-pulse wireplumber
+systemctl --user enable --now xdg-desktop-portal xdg-desktop-portal-hyprland

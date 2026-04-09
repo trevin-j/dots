@@ -12,6 +12,7 @@ export pacman_deps=(
     quickshell
     ttf-material-symbols-variable
     xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-kde
+    pipewire wireplumber pipewire-pulse
 )
 export aur_deps=(
     bibata-cursor-theme-bin
