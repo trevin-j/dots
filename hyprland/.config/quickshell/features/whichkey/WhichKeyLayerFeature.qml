@@ -70,7 +70,7 @@ Scope {
             readonly property var monitor: Hyprland.monitorFor(modelData)
             readonly property bool isFocused: root.isFocusedMonitor(monitor)
 
-            screen: modelData
+            panelScreen: modelData
             active: whichKeyState.open && whichKeyState.enabled && isFocused
             viewModel: whichKeyState
             style: Config.Config.whichKey?.panel ?? ({})
