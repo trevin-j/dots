@@ -239,9 +239,44 @@ function fuzzyTokenScore(needle, token) {
     return score;
 }
 
+function compareRankedEntries(a, b) {
+    const aFav = a.favoriteRank >= 0;
+    const bFav = b.favoriteRank >= 0;
+    if (aFav !== bFav) {
+        return aFav ? -1 : 1;
+    }
+    if (aFav && bFav && a.favoriteRank !== b.favoriteRank) {
+        return a.favoriteRank - b.favoriteRank;
+    }
+
+    if (a.frecency !== b.frecency) {
+        return b.frecency - a.frecency;
+    }
+
+    return a.name.localeCompare(b.name);
+}
+
+function sortBaseEntries(cachedEntries) {
+    const source = asList(cachedEntries);
+    const ranked = [];
+
+    for (const item of source) {
+        if (item) {
+            ranked.push(item);
+        }
+    }
+
+    ranked.sort(compareRankedEntries);
+    return ranked;
+}
+
 function rankAndFilter(cachedEntries, query) {
     const source = asList(cachedEntries);
     const normalizedQuery = normalizeText(query);
+    if (!normalizedQuery) {
+        return sortBaseEntries(source);
+    }
+
     const filtered = [];
 
     for (const item of source) {
@@ -267,23 +302,15 @@ function rankAndFilter(cachedEntries, query) {
     }
 
     filtered.sort((a, b) => {
-        const aFav = a.favoriteRank >= 0;
-        const bFav = b.favoriteRank >= 0;
-        if (aFav !== bFav) {
-            return aFav ? -1 : 1;
-        }
-        if (aFav && bFav && a.favoriteRank !== b.favoriteRank) {
-            return a.favoriteRank - b.favoriteRank;
-        }
-
-        if (a.frecency !== b.frecency) {
-            return b.frecency - a.frecency;
+        const rankedOrder = compareRankedEntries(a, b);
+        if (rankedOrder !== 0) {
+            return rankedOrder;
         }
         if (a.fuzzyScore !== b.fuzzyScore) {
             return b.fuzzyScore - a.fuzzyScore;
         }
 
-        return a.name.localeCompare(b.name);
+        return 0;
     });
 
     return filtered;

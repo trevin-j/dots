@@ -25,10 +25,14 @@ QtObject {
     readonly property int pageSize: rows * columns
     readonly property var favorites: AppDrawerLogic.normalizeFavorites(root.appDrawerConfig?.favorites)
     readonly property var usageMap: Services.AppDrawerService.usageMap ?? ({})
+    readonly property int searchDebounceMs: Math.max(0,
+        Math.floor(Number(root.appDrawerConfig?.behavior?.searchDebounceMs ?? 35) || 35))
 
     property var sourceApplications: []
     property var cachedApps: []
+    property var baseRankedApps: []
     property var sessionCachedApps: []
+    property var sessionBaseRankedApps: []
     property var rankedApps: []
     property bool pendingSourceRefresh: false
     readonly property int totalItems: rankedApps.length
@@ -51,8 +55,10 @@ QtObject {
             root.usageMap,
             Date.now()
         );
+        root.baseRankedApps = AppDrawerLogic.sortBaseEntries(root.cachedApps);
         if (!root.state.open) {
             root.sessionCachedApps = root.cachedApps;
+            root.sessionBaseRankedApps = root.baseRankedApps;
         }
         root.rebuildRanking();
     }
@@ -67,16 +73,35 @@ QtObject {
     }
 
     function rebuildRanking() {
+        rankingDebounceTimer.stop();
         if (!root.presentationOpen) {
             root.rankedApps = [];
             root.state.ensurePageInRange(1);
             return;
         }
 
-        root.rankedApps = AppDrawerLogic.rankAndFilter(root.sessionCachedApps, root.state.query);
+        if (!root.state.query) {
+            root.rankedApps = root.sessionBaseRankedApps;
+        } else {
+            root.rankedApps = AppDrawerLogic.rankAndFilter(root.sessionCachedApps, root.state.query);
+        }
         root.state.ensureSelectionInRange(root.totalItems);
         root.state.ensurePageInRange(root.totalPages);
         root.state.syncPageToSelection(root.pageSize);
+    }
+
+    function scheduleRankingRefresh() {
+        if (!root.presentationOpen) {
+            root.rebuildRanking();
+            return;
+        }
+
+        if (!root.state.query || root.searchDebounceMs === 0) {
+            root.rebuildRanking();
+            return;
+        }
+
+        rankingDebounceTimer.restart();
     }
 
     onFavoritesChanged: root.scheduleSourceRefresh()
@@ -85,7 +110,9 @@ QtObject {
             return;
         }
 
+        rankingDebounceTimer.stop();
         root.sessionCachedApps = [];
+        root.sessionBaseRankedApps = [];
         root.rankedApps = [];
         if (root.pendingSourceRefresh) {
             desktopRefreshTimer.restart();
@@ -99,6 +126,14 @@ QtObject {
         interval: 120
         repeat: false
         onTriggered: root.rebuildSourceCache()
+    }
+
+    property Timer rankingDebounceTimer: Timer {
+        id: rankingDebounceTimer
+
+        interval: root.searchDebounceMs
+        repeat: false
+        onTriggered: root.rebuildRanking()
     }
 
     property Connections desktopEntryConnections: Connections {
@@ -130,9 +165,12 @@ QtObject {
                     root.rebuildSourceCache();
                 }
                 root.sessionCachedApps = root.cachedApps;
+                root.sessionBaseRankedApps = root.baseRankedApps;
                 root.rebuildRanking();
             } else if (!root.presentationOpen) {
+                rankingDebounceTimer.stop();
                 root.sessionCachedApps = [];
+                root.sessionBaseRankedApps = [];
                 root.rankedApps = [];
                 if (root.pendingSourceRefresh) {
                     desktopRefreshTimer.restart();
@@ -141,7 +179,7 @@ QtObject {
         }
 
         function onQueryChanged() {
-            root.rebuildRanking();
+            root.scheduleRankingRefresh();
         }
     }
 

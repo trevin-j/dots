@@ -31,6 +31,8 @@ Primitives.SlideOutPanelWindow {
     readonly property int overshootBottomPadding: Config.Config.appDrawer?.size?.overshootPadding
         ?? Math.max(72, Math.round(root.panelHeight * 0.22))
     readonly property int drawerOpenDelay: Config.Config.appDrawer?.behavior?.drawerOpenDelay ?? 0
+    readonly property int pagePreloadRadius: Math.max(0,
+        Math.floor(Number(Config.Config.appDrawer?.behavior?.pagePreloadRadius ?? 1) || 1))
     readonly property real pageSwipeThreshold: Math.max(0.1, Math.min(0.9,
         Number(Config.Config.appDrawer?.behavior?.pageSwipeThreshold ?? 0.5)))
     readonly property real horizontalScrollSensitivity: Math.max(0.5,
@@ -121,6 +123,10 @@ Primitives.SlideOutPanelWindow {
 
         appModel.launchSelected();
         root.state.close();
+    }
+
+    function shouldLoadPage(pageIndex) {
+        return Math.abs(pageIndex - root.state.page) <= root.pagePreloadRadius;
     }
 
     onVisibleChanged: {
@@ -325,18 +331,23 @@ Primitives.SlideOutPanelWindow {
                                 width: pageFlick.width
                                 height: pageFlick.height
 
-                                AppDrawerComponents.AppDrawerGrid {
-                                    items: appModel.pageItems(index)
-                                    columns: root.columns
-                                    tileHeight: root.tileHeight
-                                    iconSize: root.iconSize
-                                    tileSpacing: root.tileSpacing
-                                    model: appModel
-                                    selectedPageIndex: root.state.selectedIndex - appModel.pageStartIndex(index)
+                                Loader {
                                     anchors.fill: parent
-                                    onAppActivated: desktopId => {
-                                        appModel.launch(desktopId);
-                                        root.state.close();
+                                    active: root.shouldLoadPage(index)
+                                    asynchronous: true
+
+                                    sourceComponent: AppDrawerComponents.AppDrawerGrid {
+                                        items: appModel.pageItems(index)
+                                        columns: root.columns
+                                        tileHeight: root.tileHeight
+                                        iconSize: root.iconSize
+                                        tileSpacing: root.tileSpacing
+                                        model: appModel
+                                        selectedPageIndex: root.state.selectedIndex - appModel.pageStartIndex(index)
+                                        onAppActivated: desktopId => {
+                                            appModel.launch(desktopId);
+                                            root.state.close();
+                                        }
                                     }
                                 }
                             }

@@ -37,6 +37,66 @@ TestCase {
         compare(ranked[1].desktopId, "b.desktop");
     }
 
+    function test_sortBaseEntriesUsesFavoriteThenFrecency() {
+        const ranked = AppDrawerLogic.sortBaseEntries([
+            {
+                desktopId: "browser.desktop",
+                name: "Browser",
+                favoriteRank: -1,
+                frecency: 500
+            },
+            {
+                desktopId: "notes.desktop",
+                name: "Notes",
+                favoriteRank: 1,
+                frecency: 10
+            },
+            {
+                desktopId: "terminal.desktop",
+                name: "Terminal",
+                favoriteRank: 0,
+                frecency: 200
+            }
+        ]);
+
+        compare(ranked.length, 3);
+        compare(ranked[0].desktopId, "terminal.desktop");
+        compare(ranked[1].desktopId, "notes.desktop");
+        compare(ranked[2].desktopId, "browser.desktop");
+    }
+
+    function test_emptyQueryUsesBaseOrdering() {
+        const cached = [
+            {
+                desktopId: "browser.desktop",
+                name: "Browser",
+                favoriteRank: -1,
+                frecency: 100,
+                searchText: "browser"
+            },
+            {
+                desktopId: "archive.desktop",
+                name: "Archive",
+                favoriteRank: -1,
+                frecency: 100,
+                searchText: "archive"
+            },
+            {
+                desktopId: "terminal.desktop",
+                name: "Terminal",
+                favoriteRank: 0,
+                frecency: 1,
+                searchText: "terminal"
+            }
+        ];
+
+        const ranked = AppDrawerLogic.rankAndFilter(cached, "");
+        compare(ranked.length, 3);
+        compare(ranked[0].desktopId, "terminal.desktop");
+        compare(ranked[1].desktopId, "archive.desktop");
+        compare(ranked[2].desktopId, "browser.desktop");
+    }
+
     function test_fuzzyFilter() {
         const cached = [
             {

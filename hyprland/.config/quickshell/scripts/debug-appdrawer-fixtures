@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+show_help() {
+  printf '%s\n' \
+    'Usage: scripts/debug-appdrawer-fixtures [--count N] [--output DIR] [--prefix NAME]' \
+    '' \
+    'Generates synthetic desktop entries under DIR/share/applications so the app drawer' \
+    'can be tested against large app counts in an isolated XDG data directory.'
+}
+
+count=600
+output_dir="${XDG_RUNTIME_DIR:-/tmp}/qs-appdrawer-debug"
+prefix='Debug App'
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --count)
+      count="$2"
+      shift 2
+      ;;
+    --output)
+      output_dir="$2"
+      shift 2
+      ;;
+    --prefix)
+      prefix="$2"
+      shift 2
+      ;;
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    *)
+      printf 'Unknown argument: %s\n' "$1" >&2
+      show_help >&2
+      exit 1
+      ;;
+  esac
+done
+
+if ! [[ "$count" =~ ^[0-9]+$ ]]; then
+  printf '--count must be a non-negative integer\n' >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  printf 'python3 is required\n' >&2
+  exit 1
+fi
+
+python3 - "$count" "$output_dir" "$prefix" <<'PY'
+import sys
+from pathlib import Path
+
+count = int(sys.argv[1])
+output_dir = Path(sys.argv[2]).expanduser()
+prefix = sys.argv[3]
+applications_dir = output_dir / "share" / "applications"
+applications_dir.mkdir(parents=True, exist_ok=True)
+
+icons = [
+    "utilities-terminal",
+    "system-run",
+    "accessories-text-editor",
+    "internet-web-browser",
+    "folder",
+    "applications-system",
+    "preferences-desktop",
+    "multimedia-player",
+    "package-x-generic",
+    "application-x-executable",
+]
+
+groups = [
+    "alpha",
+    "beta",
+    "gamma",
+    "delta",
+    "omega",
+    "search",
+    "media",
+    "network",
+    "system",
+    "tools",
+]
+
+for index in range(count):
+    group = groups[index % len(groups)]
+    icon = icons[index % len(icons)]
+    desktop_id = f"debug-app-{index:04d}.desktop"
+    entry_path = applications_dir / desktop_id
+    content = "\n".join([
+        "[Desktop Entry]",
+        "Type=Application",
+        f"Name={prefix} {index:04d}",
+        f"GenericName={group.title()} Utility",
+        f"Comment=Synthetic launcher {index:04d} for app drawer load testing",
+        f"Keywords={group};debug;drawer;search;load;test;{index:04d};",
+        f"Icon={icon}",
+        "Exec=/usr/bin/env true",
+        "Terminal=false",
+        "NoDisplay=false",
+        "Categories=Utility;Development;",
+        "StartupNotify=false",
+        "",
+    ])
+    entry_path.write_text(content, encoding="utf-8")
+
+print(applications_dir)
+PY
+
+printf 'Generated %s synthetic desktop entries under %s/share/applications\n' "$count" "$output_dir"
+printf 'Use that directory as an isolated XDG data source when you want to profile app drawer load.\n'

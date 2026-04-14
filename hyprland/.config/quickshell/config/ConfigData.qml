@@ -168,8 +168,10 @@ QtObject {
         }),
         behavior: ({
             drawerOpenDelay: 0,
+            pagePreloadRadius: 1,
             pageSwipeThreshold: 0.5,
-            horizontalScrollSensitivity: 2.4
+            horizontalScrollSensitivity: 2.4,
+            searchDebounceMs: 35
         }),
         favorites: []
     })
