@@ -4,7 +4,6 @@ import Quickshell
 import "../features/chrome" as ChromeFeature
 import "../features/osd" as OsdFeature
 import "../features/notifications" as NotificationFeature
-import "../features/whichkey" as WhichKeyFeature
 import "./" as App
 
 ShellRoot {
@@ -20,6 +19,5 @@ ShellRoot {
     OsdFeature.VolumePopupLayerFeature {}
     OsdFeature.BrightnessPopupLayerFeature {}
     NotificationFeature.NotificationPopupLayerFeature {}
-    WhichKeyFeature.WhichKeyLayerFeature {}
     ChromeFeature.ScreenCornerCutoutsLayerFeature {}
 }

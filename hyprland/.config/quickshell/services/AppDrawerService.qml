@@ -16,6 +16,7 @@ import "parsers/AppDrawerUsageParsers.js" as AppDrawerUsageParsers
 Scope {
     id: root
 
+    readonly property string panelId: "appdrawer"
     property var entries: []
     property var usageMap: ({})
     readonly property string usagePath: Quickshell.env("QS_APP_DRAWER_STATE_PATH")
@@ -115,25 +116,48 @@ Scope {
     }
 
     function toggle() {
-        if (root.isOpen()) {
+        if (root.isTargetOpen()) {
             root.close();
             return;
         }
 
-        Services.ControlCenterService.close();
         root.open();
     }
 
     function open() {
-        Services.ControlCenterService.close();
-        root.withTargetState(state => state.openPanel());
+        const state = root.targetState();
+        if (!state) {
+            return;
+        }
+
+        Services.PanelExclusivityService.requestOpen(root.panelId);
+        root.closeAll();
+        state.openPanel();
     }
 
     function close() {
         root.withTargetState(state => state.close());
     }
 
+    function closeAll() {
+        for (const entry of root.entries) {
+            if (entry?.state) {
+                entry.state.close();
+            }
+        }
+    }
+
     function isOpen() {
+        for (const entry of root.entries) {
+            if (entry?.state?.open) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function isTargetOpen() {
         const state = root.targetState();
         return state ? state.open : false;
     }
@@ -252,4 +276,7 @@ Scope {
             return root.isOpen();
         }
     }
+
+    Component.onCompleted: Services.PanelExclusivityService.registerPanel(root.panelId, root)
+    Component.onDestruction: Services.PanelExclusivityService.unregisterPanel(root.panelId, root)
 }

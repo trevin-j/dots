@@ -207,7 +207,7 @@ PanelWindow {
                         active: root.controlCenterState?.open ?? false
                         hasPendingNotifications: Services.NotificationService.hasNotifications
                         Layout.fillHeight: true
-                        onClicked: root.controlCenterState.toggle()
+                        onClicked: Services.ControlCenterService.toggle()
                     }
                 }
             }

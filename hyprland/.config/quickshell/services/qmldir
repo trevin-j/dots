@@ -10,3 +10,4 @@ singleton VolumeFeedbackService VolumeFeedbackService.qml
 singleton WallpaperService WallpaperService.qml
 singleton WhichKeyService WhichKeyService.qml
 singleton KeyboardService KeyboardService.qml
+singleton PanelExclusivityService PanelExclusivityService.qml

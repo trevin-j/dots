@@ -7,6 +7,7 @@ import "../features/appdrawer/vm" as AppDrawerVm
 import "../features/bar" as BarFeature
 import "../features/controlcenter" as ControlCenterFeature
 import "../features/controlcenter/vm" as ControlCenterVm
+import "../features/whichkey" as WhichKeyFeature
 
 /*
   ScreenShell
@@ -49,5 +50,9 @@ Item {
     AppDrawerFeature.AppDrawerPanelFeature {
         panelScreen: root.panelScreen
         state: appDrawerState
+    }
+
+    WhichKeyFeature.WhichKeyLayerFeature {
+        panelScreen: root.panelScreen
     }
 }

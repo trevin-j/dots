@@ -14,6 +14,7 @@ import "./" as Services
 Scope {
     id: root
 
+    readonly property string panelId: "controlcenter"
     property var entries: []
 
     function monitorKey(monitor) {
@@ -102,25 +103,48 @@ Scope {
     }
 
     function toggle() {
-        if (root.isOpen()) {
+        if (root.isTargetOpen()) {
             root.close();
             return;
         }
 
-        Services.AppDrawerService.close();
         root.open();
     }
 
     function open() {
-        Services.AppDrawerService.close();
-        root.withTargetState(state => state.openPanel());
+        const state = root.targetState();
+        if (!state) {
+            return;
+        }
+
+        Services.PanelExclusivityService.requestOpen(root.panelId);
+        root.closeAll();
+        state.openPanel();
     }
 
     function close() {
         root.withTargetState(state => state.close());
     }
 
+    function closeAll() {
+        for (const entry of root.entries) {
+            if (entry?.state) {
+                entry.state.close();
+            }
+        }
+    }
+
     function isOpen() {
+        for (const entry of root.entries) {
+            if (entry?.state?.open) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function isTargetOpen() {
         const state = root.targetState();
         return state ? state.open : false;
     }
@@ -180,4 +204,7 @@ Scope {
             root.swipeDown();
         }
     }
+
+    Component.onCompleted: Services.PanelExclusivityService.registerPanel(root.panelId, root)
+    Component.onDestruction: Services.PanelExclusivityService.unregisterPanel(root.panelId, root)
 }
