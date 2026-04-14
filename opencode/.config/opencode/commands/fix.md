@@ -1,6 +1,5 @@
 ---
 description: Debug and fix issues in the codebase
-agent: grand-master
 license: MIT
 author: DevTrev
 ---

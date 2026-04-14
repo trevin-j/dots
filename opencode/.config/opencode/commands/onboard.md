@@ -1,6 +1,5 @@
 ---
 description: Explain and document a codebase structure
-agent: documenter
 author: DevTrev
 license: MIT
 ---

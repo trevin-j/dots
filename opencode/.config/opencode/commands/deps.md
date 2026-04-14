@@ -1,6 +1,5 @@
 ---
 description: Audit project dependencies for outdated or vulnerable packages
-agent: review-master
 author: DevTrev
 license: MIT
 ---

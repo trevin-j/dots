@@ -1,6 +1,5 @@
 ---
 description: Run tests and verify functionality
-agent: validator
 author: DevTrev
 license: MIT
 ---
