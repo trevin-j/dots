@@ -10,7 +10,7 @@ import "../../../services" as Services
 
 /*
   AppDrawerModel
-  Caches desktop entries and derives ranked paginated app-grid results.
+  Caches desktop entries and derives ranked app-grid results.
   Required properties: state.
 */
 QtObject {
@@ -22,7 +22,6 @@ QtObject {
     readonly property var appDrawerConfig: Config.Config.appDrawer ?? ({})
     readonly property int rows: AppDrawerLogic.normalizeRows(root.appDrawerConfig?.size?.rows)
     readonly property int columns: AppDrawerLogic.normalizeColumns(root.appDrawerConfig?.size?.columns)
-    readonly property int pageSize: rows * columns
     readonly property var favorites: AppDrawerLogic.normalizeFavorites(root.appDrawerConfig?.favorites)
     readonly property var usageMap: Services.AppDrawerService.usageMap ?? ({})
     readonly property int searchDebounceMs: Math.max(0,
@@ -36,8 +35,6 @@ QtObject {
     property var rankedApps: []
     property bool pendingSourceRefresh: false
     readonly property int totalItems: rankedApps.length
-    readonly property int totalPages: AppDrawerLogic.pageCount(root.totalItems, root.pageSize)
-    readonly property var currentPageItems: AppDrawerLogic.pageSlice(root.rankedApps, root.state.page, root.pageSize)
     readonly property var selectedItem: (root.state.selectedIndex >= 0 && root.state.selectedIndex < root.totalItems)
         ? root.rankedApps[root.state.selectedIndex]
         : null
@@ -76,7 +73,7 @@ QtObject {
         rankingDebounceTimer.stop();
         if (!root.presentationOpen) {
             root.rankedApps = [];
-            root.state.ensurePageInRange(1);
+            root.state.ensureSelectionInRange(1);
             return;
         }
 
@@ -86,8 +83,6 @@ QtObject {
             root.rankedApps = AppDrawerLogic.rankAndFilter(root.sessionCachedApps, root.state.query);
         }
         root.state.ensureSelectionInRange(root.totalItems);
-        root.state.ensurePageInRange(root.totalPages);
-        root.state.syncPageToSelection(root.pageSize);
     }
 
     function scheduleRankingRefresh() {
@@ -192,15 +187,6 @@ QtObject {
         }
 
         return Quickshell.iconPath(normalized, true);
-    }
-
-    function pageItems(page) {
-        return AppDrawerLogic.pageSlice(root.rankedApps, page, root.pageSize);
-    }
-
-    function pageStartIndex(page) {
-        const index = Math.max(0, Math.floor(Number(page) || 0));
-        return index * root.pageSize;
     }
 
     function launchSelected() {

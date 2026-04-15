@@ -4,7 +4,7 @@ import QtQuick
 
 /*
   AppDrawerState
-  Shared per-screen state for app drawer visibility, query, and page selection.
+  Shared per-screen state for app drawer visibility, query, and selection.
 */
 QtObject {
     id: root
@@ -12,11 +12,9 @@ QtObject {
     property bool open: false
     property int edgeInset: 0
     property string query: ""
-    property int page: 0
     property int selectedIndex: -1
 
     function resetNavigation() {
-        root.page = 0;
         root.selectedIndex = 0;
     }
 
@@ -48,21 +46,10 @@ QtObject {
         root.resetNavigation();
     }
 
-    function ensurePageInRange(totalPages) {
-        const maxPage = Math.max(0, totalPages - 1);
-        if (root.page > maxPage) {
-            root.page = maxPage;
-        }
-        if (root.page < 0) {
-            root.page = 0;
-        }
-    }
-
     function ensureSelectionInRange(totalItems) {
         const maxIndex = Math.max(-1, totalItems - 1);
         if (maxIndex < 0) {
             root.selectedIndex = -1;
-            root.page = 0;
             return;
         }
 
@@ -73,34 +60,9 @@ QtObject {
         }
     }
 
-    function syncPageToSelection(pageSize) {
-        const size = Math.max(1, Math.floor(Number(pageSize) || 1));
-        if (root.selectedIndex < 0) {
-            root.page = 0;
-            return;
-        }
-
-        root.page = Math.floor(root.selectedIndex / size);
-    }
-
-    function selectPage(pageIndex, totalPages, pageSize, totalItems) {
-        root.ensurePageInRange(totalPages);
-        const maxPage = Math.max(0, totalPages - 1);
-        root.page = Math.min(Math.max(0, Math.floor(Number(pageIndex) || 0)), maxPage);
-
+    function moveSelection(delta, totalItems, columns) {
         if (totalItems <= 0) {
             root.selectedIndex = -1;
-            return;
-        }
-
-        const size = Math.max(1, Math.floor(Number(pageSize) || 1));
-        root.selectedIndex = Math.min(totalItems - 1, root.page * size);
-    }
-
-    function moveSelection(delta, totalItems, pageSize) {
-        if (totalItems <= 0) {
-            root.selectedIndex = -1;
-            root.page = 0;
             return;
         }
 
@@ -110,21 +72,6 @@ QtObject {
         }
 
         root.ensureSelectionInRange(totalItems);
-        root.selectedIndex = Math.min(totalItems - 1, Math.max(0, root.selectedIndex + offset));
-        root.syncPageToSelection(pageSize);
-    }
-
-    function nextPage(totalPages) {
-        root.ensurePageInRange(totalPages);
-        if (root.page + 1 < totalPages) {
-            root.page += 1;
-        }
-    }
-
-    function previousPage(totalPages) {
-        root.ensurePageInRange(totalPages);
-        if (root.page > 0) {
-            root.page -= 1;
-        }
+        root.selectedIndex = Math.max(0, Math.min(totalItems - 1, root.selectedIndex + offset));
     }
 }

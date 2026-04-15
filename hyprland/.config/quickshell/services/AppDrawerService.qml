@@ -163,9 +163,9 @@ Scope {
     }
 
     function swipeUp() {
-        if (!root.isOpen()) {
-            root.open();
-        }
+    }
+
+    function swipeDown() {
     }
 
     function queueUsageWrite() {

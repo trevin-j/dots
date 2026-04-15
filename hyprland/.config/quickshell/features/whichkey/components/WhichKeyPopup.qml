@@ -26,7 +26,7 @@ Primitives.SlideOutPanelWindow {
     readonly property int drawerRows: Math.max(1, Config.Config.appDrawer?.size?.rows ?? 3)
     readonly property int drawerTileHeight: Config.Config.appDrawer?.size?.tileHeight ?? 104
     readonly property int drawerTileSpacing: Config.Config.appDrawer?.size?.tileSpacing ?? 10
-    readonly property int footerHeight: Config.Config.appDrawer?.size?.pageControlHeight ?? 36
+    readonly property int footerHeight: 36
     readonly property int overshootBottomPadding: Config.Config.appDrawer?.size?.overshootPadding
         ?? Math.max(72, Math.round(root.panelHeight * 0.22))
     readonly property int drawerOpenDelay: Config.Config.appDrawer?.behavior?.drawerOpenDelay ?? 0

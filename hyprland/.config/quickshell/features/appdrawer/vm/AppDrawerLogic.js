@@ -315,18 +315,3 @@ function rankAndFilter(cachedEntries, query) {
 
     return filtered;
 }
-
-function pageCount(itemCount, pageSize) {
-    const size = Math.max(1, Math.floor(Number(pageSize) || 1));
-    const count = Math.max(0, Math.floor(Number(itemCount) || 0));
-    return Math.max(1, Math.ceil(count / size));
-}
-
-function pageSlice(items, page, pageSize) {
-    const source = asList(items);
-    const size = Math.max(1, Math.floor(Number(pageSize) || 1));
-    const maxPage = Math.max(0, Math.ceil(source.length / size) - 1);
-    const index = Math.min(Math.max(0, Math.floor(Number(page) || 0)), maxPage);
-    const start = index * size;
-    return source.slice(start, start + size);
-}

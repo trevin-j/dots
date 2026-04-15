@@ -10,7 +10,7 @@ import "./vm" as AppDrawerVm
 
 /*
   AppDrawerPanelFeature
-  Full-width bottom-edge app drawer with search, grid pagination, and global key capture.
+  Full-height left-edge app drawer with search and vertical app grid.
   Required properties: panelScreen, state.
 */
 Primitives.SlideOutPanelWindow {
@@ -22,33 +22,18 @@ Primitives.SlideOutPanelWindow {
     readonly property int contentSpacing: Config.Config.appDrawer?.size?.spacing ?? 14
     readonly property int searchHeight: Config.Config.appDrawer?.size?.searchHeight ?? 44
     readonly property int searchHorizontalPadding: Config.Config.appDrawer?.size?.searchHorizontalPadding ?? 18
-    readonly property int rows: Math.max(1, Config.Config.appDrawer?.size?.rows ?? 3)
     readonly property int columns: Math.max(1, Config.Config.appDrawer?.size?.columns ?? 10)
     readonly property int tileHeight: Config.Config.appDrawer?.size?.tileHeight ?? 104
     readonly property int tileSpacing: Config.Config.appDrawer?.size?.tileSpacing ?? 10
     readonly property int iconSize: Config.Config.appDrawer?.size?.iconSize ?? 38
-    readonly property int pageControlHeight: Config.Config.appDrawer?.size?.pageControlHeight ?? 36
-    readonly property int overshootBottomPadding: Config.Config.appDrawer?.size?.overshootPadding
-        ?? Math.max(72, Math.round(root.panelHeight * 0.22))
     readonly property int drawerOpenDelay: Config.Config.appDrawer?.behavior?.drawerOpenDelay ?? 0
-    readonly property int pagePreloadRadius: Math.max(0,
-        Math.floor(Number(Config.Config.appDrawer?.behavior?.pagePreloadRadius ?? 1) || 1))
-    readonly property real pageSwipeThreshold: Math.max(0.1, Math.min(0.9,
-        Number(Config.Config.appDrawer?.behavior?.pageSwipeThreshold ?? 0.5)))
-    readonly property real horizontalScrollSensitivity: Math.max(0.5,
-        Number(Config.Config.appDrawer?.behavior?.horizontalScrollSensitivity ?? 2.4))
+    readonly property int overshootLeftPadding: Config.Config.appDrawer?.size?.overshootPadding
+        ?? Math.max(96, Math.round(panelWidth * 0.24))
     readonly property int panelOpenDurationMs: Config.Motion.shellDuration
     readonly property int panelCloseDurationMs: Config.Motion.shortDuration
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
-    readonly property int gridHeight: rows * tileHeight + Math.max(0, rows - 1) * tileSpacing
-    readonly property int panelHeight: contentPadding
-        + searchHeight
-        + contentSpacing
-        + gridHeight
-        + contentSpacing
-        + pageControlHeight
-        + contentPadding
+    readonly property int panelWidth: Math.max(280, Math.round(root.columns * (root.tileHeight * 0.8) + root.contentPadding * 2))
 
     open: root.state.open
     closeDurationMs: root.panelCloseDurationMs
@@ -64,56 +49,7 @@ Primitives.SlideOutPanelWindow {
     }
 
     function moveSelection(delta) {
-        root.state.moveSelection(delta, appModel.totalItems, appModel.pageSize);
-    }
-
-    function selectPage(page) {
-        pageSettleTimer.stop();
-        pageFlick.pageGestureActive = false;
-        root.state.selectPage(page, appModel.totalPages, appModel.pageSize, appModel.totalItems);
-    }
-
-    function beginPageGesture() {
-        if (pageFlick.pageGestureActive) {
-            return;
-        }
-
-        pageFlick.pageGestureActive = true;
-        pageFlick.pageGestureAnchorPage = root.state.page;
-    }
-
-    function settlePageGesture() {
-        if (pageFlick.width <= 0) {
-            pageFlick.pageGestureActive = false;
-            return;
-        }
-
-        const anchorPage = Math.max(0, Math.min(appModel.totalPages - 1, pageFlick.pageGestureAnchorPage));
-        const anchorOffset = anchorPage * pageFlick.width;
-        const progress = (pageFlick.contentX - anchorOffset) / pageFlick.width;
-        let targetPage = anchorPage;
-
-        if (progress >= root.pageSwipeThreshold) {
-            targetPage += 1;
-        } else if (progress <= -root.pageSwipeThreshold) {
-            targetPage -= 1;
-        }
-
-        pageFlick.pageGestureActive = false;
-        root.selectPage(targetPage);
-    }
-
-    function nudgePageGesture(delta) {
-        if (pageFlick.width <= 0 || appModel.totalPages <= 1) {
-            return;
-        }
-
-        root.beginPageGesture();
-        const minX = Math.max(0, (pageFlick.pageGestureAnchorPage - 1) * pageFlick.width);
-        const maxX = Math.min((appModel.totalPages - 1) * pageFlick.width,
-            (pageFlick.pageGestureAnchorPage + 1) * pageFlick.width);
-        pageFlick.contentX = Math.max(minX, Math.min(maxX, pageFlick.contentX + delta));
-        pageSettleTimer.restart();
+        root.state.moveSelection(delta, appModel.totalItems, root.columns);
     }
 
     function launchSelectedApp() {
@@ -123,10 +59,6 @@ Primitives.SlideOutPanelWindow {
 
         appModel.launchSelected();
         root.state.close();
-    }
-
-    function shouldLoadPage(pageIndex) {
-        return Math.abs(pageIndex - root.state.page) <= root.pagePreloadRadius;
     }
 
     onVisibleChanged: {
@@ -172,19 +104,12 @@ Primitives.SlideOutPanelWindow {
         }
     }
 
-    Timer {
-        id: pageSettleTimer
-
-        interval: 90
-        repeat: false
-        onTriggered: root.settlePageGesture()
-    }
-
     Connections {
         target: root.state
 
         function onOpenChanged() {
             if (root.state.open) {
+                gridView.currentIndex = root.state.selectedIndex;
                 focusTimer.restart();
                 focusRetryTimer.restart();
             } else {
@@ -192,20 +117,16 @@ Primitives.SlideOutPanelWindow {
             }
         }
 
-        function onPageChanged() {
-            const targetX = root.state.page * pageFlick.width;
-            if (Math.abs(pageFlick.contentX - targetX) > 1) {
-                pageFlick.contentX = targetX;
-            }
-            pageFlick.pageGestureAnchorPage = root.state.page;
+        function onSelectedIndexChanged() {
+            gridView.currentIndex = root.state.selectedIndex;
         }
     }
 
     MouseArea {
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.right: parent.right
-        height: Math.max(0, Math.round(mainPanel.visibleSurfaceY))
+        anchors.bottom: parent.bottom
+        width: Math.max(0, Math.round(mainPanel.visibleSurfaceX))
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         enabled: root.state.open
         onClicked: root.state.close()
@@ -215,14 +136,14 @@ Primitives.SlideOutPanelWindow {
         id: mainPanel
 
         anchors.fill: parent
-        attachedEdge: "bottom"
-        primaryExtent: root.panelHeight
-        overshootPadding: root.overshootBottomPadding
+        attachedEdge: "left"
+        primaryExtent: root.panelWidth
+        overshootPadding: root.overshootLeftPadding
         openDelay: root.drawerOpenDelay
         active: root.presentationOpen
         open: root.open
         surfaceColor: root.surfaceColor
-        shadowOffsetY: -Config.Appearance.shadowOffsetY
+        shadowOffsetX: Config.Appearance.shadowOffsetY
 
         onEdgeInsetChanged: root.state.edgeInset = edgeInset
 
@@ -256,111 +177,102 @@ Primitives.SlideOutPanelWindow {
                 color: root.sectionColor
                 clip: true
 
-                Item {
+                GridView {
+                    id: gridView
+
                     anchors.fill: parent
                     anchors.margins: root.contentPadding
+                    cellWidth: (width - root.contentSpacing * Math.max(0, root.columns - 1)) / root.columns
+                    cellHeight: root.tileHeight
+                    snapMode: GridView.NoSnap
+                    cacheBuffer: height
 
-                    Flickable {
-                        id: pageFlick
+                    model: appModel.rankedApps
 
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        height: root.gridHeight
-                        clip: true
-                        contentWidth: Math.max(width, width * Math.max(1, appModel.totalPages))
-                        contentHeight: height
-                        interactive: appModel.totalPages > 1
-                        flickableDirection: Flickable.HorizontalFlick
-                        boundsBehavior: Flickable.StopAtBounds
-                        property int pageGestureAnchorPage: root.state.page
-                        property bool pageGestureActive: false
+                    currentIndex: -1
 
-                        onWidthChanged: contentX = root.state.page * width
-                        onMovementStarted: root.beginPageGesture()
-                        onDraggingChanged: if (!dragging) {
-                            pageSettleTimer.restart();
-                        }
-                        onFlickingChanged: if (!flicking && !dragging) {
-                            pageSettleTimer.restart();
-                        }
-
-                        Behavior on contentX {
-                            enabled: !pageFlick.dragging && !pageFlick.flicking
-
-                            NumberAnimation {
-                                duration: Config.Motion.shellDuration
-                                easing.bezierCurve: Config.Motion.shell
-                            }
-                        }
-
-                        onMovementEnded: {
-                            pageSettleTimer.restart();
-                        }
-
-                        WheelHandler {
-                            target: pageFlick
-                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-
-                            onWheel: event => {
-                                if (!root.state.open || appModel.totalPages <= 1) {
-                                    return;
-                                }
-
-                                let delta = 0;
-                                if (event.pixelDelta.x !== 0) {
-                                    delta = -event.pixelDelta.x;
-                                } else if (event.angleDelta.x !== 0) {
-                                    delta = -(event.angleDelta.x / 120) * 48;
-                                } else {
-                                    return;
-                                }
-
-                                root.nudgePageGesture(delta * root.horizontalScrollSensitivity);
-                                event.accepted = true;
-                            }
-                        }
-
-                        Repeater {
-                            model: Math.max(1, appModel.totalPages)
-
-                            delegate: Item {
-                                required property int index
-
-                                x: index * pageFlick.width
-                                width: pageFlick.width
-                                height: pageFlick.height
-
-                                Loader {
-                                    anchors.fill: parent
-                                    active: root.shouldLoadPage(index)
-                                    asynchronous: true
-
-                                    sourceComponent: AppDrawerComponents.AppDrawerGrid {
-                                        items: appModel.pageItems(index)
-                                        columns: root.columns
-                                        tileHeight: root.tileHeight
-                                        iconSize: root.iconSize
-                                        tileSpacing: root.tileSpacing
-                                        model: appModel
-                                        selectedPageIndex: root.state.selectedIndex - appModel.pageStartIndex(index)
-                                        onAppActivated: desktopId => {
-                                            appModel.launch(desktopId);
-                                            root.state.close();
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    onCurrentIndexChanged: {
+                        if (currentIndex < 0) return;
+                        gridView.positionViewAtIndex(currentIndex, GridView.Contain);
                     }
 
-                    AppDrawerComponents.AppDrawerPagination {
-                        page: root.state.page
-                        pageCount: appModel.totalPages
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        height: root.pageControlHeight
-                        onPageRequested: page => root.selectPage(page)
+                    delegate: Item {
+                        id: tileRoot
+
+                        required property int index
+                        required property var modelData
+
+                        width: gridView.cellWidth
+                        height: gridView.cellHeight
+
+                        readonly property string desktopId: modelData.desktopId || ""
+                        readonly property string iconName: modelData.iconName || ""
+                        readonly property string appName: modelData.name || desktopId
+                        readonly property string iconSource: appModel.iconSourceFor(iconName)
+                        readonly property real iconTopMargin: Math.max(6, Math.round(root.tileHeight * 0.08))
+                        readonly property real textTopMargin: Math.max(6, Math.round(root.tileHeight * 0.14))
+                        readonly property bool selected: index === gridView.currentIndex
+
+                        Rectangle {
+                            id: tileBackground
+
+                            anchors.fill: parent
+                            radius: Config.Appearance.radiusMedium
+                            color: tileRoot.selected
+                                ? Config.Palette.color("secondary_container")
+                                : (mouseArea.pressed
+                                    ? Config.Palette.color("surface_container_high")
+                                    : "transparent")
+                            border.width: tileRoot.selected ? 1 : 0
+                            border.color: tileRoot.selected ? Config.Palette.color("outline_variant") : "transparent"
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Config.Motion.shortDuration
+                                }
+                            }
+                        }
+
+                        IconImage {
+                            source: tileRoot.iconSource
+                            asynchronous: true
+                            mipmap: true
+                            width: root.iconSize
+                            height: root.iconSize
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            anchors.topMargin: tileRoot.iconTopMargin
+                        }
+
+                        Text {
+                            text: tileRoot.appName
+                            color: Config.Palette.color("on_surface")
+                            font.family: Config.Appearance.fontFamily
+                            font.weight: tileRoot.selected ? Font.DemiBold : Config.Appearance.fontWeight
+                            font.pixelSize: Config.Appearance.fontSizeSmall
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignTop
+                            elide: Text.ElideRight
+                            maximumLineCount: 2
+                            wrapMode: Text.WordWrap
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.topMargin: tileRoot.iconTopMargin + root.iconSize + tileRoot.textTopMargin
+                            anchors.bottom: parent.bottom
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                        }
+
+                        MouseArea {
+                            id: mouseArea
+
+                            anchors.fill: parent
+                            onClicked: {
+                                root.state.selectedIndex = tileRoot.index;
+                                root.launchSelectedApp();
+                            }
+                        }
                     }
                 }
             }
@@ -403,22 +315,14 @@ Primitives.SlideOutPanelWindow {
                 return;
             }
 
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_PageUp) {
-                if (event.key === Qt.Key_PageUp) {
-                    root.selectPage(root.state.page - 1);
-                } else {
-                    root.moveSelection(-1);
-                }
+            if (event.key === Qt.Key_Left) {
+                root.moveSelection(-1);
                 event.accepted = true;
                 return;
             }
 
-            if (event.key === Qt.Key_Right || event.key === Qt.Key_PageDown) {
-                if (event.key === Qt.Key_PageDown) {
-                    root.selectPage(root.state.page + 1);
-                } else {
-                    root.moveSelection(1);
-                }
+            if (event.key === Qt.Key_Right) {
+                root.moveSelection(1);
                 event.accepted = true;
                 return;
             }

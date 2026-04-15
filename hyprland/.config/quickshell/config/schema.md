@@ -99,7 +99,6 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
 {
   "appDrawer": {
     "size": {
-      "rows": 3,
       "columns": 10,
       "padding": 18,
       "spacing": 14,
@@ -108,13 +107,11 @@ Any subset of keys can be provided. Changes are reloaded at runtime.
       "tileSpacing": 10,
       "searchHeight": 44,
       "searchHorizontalPadding": 18,
-      "pageControlHeight": 36,
-      "overshootPadding": 84
+      "overshootPadding": 96
     },
     "behavior": {
       "drawerOpenDelay": 0,
-      "pageSwipeThreshold": 0.5,
-      "horizontalScrollSensitivity": 2.4
+      "searchDebounceMs": 35
     },
     "favorites": [
       "firefox.desktop",

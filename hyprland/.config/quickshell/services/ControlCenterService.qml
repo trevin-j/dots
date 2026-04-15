@@ -150,23 +150,29 @@ Scope {
     }
 
     function swipeLeft() {
-        if (!root.isOpen()) {
-            root.open();
+        // swipe from right to left
+        if (Services.AppDrawerService.isTargetOpen()) {
+            Services.AppDrawerService.close();
+            return;
         }
+
+        root.open();
     }
 
     function swipeRight() {
-        if (root.isOpen()) {
+        // swipe from left to right
+        if (root.isTargetOpen()) {
             root.close();
+            return;
         }
+
+        Services.AppDrawerService.open();
     }
 
     function swipeUp() {
-        Services.AppDrawerService.swipeUp();
     }
 
     function swipeDown() {
-        Services.AppDrawerService.close();
     }
 
     IpcHandler {

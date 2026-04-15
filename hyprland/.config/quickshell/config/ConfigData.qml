@@ -158,19 +158,15 @@ QtObject {
             columns: 10,
             padding: 18,
             spacing: 14,
-            pageControlHeight: 36,
             tileHeight: 104,
             iconSize: 38,
             tileSpacing: 10,
             searchHeight: 44,
             searchHorizontalPadding: 18,
-            overshootPadding: 84
+            overshootPadding: 96
         }),
         behavior: ({
             drawerOpenDelay: 0,
-            pagePreloadRadius: 1,
-            pageSwipeThreshold: 0.5,
-            horizontalScrollSensitivity: 2.4,
             searchDebounceMs: 35
         }),
         favorites: []
