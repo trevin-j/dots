@@ -144,10 +144,10 @@ Primitives.SlideOutPanelWindow {
     }
 
     MouseArea {
-        anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: Math.max(0, Math.round(mainPanel.visibleSurfaceX))
+        x: Math.max(0, Math.round(mainPanel.visibleSurfaceX + mainPanel.edgeInset))
+        width: Math.max(0, Math.round(parent.width - x))
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         enabled: root.state.open
         onClicked: root.state.close()
