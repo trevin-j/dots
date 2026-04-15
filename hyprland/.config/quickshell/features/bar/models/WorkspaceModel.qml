@@ -28,7 +28,7 @@ Item {
             return "";
         }
         if (workspace.name && workspace.name !== workspace.id.toString()) {
-            return workspace.name;
+            return workspace.id.toString() + ": " + workspace.name;
         }
         return workspace.id.toString();
     }
