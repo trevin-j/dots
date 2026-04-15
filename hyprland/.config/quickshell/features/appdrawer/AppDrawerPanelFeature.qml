@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -6,6 +7,7 @@ import Quickshell.Widgets
 
 import "../../config" as Config
 import "../../design/primitives" as Primitives
+import "../../services" as Services
 import "./components" as AppDrawerComponents
 import "./vm" as AppDrawerVm
 
@@ -34,6 +36,9 @@ Primitives.SlideOutPanelWindow {
     readonly property int panelCloseDurationMs: Config.Motion.shortDuration
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
+    property string contextDesktopId: ""
+    property bool contextPinned: false
+    property bool contextHidden: false
     readonly property int panelWidth: Math.max(280, Math.round(482))
 
     open: root.state.open
@@ -60,6 +65,16 @@ Primitives.SlideOutPanelWindow {
 
         appModel.launchSelected();
         root.state.close();
+    }
+
+    function openContextMenu(tileItem, mouseX, mouseY, desktopId, pinned, hidden) {
+        const point = tileItem.mapToItem(root.contentItem, mouseX, mouseY);
+        root.contextDesktopId = desktopId;
+        root.contextPinned = pinned;
+        root.contextHidden = hidden;
+        contextMenu.x = Math.round(point.x);
+        contextMenu.y = Math.round(point.y);
+        contextMenu.open();
     }
 
     function ensureSelectedVisible() {
@@ -270,6 +285,8 @@ Primitives.SlideOutPanelWindow {
                                     readonly property string iconSource: appModel.iconSourceFor(iconName)
                                     readonly property real iconTopMargin: Math.max(6, Math.round(root.tileHeight * 0.08))
                                     readonly property real textTopMargin: Math.max(6, Math.round(root.tileHeight * 0.14))
+                                    readonly property bool pinned: !!modelData.pinned
+                                    readonly property bool hidden: !!modelData.hidden
                                     readonly property bool selected: index === root.state.selectedIndex
 
                                     x: gridMetrics.sideGap + column * (gridMetrics.tileWidth + gridMetrics.columnGap)
@@ -308,17 +325,7 @@ Primitives.SlideOutPanelWindow {
                                         anchors.topMargin: tileRoot.iconTopMargin
                                     }
 
-                                    Text {
-                                        text: tileRoot.appName
-                                        color: Config.Palette.color("on_surface")
-                                        font.family: Config.Appearance.fontFamily
-                                        font.weight: tileRoot.selected ? Font.DemiBold : Config.Appearance.fontWeight
-                                        font.pixelSize: Config.Appearance.fontSizeSmall
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignTop
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 2
-                                        wrapMode: Text.WordWrap
+                                    Item {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.top: parent.top
@@ -326,13 +333,82 @@ Primitives.SlideOutPanelWindow {
                                         anchors.bottom: parent.bottom
                                         anchors.leftMargin: 8
                                         anchors.rightMargin: 8
+
+                                        Row {
+                                            id: statusIcons
+
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            spacing: 2
+                                            visible: tileRoot.pinned || tileRoot.hidden
+
+                                            Text {
+                                                visible: tileRoot.pinned
+                                                text: "push_pin"
+                                                color: Config.Palette.color("on_surface_variant")
+                                                font.family: Config.Appearance.iconFontFamily
+                                                font.pixelSize: Math.max(12, Math.round(Config.Appearance.fontSizeSmall + 1))
+                                                font.weight: Font.Medium
+                                            }
+
+                                            Text {
+                                                visible: tileRoot.hidden
+                                                text: "visibility_off"
+                                                color: Config.Palette.color("on_surface_variant")
+                                                font.family: Config.Appearance.iconFontFamily
+                                                font.pixelSize: Math.max(12, Math.round(Config.Appearance.fontSizeSmall + 1))
+                                                font.weight: Font.Medium
+                                            }
+                                        }
+
+                                        Text {
+                                            text: tileRoot.appName
+                                            color: Config.Palette.color("on_surface")
+                                            font.family: Config.Appearance.fontFamily
+                                            font.weight: tileRoot.selected ? Font.DemiBold : Config.Appearance.fontWeight
+                                            font.pixelSize: Config.Appearance.fontSizeSmall
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignTop
+                                            elide: Text.ElideRight
+                                            maximumLineCount: 2
+                                            wrapMode: Text.WordWrap
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.bottom: parent.bottom
+                                            anchors.rightMargin: statusIcons.visible ? statusIcons.width + 4 : 0
+                                        }
                                     }
 
                                     MouseArea {
                                         id: mouseArea
 
                                         anchors.fill: parent
-                                        onClicked: {
+                                        acceptedButtons: Qt.AllButtons
+                                        preventStealing: true
+
+                                        onPressed: mouse => {
+                                            if (mouse.button !== Qt.RightButton) {
+                                                return;
+                                            }
+
+                                            root.state.selectedIndex = tileRoot.index;
+                                            root.openContextMenu(
+                                                tileRoot,
+                                                mouse.x,
+                                                mouse.y,
+                                                tileRoot.desktopId,
+                                                tileRoot.pinned,
+                                                tileRoot.hidden
+                                            );
+                                            mouse.accepted = true;
+                                        }
+
+                                        onClicked: mouse => {
+                                            if (mouse.button !== Qt.LeftButton) {
+                                                return;
+                                            }
+
                                             root.state.selectedIndex = tileRoot.index;
                                             root.launchSelectedApp();
                                         }
@@ -343,6 +419,36 @@ Primitives.SlideOutPanelWindow {
                     }
                 }
             }
+        }
+    }
+
+    Controls.Menu {
+        id: contextMenu
+
+        Controls.MenuItem {
+            text: root.contextPinned ? "Unpin" : "Pin"
+            enabled: root.contextDesktopId !== ""
+            onTriggered: Services.AppDrawerService.setPinned(root.contextDesktopId, !root.contextPinned)
+        }
+
+        Controls.MenuItem {
+            text: root.contextHidden ? "Unhide" : "Hide"
+            enabled: root.contextDesktopId !== ""
+            onTriggered: Services.AppDrawerService.setHidden(root.contextDesktopId, !root.contextHidden)
+        }
+
+        Controls.MenuSeparator {
+        }
+
+        Controls.MenuItem {
+            text: "Show Hidden"
+            checkable: true
+            checked: appModel.showHidden
+            onTriggered: Services.AppDrawerService.setShowHidden(!appModel.showHidden)
+        }
+
+        onClosed: {
+            root.contextDesktopId = "";
         }
     }
 

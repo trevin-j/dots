@@ -7,6 +7,7 @@ import Quickshell.Io
 import Qt.labs.platform as Platform
 
 import "./" as Services
+import "parsers/AppDrawerPrefsParsers.js" as AppDrawerPrefsParsers
 import "parsers/AppDrawerUsageParsers.js" as AppDrawerUsageParsers
 
 /*
@@ -19,14 +20,25 @@ Scope {
     readonly property string panelId: "appdrawer"
     property var entries: []
     property var usageMap: ({})
+    property var prefs: AppDrawerPrefsParsers.normalizePrefs({})
     readonly property string usagePath: Quickshell.env("QS_APP_DRAWER_STATE_PATH")
         || (Platform.StandardPaths.writableLocation(Platform.StandardPaths.GenericStateLocation)
             + "/quickshell/app_drawer_usage.json")
     readonly property string usageFilePath: AppDrawerUsageParsers.normalizeFileSystemPath(root.usagePath)
+    readonly property string prefsPath: Quickshell.env("QS_APP_DRAWER_PREFS_PATH")
+        || (Platform.StandardPaths.writableLocation(Platform.StandardPaths.GenericStateLocation)
+            + "/quickshell/app_drawer_prefs.json")
+    readonly property string prefsFilePath: AppDrawerUsageParsers.normalizeFileSystemPath(root.prefsPath)
+    readonly property var pinnedIds: root.prefs.pinnedIds || []
+    readonly property var hiddenIds: root.prefs.hiddenIds || []
+    readonly property bool showHidden: root.prefs.showHidden || false
 
     property bool _usageReady: false
     property bool _writeInFlight: false
     property bool _pendingWrite: false
+    property bool _prefsReady: false
+    property bool _prefsWriteInFlight: false
+    property bool _prefsPendingWrite: false
 
     readonly property string _writeScript: "import json, os, pathlib, sys; p = pathlib.Path(sys.argv[1]).expanduser(); payload = json.loads(sys.argv[2]); p.parent.mkdir(parents=True, exist_ok=True); tmp = p.with_suffix(p.suffix + '.tmp'); tmp.write_text(json.dumps(payload, indent=2), encoding='utf-8'); os.replace(tmp, p)"
 
@@ -184,9 +196,40 @@ Scope {
         usageWriteProcess.exec(["python3", "-c", root._writeScript, root.usageFilePath, payload]);
     }
 
+    function queuePrefsWrite() {
+        prefsWriteTimer.restart();
+    }
+
+    function writePrefs() {
+        if (!root._prefsReady || root._prefsWriteInFlight) {
+            root._prefsPendingWrite = true;
+            return;
+        }
+
+        root._prefsPendingWrite = false;
+        root._prefsWriteInFlight = true;
+        const payload = AppDrawerPrefsParsers.stringifyPrefs(root.prefs);
+        prefsWriteProcess.exec(["python3", "-c", root._writeScript, root.prefsFilePath, payload]);
+    }
+
     function markLaunch(desktopId) {
         root.usageMap = AppDrawerUsageParsers.recordLaunch(root.usageMap, desktopId, Date.now());
         root.queueUsageWrite();
+    }
+
+    function setPinned(desktopId, pinned) {
+        root.prefs = AppDrawerPrefsParsers.setPinned(root.prefs, desktopId, pinned);
+        root.queuePrefsWrite();
+    }
+
+    function setHidden(desktopId, hidden) {
+        root.prefs = AppDrawerPrefsParsers.setHidden(root.prefs, desktopId, hidden);
+        root.queuePrefsWrite();
+    }
+
+    function setShowHidden(showHidden) {
+        root.prefs = AppDrawerPrefsParsers.setShowHidden(root.prefs, showHidden);
+        root.queuePrefsWrite();
     }
 
     function launchDesktopId(desktopId) {
@@ -214,12 +257,40 @@ Scope {
         }
     }
 
+    FileView {
+        id: prefsFile
+
+        path: root.prefsFilePath
+        watchChanges: true
+        blockLoading: true
+
+        onFileChanged: reload()
+
+        onLoaded: {
+            root.prefs = AppDrawerPrefsParsers.parsePrefsText(prefsFile.text());
+            root._prefsReady = true;
+        }
+
+        onLoadFailed: {
+            root.prefs = AppDrawerPrefsParsers.normalizePrefs({});
+            root._prefsReady = true;
+        }
+    }
+
     Timer {
         id: usageWriteTimer
 
         interval: 80
         repeat: false
         onTriggered: root.writeUsage()
+    }
+
+    Timer {
+        id: prefsWriteTimer
+
+        interval: 80
+        repeat: false
+        onTriggered: root.writePrefs()
     }
 
     Process {
@@ -239,6 +310,28 @@ Scope {
                 root._writeInFlight = false;
                 if (root._pendingWrite) {
                     root.writeUsage();
+                }
+            }
+        }
+    }
+
+    Process {
+        id: prefsWriteProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root._prefsWriteInFlight = false;
+                if (root._prefsPendingWrite) {
+                    root.writePrefs();
+                }
+            }
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                root._prefsWriteInFlight = false;
+                if (root._prefsPendingWrite) {
+                    root.writePrefs();
                 }
             }
         }

@@ -43,6 +43,14 @@ function normalizeFavorites(value) {
     return ordered;
 }
 
+function normalizePinned(value) {
+    return normalizeFavorites(value);
+}
+
+function normalizeHidden(value) {
+    return normalizeFavorites(value);
+}
+
 function normalizeText(value) {
     if (typeof value !== "string") {
         return "";
@@ -107,12 +115,22 @@ function frecencyScore(record, nowMs) {
     return launches * 12000 + recencyScore;
 }
 
-function buildCache(entries, favorites, usageMap, nowMs) {
+function buildCache(entries, favorites, pinnedIds, hiddenIds, usageMap, nowMs) {
     const list = asList(entries);
     const favoriteList = normalizeFavorites(favorites);
+    const pinnedList = normalizePinned(pinnedIds);
+    const hiddenList = normalizeHidden(hiddenIds);
     const favoriteRankById = ({});
+    const pinnedLookup = ({});
+    const hiddenLookup = ({});
     for (let i = 0; i < favoriteList.length; i += 1) {
         favoriteRankById[favoriteList[i]] = i;
+    }
+    for (const id of pinnedList) {
+        pinnedLookup[id] = true;
+    }
+    for (const id of hiddenList) {
+        hiddenLookup[id] = true;
     }
 
     const now = Math.max(0, Number(nowMs) || Date.now());
@@ -144,6 +162,8 @@ function buildCache(entries, favorites, usageMap, nowMs) {
             favoriteRank: Object.prototype.hasOwnProperty.call(favoriteRankById, desktopId)
                 ? favoriteRankById[desktopId]
                 : -1,
+            pinned: !!pinnedLookup[desktopId],
+            hidden: !!hiddenLookup[desktopId],
             frecency: frecencyScore(usage, now),
             launches: usage.launches,
             lastUsedMs: usage.lastUsedMs,
@@ -240,12 +260,18 @@ function fuzzyTokenScore(needle, token) {
 }
 
 function compareRankedEntries(a, b) {
+    const aPinned = !!a.pinned;
+    const bPinned = !!b.pinned;
+    if (aPinned !== bPinned) {
+        return aPinned ? -1 : 1;
+    }
+
     const aFav = a.favoriteRank >= 0;
     const bFav = b.favoriteRank >= 0;
-    if (aFav !== bFav) {
+    if (!aPinned && !bPinned && aFav !== bFav) {
         return aFav ? -1 : 1;
     }
-    if (aFav && bFav && a.favoriteRank !== b.favoriteRank) {
+    if (!aPinned && !bPinned && aFav && bFav && a.favoriteRank !== b.favoriteRank) {
         return a.favoriteRank - b.favoriteRank;
     }
 
@@ -254,6 +280,24 @@ function compareRankedEntries(a, b) {
     }
 
     return a.name.localeCompare(b.name);
+}
+
+function filterVisibleEntries(cachedEntries, showHidden) {
+    if (showHidden) {
+        return asList(cachedEntries);
+    }
+
+    const source = asList(cachedEntries);
+    const result = [];
+    for (const item of source) {
+        if (!item || item.hidden) {
+            continue;
+        }
+
+        result.push(item);
+    }
+
+    return result;
 }
 
 function sortBaseEntries(cachedEntries) {
@@ -296,6 +340,8 @@ function rankAndFilter(cachedEntries, query) {
             name: item.name,
             genericName: item.genericName,
             favoriteRank: item.favoriteRank,
+            pinned: !!item.pinned,
+            hidden: !!item.hidden,
             frecency: item.frecency,
             fuzzyScore: fuzzy
         });

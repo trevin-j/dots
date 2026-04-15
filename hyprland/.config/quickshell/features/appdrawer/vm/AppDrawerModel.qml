@@ -23,6 +23,9 @@ QtObject {
     readonly property int rows: AppDrawerLogic.normalizeRows(root.appDrawerConfig?.size?.rows)
     readonly property int columns: AppDrawerLogic.normalizeColumns(root.appDrawerConfig?.size?.columns)
     readonly property var favorites: AppDrawerLogic.normalizeFavorites(root.appDrawerConfig?.favorites)
+    readonly property var pinnedIds: Services.AppDrawerService.pinnedIds ?? []
+    readonly property var hiddenIds: Services.AppDrawerService.hiddenIds ?? []
+    readonly property bool showHidden: Services.AppDrawerService.showHidden ?? false
     readonly property var usageMap: Services.AppDrawerService.usageMap ?? ({})
     readonly property int searchDebounceMs: Math.max(0,
         Math.floor(Number(root.appDrawerConfig?.behavior?.searchDebounceMs ?? 35) || 35))
@@ -43,17 +46,19 @@ QtObject {
         root.sourceApplications = AppDrawerLogic.asList(DesktopEntries.applications?.values);
     }
 
-    function rebuildSourceCache() {
+    function rebuildSourceCache(syncSession) {
         root.pendingSourceRefresh = false;
         root.snapshotApplications();
         root.cachedApps = AppDrawerLogic.buildCache(
             root.sourceApplications,
             root.favorites,
+            root.pinnedIds,
+            root.hiddenIds,
             root.usageMap,
             Date.now()
         );
         root.baseRankedApps = AppDrawerLogic.sortBaseEntries(root.cachedApps);
-        if (!root.state.open) {
+        if (syncSession || !root.state.open) {
             root.sessionCachedApps = root.cachedApps;
             root.sessionBaseRankedApps = root.baseRankedApps;
         }
@@ -78,11 +83,23 @@ QtObject {
         }
 
         if (!root.state.query) {
-            root.rankedApps = root.sessionBaseRankedApps;
+            root.rankedApps = AppDrawerLogic.filterVisibleEntries(root.sessionBaseRankedApps, root.showHidden);
         } else {
-            root.rankedApps = AppDrawerLogic.rankAndFilter(root.sessionCachedApps, root.state.query);
+            root.rankedApps = AppDrawerLogic.filterVisibleEntries(
+                AppDrawerLogic.rankAndFilter(root.sessionCachedApps, root.state.query),
+                root.showHidden
+            );
         }
         root.state.ensureSelectionInRange(root.totalItems);
+    }
+
+    function refreshCachedPreferences() {
+        if (root.cachedApps.length === 0 && root.sourceApplications.length === 0) {
+            root.scheduleSourceRefresh();
+            return;
+        }
+
+        root.rebuildSourceCache(true);
     }
 
     function scheduleRankingRefresh() {
@@ -100,6 +117,9 @@ QtObject {
     }
 
     onFavoritesChanged: root.scheduleSourceRefresh()
+    onPinnedIdsChanged: root.refreshCachedPreferences()
+    onHiddenIdsChanged: root.refreshCachedPreferences()
+    onShowHiddenChanged: root.rebuildRanking()
     onPresentationOpenChanged: {
         if (root.presentationOpen) {
             return;

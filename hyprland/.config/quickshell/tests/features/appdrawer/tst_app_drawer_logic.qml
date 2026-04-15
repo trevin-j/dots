@@ -6,7 +6,7 @@ import "../../../features/appdrawer/vm/AppDrawerLogic.js" as AppDrawerLogic
 TestCase {
     name: "AppDrawerLogic"
 
-    function test_buildCacheAndFavoriteOrder() {
+    function test_buildCacheTracksPinnedAndHiddenState() {
         const entries = [
             {
                 id: "b.desktop",
@@ -29,32 +29,38 @@ TestCase {
             "b.desktop": { launches: 10, lastUsedMs: 1000 },
             "a.desktop": { launches: 1, lastUsedMs: 1000 }
         };
-        const cached = AppDrawerLogic.buildCache(entries, ["a.desktop"], usage, 1000);
-        const ranked = AppDrawerLogic.rankAndFilter(cached, "");
+        const cached = AppDrawerLogic.buildCache(entries, ["a.desktop"], ["b.desktop"], ["a.desktop"], usage, 1000);
 
-        compare(ranked.length, 2);
-        compare(ranked[0].desktopId, "a.desktop");
-        compare(ranked[1].desktopId, "b.desktop");
+        compare(cached.length, 2);
+        compare(cached[0].desktopId, "b.desktop");
+        compare(cached[0].pinned, true);
+        compare(cached[0].hidden, false);
+        compare(cached[1].desktopId, "a.desktop");
+        compare(cached[1].favoriteRank, 0);
+        compare(cached[1].hidden, true);
     }
 
-    function test_sortBaseEntriesUsesFavoriteThenFrecency() {
+    function test_sortBaseEntriesUsesPinnedThenFrecency() {
         const ranked = AppDrawerLogic.sortBaseEntries([
             {
                 desktopId: "browser.desktop",
                 name: "Browser",
                 favoriteRank: -1,
+                pinned: false,
                 frecency: 500
             },
             {
                 desktopId: "notes.desktop",
                 name: "Notes",
                 favoriteRank: 1,
+                pinned: true,
                 frecency: 10
             },
             {
                 desktopId: "terminal.desktop",
                 name: "Terminal",
                 favoriteRank: 0,
+                pinned: true,
                 frecency: 200
             }
         ]);
@@ -71,6 +77,8 @@ TestCase {
                 desktopId: "browser.desktop",
                 name: "Browser",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 100,
                 searchText: "browser"
             },
@@ -78,6 +86,8 @@ TestCase {
                 desktopId: "archive.desktop",
                 name: "Archive",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 100,
                 searchText: "archive"
             },
@@ -85,6 +95,8 @@ TestCase {
                 desktopId: "terminal.desktop",
                 name: "Terminal",
                 favoriteRank: 0,
+                pinned: true,
+                hidden: false,
                 frecency: 1,
                 searchText: "terminal"
             }
@@ -105,6 +117,8 @@ TestCase {
                 name: "Firefox",
                 genericName: "",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 0,
                 searchText: "firefox web browser"
             },
@@ -114,6 +128,8 @@ TestCase {
                 name: "Thunderbird",
                 genericName: "",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 0,
                 searchText: "thunderbird email"
             }
@@ -132,6 +148,8 @@ TestCase {
                 name: "Firefox",
                 genericName: "",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 0,
                 searchText: "firefox web browser"
             },
@@ -141,6 +159,8 @@ TestCase {
                 name: "Files",
                 genericName: "",
                 favoriteRank: -1,
+                pinned: false,
+                hidden: false,
                 frecency: 0,
                 searchText: "files nautilus file manager"
             }
@@ -148,6 +168,28 @@ TestCase {
 
         const ranked = AppDrawerLogic.rankAndFilter(cached, "fbr");
         compare(ranked.length, 0);
+    }
+
+    function test_filterVisibleEntriesHidesHiddenAppsByDefault() {
+        const filtered = AppDrawerLogic.filterVisibleEntries([
+            { desktopId: "a.desktop", hidden: false },
+            { desktopId: "b.desktop", hidden: true },
+            { desktopId: "c.desktop", hidden: false }
+        ], false);
+
+        compare(filtered.length, 2);
+        compare(filtered[0].desktopId, "a.desktop");
+        compare(filtered[1].desktopId, "c.desktop");
+    }
+
+    function test_filterVisibleEntriesKeepsHiddenAppsWhenEnabled() {
+        const filtered = AppDrawerLogic.filterVisibleEntries([
+            { desktopId: "a.desktop", hidden: false },
+            { desktopId: "b.desktop", hidden: true }
+        ], true);
+
+        compare(filtered.length, 2);
+        compare(filtered[1].desktopId, "b.desktop");
     }
 
     function test_pageSlice() {
