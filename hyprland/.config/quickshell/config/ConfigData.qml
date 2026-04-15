@@ -155,15 +155,15 @@ QtObject {
     readonly property var appDrawer: ({
         size: ({
             rows: 3,
-            columns: 10,
-            padding: 18,
-            spacing: 14,
+            columns: 5,
+            padding: 24,
+            spacing: 24,
             tileHeight: 104,
             iconSize: 38,
-            tileSpacing: 10,
-            searchHeight: 44,
+            tileSpacing: 20,
+            searchHeight: 54,
             searchHorizontalPadding: 18,
-            overshootPadding: 96
+            overshootPadding: 64
         }),
         behavior: ({
             drawerOpenDelay: 0,

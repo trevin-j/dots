@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Widgets
 
 import "../../config" as Config
 import "../../design/primitives" as Primitives
@@ -18,22 +19,22 @@ Primitives.SlideOutPanelWindow {
 
     required property AppDrawerVm.AppDrawerState state
 
-    readonly property int contentPadding: Config.Config.appDrawer?.size?.padding ?? 18
-    readonly property int contentSpacing: Config.Config.appDrawer?.size?.spacing ?? 14
-    readonly property int searchHeight: Config.Config.appDrawer?.size?.searchHeight ?? 44
+    readonly property int contentPadding: Config.Config.appDrawer?.size?.padding ?? 24
+    readonly property int contentSpacing: Config.Config.appDrawer?.size?.spacing ?? 24
+    readonly property int searchHeight: Config.Config.appDrawer?.size?.searchHeight ?? 54
     readonly property int searchHorizontalPadding: Config.Config.appDrawer?.size?.searchHorizontalPadding ?? 18
-    readonly property int columns: Math.max(1, Config.Config.appDrawer?.size?.columns ?? 10)
+    readonly property int columns: appModel.columns
     readonly property int tileHeight: Config.Config.appDrawer?.size?.tileHeight ?? 104
-    readonly property int tileSpacing: Config.Config.appDrawer?.size?.tileSpacing ?? 10
+    readonly property int tileSpacing: Config.Config.appDrawer?.size?.tileSpacing ?? 20
     readonly property int iconSize: Config.Config.appDrawer?.size?.iconSize ?? 38
     readonly property int drawerOpenDelay: Config.Config.appDrawer?.behavior?.drawerOpenDelay ?? 0
     readonly property int overshootLeftPadding: Config.Config.appDrawer?.size?.overshootPadding
-        ?? Math.max(96, Math.round(panelWidth * 0.24))
+        ?? Math.max(64, Math.round(panelWidth * 0.24))
     readonly property int panelOpenDurationMs: Config.Motion.shellDuration
     readonly property int panelCloseDurationMs: Config.Motion.shortDuration
     readonly property color surfaceColor: Config.Palette.color("surface")
     readonly property color sectionColor: Config.Palette.color("surface_container")
-    readonly property int panelWidth: Math.max(280, Math.round(root.columns * (root.tileHeight * 0.8) + root.contentPadding * 2))
+    readonly property int panelWidth: Math.max(280, Math.round(482))
 
     open: root.state.open
     closeDurationMs: root.panelCloseDurationMs
@@ -59,6 +60,26 @@ Primitives.SlideOutPanelWindow {
 
         appModel.launchSelected();
         root.state.close();
+    }
+
+    function ensureSelectedVisible() {
+        if (root.state.selectedIndex < 0 || root.columns <= 0) {
+            return;
+        }
+
+        const selectedRow = Math.floor(root.state.selectedIndex / root.columns);
+        const rowTop = gridMetrics.topGap + selectedRow * (root.tileHeight + gridMetrics.rowGap);
+        const rowBottom = rowTop + root.tileHeight;
+
+        if (rowTop < gridFlick.contentY) {
+            gridFlick.contentY = rowTop;
+            return;
+        }
+
+        const viewportBottom = gridFlick.contentY + gridFlick.height;
+        if (rowBottom > viewportBottom) {
+            gridFlick.contentY = rowBottom - gridFlick.height;
+        }
     }
 
     onVisibleChanged: {
@@ -109,16 +130,16 @@ Primitives.SlideOutPanelWindow {
 
         function onOpenChanged() {
             if (root.state.open) {
-                gridView.currentIndex = root.state.selectedIndex;
                 focusTimer.restart();
                 focusRetryTimer.restart();
+                root.ensureSelectedVisible();
             } else {
                 focusRetryTimer.stop();
             }
         }
 
         function onSelectedIndexChanged() {
-            gridView.currentIndex = root.state.selectedIndex;
+            root.ensureSelectedVisible();
         }
     }
 
@@ -143,7 +164,7 @@ Primitives.SlideOutPanelWindow {
         active: root.presentationOpen
         open: root.open
         surfaceColor: root.surfaceColor
-        shadowOffsetX: Config.Appearance.shadowOffsetY
+        shadowOffsetX: 6
 
         onEdgeInsetChanged: root.state.edgeInset = edgeInset
 
@@ -177,100 +198,146 @@ Primitives.SlideOutPanelWindow {
                 color: root.sectionColor
                 clip: true
 
-                GridView {
-                    id: gridView
+                Item {
+                    id: gridMetrics
 
                     anchors.fill: parent
-                    anchors.margins: root.contentPadding
-                    cellWidth: (width - root.contentSpacing * Math.max(0, root.columns - 1)) / root.columns
-                    cellHeight: root.tileHeight
-                    snapMode: GridView.NoSnap
-                    cacheBuffer: height
 
-                    model: appModel.rankedApps
+                    readonly property real baseTileWidth: Math.max(56, Math.round(root.tileHeight * 0.78))
+                    readonly property real baseGap: Math.max(8, root.tileSpacing)
+                    readonly property real horizontalScale: width > 0
+                        ? width / Math.max(1, root.columns * baseTileWidth + (root.columns + 1) * baseGap)
+                        : 1
+                    readonly property real columnGap: Math.max(8, baseGap * horizontalScale)
+                    readonly property real sideGap: columnGap
+                    readonly property real tileWidth: Math.max(1,
+                        (width - sideGap * 2 - Math.max(0, root.columns - 1) * columnGap) / Math.max(1, root.columns))
+                    readonly property real rowGap: Math.max(8, root.tileSpacing)
+                    readonly property real topGap: rowGap
+                    readonly property real bottomGap: rowGap
+                    readonly property int totalRows: Math.ceil(appModel.totalItems / Math.max(1, root.columns))
 
-                    currentIndex: -1
+                    Flickable {
+                        id: gridFlick
 
-                    onCurrentIndexChanged: {
-                        if (currentIndex < 0) return;
-                        gridView.positionViewAtIndex(currentIndex, GridView.Contain);
-                    }
+                        anchors.fill: parent
+                        contentWidth: width
+                        contentHeight: gridContent.height
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
 
-                    delegate: Item {
-                        id: tileRoot
-
-                        required property int index
-                        required property var modelData
-
-                        width: gridView.cellWidth
-                        height: gridView.cellHeight
-
-                        readonly property string desktopId: modelData.desktopId || ""
-                        readonly property string iconName: modelData.iconName || ""
-                        readonly property string appName: modelData.name || desktopId
-                        readonly property string iconSource: appModel.iconSourceFor(iconName)
-                        readonly property real iconTopMargin: Math.max(6, Math.round(root.tileHeight * 0.08))
-                        readonly property real textTopMargin: Math.max(6, Math.round(root.tileHeight * 0.14))
-                        readonly property bool selected: index === gridView.currentIndex
-
-                        Rectangle {
-                            id: tileBackground
-
-                            anchors.fill: parent
-                            radius: Config.Appearance.radiusMedium
-                            color: tileRoot.selected
-                                ? Config.Palette.color("secondary_container")
-                                : (mouseArea.pressed
-                                    ? Config.Palette.color("surface_container_high")
-                                    : "transparent")
-                            border.width: tileRoot.selected ? 1 : 0
-                            border.color: tileRoot.selected ? Config.Palette.color("outline_variant") : "transparent"
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Config.Motion.shortDuration
+                        WheelHandler {
+                            target: gridFlick
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                            onWheel: event => {
+                                let delta = 0;
+                                if (event.pixelDelta.y !== 0) {
+                                    delta = event.pixelDelta.y;
+                                } else if (event.angleDelta.y !== 0) {
+                                    delta = (event.angleDelta.y / 120) * 48;
                                 }
+                                const maxContentY = Math.max(0, gridFlick.contentHeight - gridFlick.height);
+                                gridFlick.contentY = Math.max(0, Math.min(maxContentY, gridFlick.contentY - delta * 2));
+                                event.accepted = true;
                             }
                         }
 
-                        IconImage {
-                            source: tileRoot.iconSource
-                            asynchronous: true
-                            mipmap: true
-                            width: root.iconSize
-                            height: root.iconSize
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.top: parent.top
-                            anchors.topMargin: tileRoot.iconTopMargin
-                        }
+                        Item {
+                            id: gridContent
 
-                        Text {
-                            text: tileRoot.appName
-                            color: Config.Palette.color("on_surface")
-                            font.family: Config.Appearance.fontFamily
-                            font.weight: tileRoot.selected ? Font.DemiBold : Config.Appearance.fontWeight
-                            font.pixelSize: Config.Appearance.fontSizeSmall
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignTop
-                            elide: Text.ElideRight
-                            maximumLineCount: 2
-                            wrapMode: Text.WordWrap
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.topMargin: tileRoot.iconTopMargin + root.iconSize + tileRoot.textTopMargin
-                            anchors.bottom: parent.bottom
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
-                        }
+                            width: gridFlick.width
+                            height: gridMetrics.totalRows <= 0
+                                ? gridFlick.height
+                                : gridMetrics.topGap
+                                    + gridMetrics.totalRows * root.tileHeight
+                                    + Math.max(0, gridMetrics.totalRows - 1) * gridMetrics.rowGap
+                                    + gridMetrics.bottomGap
 
-                        MouseArea {
-                            id: mouseArea
+                            Repeater {
+                                model: appModel.rankedApps
 
-                            anchors.fill: parent
-                            onClicked: {
-                                root.state.selectedIndex = tileRoot.index;
-                                root.launchSelectedApp();
+                                delegate: Item {
+                                    id: tileRoot
+
+                                    required property int index
+                                    required property var modelData
+
+                                    readonly property int row: Math.floor(index / root.columns)
+                                    readonly property int column: index % root.columns
+                                    readonly property string desktopId: modelData.desktopId || ""
+                                    readonly property string iconName: modelData.iconName || ""
+                                    readonly property string appName: modelData.name || desktopId
+                                    readonly property string iconSource: appModel.iconSourceFor(iconName)
+                                    readonly property real iconTopMargin: Math.max(6, Math.round(root.tileHeight * 0.08))
+                                    readonly property real textTopMargin: Math.max(6, Math.round(root.tileHeight * 0.14))
+                                    readonly property bool selected: index === root.state.selectedIndex
+
+                                    x: gridMetrics.sideGap + column * (gridMetrics.tileWidth + gridMetrics.columnGap)
+                                    y: gridMetrics.topGap + row * (root.tileHeight + gridMetrics.rowGap)
+                                    width: gridMetrics.tileWidth
+                                    height: root.tileHeight
+
+                                    Rectangle {
+                                        id: tileBackground
+
+                                        anchors.fill: parent
+                                        radius: Config.Appearance.radiusMedium
+                                        color: tileRoot.selected
+                                            ? Config.Palette.color("secondary_container")
+                                            : (mouseArea.pressed
+                                                ? Config.Palette.color("surface_container_high")
+                                                : "transparent")
+                                        border.width: tileRoot.selected ? 1 : 0
+                                        border.color: tileRoot.selected ? Config.Palette.color("outline_variant") : "transparent"
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: Config.Motion.shortDuration
+                                            }
+                                        }
+                                    }
+
+                                    IconImage {
+                                        source: tileRoot.iconSource
+                                        asynchronous: true
+                                        mipmap: true
+                                        width: root.iconSize
+                                        height: root.iconSize
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        anchors.top: parent.top
+                                        anchors.topMargin: tileRoot.iconTopMargin
+                                    }
+
+                                    Text {
+                                        text: tileRoot.appName
+                                        color: Config.Palette.color("on_surface")
+                                        font.family: Config.Appearance.fontFamily
+                                        font.weight: tileRoot.selected ? Font.DemiBold : Config.Appearance.fontWeight
+                                        font.pixelSize: Config.Appearance.fontSizeSmall
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignTop
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 2
+                                        wrapMode: Text.WordWrap
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.topMargin: tileRoot.iconTopMargin + root.iconSize + tileRoot.textTopMargin
+                                        anchors.bottom: parent.bottom
+                                        anchors.leftMargin: 8
+                                        anchors.rightMargin: 8
+                                    }
+
+                                    MouseArea {
+                                        id: mouseArea
+
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            root.state.selectedIndex = tileRoot.index;
+                                            root.launchSelectedApp();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
