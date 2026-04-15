@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -69,12 +68,20 @@ Primitives.SlideOutPanelWindow {
 
     function openContextMenu(tileItem, mouseX, mouseY, desktopId, pinned, hidden) {
         const point = tileItem.mapToItem(root.contentItem, mouseX, mouseY);
+        const minX = Math.round(mainPanel.visibleSurfaceX + root.contentPadding);
+        const maxX = Math.max(minX, Math.round(mainPanel.visibleSurfaceX + mainPanel.edgeInset - contextMenu.popupWidth - root.contentPadding));
+        const minY = root.contentPadding;
+        const maxY = Math.max(minY, Math.round(root.height - contextMenu.popupHeight - root.contentPadding));
         root.contextDesktopId = desktopId;
         root.contextPinned = pinned;
         root.contextHidden = hidden;
-        contextMenu.x = Math.round(point.x);
-        contextMenu.y = Math.round(point.y);
-        contextMenu.open();
+        contextMenu.menuX = Math.max(minX, Math.min(maxX, Math.round(point.x)));
+        contextMenu.menuY = Math.max(minY, Math.min(maxY, Math.round(point.y)));
+        contextMenu.open = true;
+    }
+
+    function closeContextMenu() {
+        contextMenu.closeMenu();
     }
 
     function ensureSelectedVisible() {
@@ -100,11 +107,18 @@ Primitives.SlideOutPanelWindow {
     onVisibleChanged: {
         if (!visible) {
             focusRetryTimer.stop();
+            root.closeContextMenu();
         }
     }
 
     Keys.onPressed: event => {
         if (!root.state.open) {
+            return;
+        }
+
+        if (event.key === Qt.Key_Escape && contextMenu.open) {
+            root.closeContextMenu();
+            event.accepted = true;
             return;
         }
 
@@ -149,6 +163,7 @@ Primitives.SlideOutPanelWindow {
                 focusRetryTimer.restart();
                 root.ensureSelectedVisible();
             } else {
+                root.closeContextMenu();
                 focusRetryTimer.stop();
             }
         }
@@ -422,33 +437,22 @@ Primitives.SlideOutPanelWindow {
         }
     }
 
-    Controls.Menu {
+    AppDrawerComponents.AppDrawerContextMenu {
         id: contextMenu
 
-        Controls.MenuItem {
-            text: root.contextPinned ? "Unpin" : "Pin"
-            enabled: root.contextDesktopId !== ""
-            onTriggered: Services.AppDrawerService.setPinned(root.contextDesktopId, !root.contextPinned)
-        }
+        anchors.fill: parent
+        desktopId: root.contextDesktopId
+        pinned: root.contextPinned
+        hidden: root.contextHidden
+        showHidden: appModel.showHidden
 
-        Controls.MenuItem {
-            text: root.contextHidden ? "Unhide" : "Hide"
-            enabled: root.contextDesktopId !== ""
-            onTriggered: Services.AppDrawerService.setHidden(root.contextDesktopId, !root.contextHidden)
-        }
-
-        Controls.MenuSeparator {
-        }
-
-        Controls.MenuItem {
-            text: "Show Hidden"
-            checkable: true
-            checked: appModel.showHidden
-            onTriggered: Services.AppDrawerService.setShowHidden(!appModel.showHidden)
-        }
-
-        onClosed: {
+        onPinRequested: nextPinned => Services.AppDrawerService.setPinned(root.contextDesktopId, nextPinned)
+        onHideRequested: nextHidden => Services.AppDrawerService.setHidden(root.contextDesktopId, nextHidden)
+        onShowHiddenRequested: nextShowHidden => Services.AppDrawerService.setShowHidden(nextShowHidden)
+        onDismissed: {
             root.contextDesktopId = "";
+            root.contextPinned = false;
+            root.contextHidden = false;
         }
     }
 
@@ -479,6 +483,12 @@ Primitives.SlideOutPanelWindow {
 
         Keys.onPressed: event => {
             if (!root.state.open) {
+                return;
+            }
+
+            if (contextMenu.open && event.key === Qt.Key_Escape) {
+                root.closeContextMenu();
+                event.accepted = true;
                 return;
             }
 
