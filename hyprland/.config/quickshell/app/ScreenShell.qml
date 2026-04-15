@@ -8,6 +8,7 @@ import "../features/bar" as BarFeature
 import "../features/controlcenter" as ControlCenterFeature
 import "../features/controlcenter/vm" as ControlCenterVm
 import "../features/whichkey" as WhichKeyFeature
+import "../features/workspacerename" as WorkspaceRenameFeature
 
 /*
   ScreenShell
@@ -54,5 +55,13 @@ Item {
 
     WhichKeyFeature.WhichKeyLayerFeature {
         panelScreen: root.panelScreen
+    }
+
+    WorkspaceRenameFeature.WorkspaceRenamePanelFeature {
+        id: workspaceRenamePanel
+
+        panelScreen: root.panelScreen
+        Component.onCompleted: Services.WorkspaceService.setPanel(workspaceRenamePanel)
+        Component.onDestruction: Services.WorkspaceService.setPanel(null)
     }
 }

@@ -6,6 +6,7 @@ singleton NightLightService NightLightService.qml
 singleton NotificationService NotificationService.qml
 singleton PowerService PowerService.qml
 singleton RuntimeStateService RuntimeStateService.qml
+singleton WorkspaceService WorkspaceService.qml
 singleton VolumeFeedbackService VolumeFeedbackService.qml
 singleton WallpaperService WallpaperService.qml
 singleton WhichKeyService WhichKeyService.qml
