@@ -38,6 +38,9 @@ Primitives.SlideOutPanelWindow {
     property string contextDesktopId: ""
     property bool contextPinned: false
     property bool contextHidden: false
+    property string hoverTitle: ""
+    property real hoverTooltipX: 0
+    property real hoverTooltipY: 0
     readonly property int panelWidth: Math.max(280, Math.round(482))
 
     open: root.state.open
@@ -72,6 +75,7 @@ Primitives.SlideOutPanelWindow {
         const maxX = Math.max(minX, Math.round(mainPanel.visibleSurfaceX + mainPanel.edgeInset - contextMenu.popupWidth - root.contentPadding));
         const minY = root.contentPadding;
         const maxY = Math.max(minY, Math.round(root.height - contextMenu.popupHeight - root.contentPadding));
+        root.hideTitleTooltip();
         root.contextDesktopId = desktopId;
         root.contextPinned = pinned;
         root.contextHidden = hidden;
@@ -82,6 +86,29 @@ Primitives.SlideOutPanelWindow {
 
     function closeContextMenu() {
         contextMenu.closeMenu();
+    }
+
+    function requestTitleTooltip(tileItem, title, anchorX, anchorY) {
+        if (!title || contextMenu.open) {
+            root.hideTitleTooltip();
+            return;
+        }
+
+        const point = tileItem.mapToItem(root.contentItem, anchorX, anchorY);
+        root.hoverTitle = title;
+        const minX = Math.round(mainPanel.visibleSurfaceX + root.contentPadding);
+        const maxX = Math.max(minX, Math.round(mainPanel.visibleSurfaceX + mainPanel.edgeInset - titleTooltip.bubbleWidth - root.contentPadding));
+        const minY = root.contentPadding;
+        const maxY = Math.max(minY, Math.round(root.height - titleTooltip.bubbleHeight - root.contentPadding));
+        root.hoverTooltipX = Math.max(minX, Math.min(maxX, Math.round(point.x - titleTooltip.bubbleWidth / 2)));
+        root.hoverTooltipY = Math.max(minY, Math.min(maxY, Math.round(point.y)));
+        titleTooltipTimer.restart();
+    }
+
+    function hideTitleTooltip() {
+        titleTooltipTimer.stop();
+        titleTooltip.open = false;
+        root.hoverTitle = "";
     }
 
     function ensureSelectedVisible() {
@@ -108,6 +135,7 @@ Primitives.SlideOutPanelWindow {
         if (!visible) {
             focusRetryTimer.stop();
             root.closeContextMenu();
+            root.hideTitleTooltip();
         }
     }
 
@@ -164,12 +192,23 @@ Primitives.SlideOutPanelWindow {
                 root.ensureSelectedVisible();
             } else {
                 root.closeContextMenu();
+                root.hideTitleTooltip();
                 focusRetryTimer.stop();
             }
         }
 
         function onSelectedIndexChanged() {
             root.ensureSelectedVisible();
+        }
+    }
+
+    Timer {
+        id: titleTooltipTimer
+
+        interval: 280
+        repeat: false
+        onTriggered: {
+            titleTooltip.open = root.hoverTitle !== "" && !contextMenu.open;
         }
     }
 
@@ -255,11 +294,13 @@ Primitives.SlideOutPanelWindow {
                         contentHeight: gridContent.height
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
+                        onContentYChanged: root.hideTitleTooltip()
 
                         WheelHandler {
                             target: gridFlick
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                             onWheel: event => {
+                                root.hideTitleTooltip();
                                 let delta = 0;
                                 if (event.pixelDelta.y !== 0) {
                                     delta = event.pixelDelta.y;
@@ -377,6 +418,8 @@ Primitives.SlideOutPanelWindow {
                                         }
 
                                         Text {
+                                            id: titleText
+
                                             text: tileRoot.appName
                                             color: Config.Palette.color("on_surface")
                                             font.family: Config.Appearance.fontFamily
@@ -401,8 +444,21 @@ Primitives.SlideOutPanelWindow {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.AllButtons
                                         preventStealing: true
+                                        hoverEnabled: true
+
+                                        onEntered: {
+                                            root.requestTitleTooltip(
+                                                tileRoot,
+                                                tileRoot.appName,
+                                                tileRoot.width / 2,
+                                                tileRoot.iconTopMargin + root.iconSize + tileRoot.textTopMargin
+                                            );
+                                        }
+
+                                        onExited: root.hideTitleTooltip()
 
                                         onPressed: mouse => {
+                                            root.hideTitleTooltip();
                                             if (mouse.button !== Qt.RightButton) {
                                                 return;
                                             }
@@ -454,6 +510,17 @@ Primitives.SlideOutPanelWindow {
             root.contextPinned = false;
             root.contextHidden = false;
         }
+    }
+
+    AppDrawerComponents.AppDrawerTitleTooltip {
+        id: titleTooltip
+
+        anchors.fill: parent
+        open: false
+        title: root.hoverTitle
+        tooltipX: root.hoverTooltipX
+        tooltipY: root.hoverTooltipY
+        maxWidth: Math.max(180, Math.round(root.panelWidth - root.contentPadding * 3))
     }
 
     Item {
