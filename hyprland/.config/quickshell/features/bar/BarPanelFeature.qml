@@ -167,6 +167,14 @@ PanelWindow {
                     Layout.fillHeight: true
                     spacing: root.spacing
 
+                    BarComponents.AppDrawerButton {
+                        barHeight: root.thickness - root.padding * 2
+                        iconFont: Config.Appearance.iconFontFamily
+                        active: Services.AppDrawerService.isTargetOpen()
+                        Layout.fillHeight: true
+                        onClicked: Services.AppDrawerService.toggle()
+                    }
+
                     BarComponents.Workspaces {
                         screen: root.panelScreen
                         vertical: root.position === "left" || root.position === "right"
