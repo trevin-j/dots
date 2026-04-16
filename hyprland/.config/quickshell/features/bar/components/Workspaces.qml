@@ -4,6 +4,7 @@ import Quickshell
 
 import "./"
 import "../models" as BarModels
+import "../../../services" as Services
 
 Item {
     id: root
@@ -38,7 +39,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: modelData.activate()
+                    onClicked: Services.WorkspaceService.activateWorkspace(workspaceId)
                 }
             }
         }

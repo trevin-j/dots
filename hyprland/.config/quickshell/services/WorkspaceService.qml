@@ -137,6 +137,14 @@ Scope {
         renameProcess.exec(["/bin/sh", "-lc", `hyprctl dispatch renameworkspace ${id} "${safeName}"`]);
     }
 
+    function activateWorkspace(id) {
+        if (id < 0) {
+            return;
+        }
+
+        activateProcess.exec(["hyprctl", "dispatch", "workspace", id.toString()]);
+    }
+
     IpcHandler {
         target: "workspace"
 
@@ -151,6 +159,10 @@ Scope {
         function renameWorkspace(id, name): void {
             root.renameWorkspace(id, name);
         }
+
+        function activateWorkspace(id): void {
+            root.activateWorkspace(id);
+        }
     }
 
     Process {
@@ -161,6 +173,19 @@ Scope {
                 const output = text.trim();
                 if (output) {
                     console.warn("WorkspaceService rename failed", output);
+                }
+            }
+        }
+    }
+
+    Process {
+        id: activateProcess
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const output = text.trim();
+                if (output) {
+                    console.warn("WorkspaceService activate failed", output);
                 }
             }
         }
