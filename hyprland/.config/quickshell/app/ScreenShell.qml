@@ -43,6 +43,10 @@ Item {
         id: bitwardenState
     }
 
+    BitwardenVm.BitwardenSetupState {
+        id: bitwardenSetupState
+    }
+
     SymbolPickerVm.SymbolPickerState {
         id: emojiState
     }
@@ -55,7 +59,9 @@ Item {
         Services.ControlCenterService.registerScreenState(root.panelScreen, controlCenterState);
         Services.AppDrawerService.registerScreenState(root.panelScreen, appDrawerState);
         Services.BitwardenService.registerScreenState(root.panelScreen, bitwardenState);
+        Services.BitwardenService.registerSetupState(root.panelScreen, bitwardenSetupState);
         Services.ClipboardHistoryService.registerScreenState(root.panelScreen, clipboardHistoryState);
+        Services.WorkspaceService.registerScreenState(root.panelScreen, workspaceRenamePanel);
         Services.SymbolPickerService.registerScreenState("emoji", root.panelScreen, emojiState);
         Services.SymbolPickerService.registerScreenState("nerdfont", root.panelScreen, nerdFontState);
     }
@@ -64,7 +70,9 @@ Item {
         Services.ControlCenterService.unregisterScreenState(controlCenterState);
         Services.AppDrawerService.unregisterScreenState(appDrawerState);
         Services.BitwardenService.unregisterScreenState(bitwardenState);
+        Services.BitwardenService.unregisterSetupState(bitwardenSetupState);
         Services.ClipboardHistoryService.unregisterScreenState(clipboardHistoryState);
+        Services.WorkspaceService.unregisterScreenState(workspaceRenamePanel);
         Services.SymbolPickerService.unregisterScreenState("emoji", emojiState);
         Services.SymbolPickerService.unregisterScreenState("nerdfont", nerdFontState);
     }
@@ -94,6 +102,11 @@ Item {
         state: bitwardenState
     }
 
+    BitwardenFeature.BitwardenSetupPopupFeature {
+        panelScreen: root.panelScreen
+        state: bitwardenSetupState
+    }
+
     EmojiFeature.EmojiPanelFeature {
         panelScreen: root.panelScreen
         state: emojiState
@@ -112,7 +125,5 @@ Item {
         id: workspaceRenamePanel
 
         panelScreen: root.panelScreen
-        Component.onCompleted: Services.WorkspaceService.setPanel(workspaceRenamePanel)
-        Component.onDestruction: Services.WorkspaceService.setPanel(null)
     }
 }

@@ -119,6 +119,16 @@ ColumnLayout {
                 }
             }
         }
+
+        BitwardenQuickToggle {
+            visible: root.controlCenterState !== null
+            controlHeight: root.toggleHeight
+            iconFont: root.materialFont
+            controlCenterOpen: root.controlCenterState?.open ?? false
+            Layout.fillWidth: true
+            Layout.preferredWidth: toggleGrid.columnWidth
+            Layout.preferredHeight: visible ? root.toggleHeight : 0
+        }
     }
 
     Controls.ExpandablePowerMenu {

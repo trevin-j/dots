@@ -20,6 +20,9 @@ QtObject {
             exclusiveZone: true,
             scrollToSwitchWorkspaces: true
         }),
+        searchMenu: ({
+            enabled: true
+        }),
         layout: ({
             left: ["workspaces"],
             center: ["activeWindow"],
@@ -149,6 +152,9 @@ QtObject {
         }),
         transition: ({
             drawerOpenDelay: 0
+        }),
+        bitwarden: ({
+            visible: true
         })
     })
 
@@ -178,6 +184,13 @@ QtObject {
             itemHeight: 64,
             itemSpacing: 8,
             iconSize: 18
+        }),
+        setup: ({
+            width: 420,
+            padding: 18,
+            spacing: 12,
+            inputHeight: 42,
+            buttonHeight: 40
         })
     })
 

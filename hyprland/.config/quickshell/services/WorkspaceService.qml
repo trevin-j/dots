@@ -16,7 +16,6 @@ Scope {
 
     readonly property string panelId: "workspacerename"
     property var entries: []
-    property var _panel
 
     property int currentWorkspaceId: Hyprland.focusedWorkspace?.id ?? -1
     property string currentWorkspaceName: Hyprland.focusedWorkspace?.name ?? ""
@@ -106,27 +105,21 @@ Scope {
         root.entries = root.entries.filter(entry => entry && entry.state && entry.state !== state);
     }
 
-    function setPanel(panel) {
-        root._panel = panel;
-    }
-
     function openRenamePanel() {
         root.refreshCurrentWorkspace();
         Services.WhichKeyService.close();
-        if (root._panel) {
-            root._panel.open = true;
-        }
+        root.withTargetState(state => state.open = true);
     }
 
     function closeRenamePanel() {
-        if (root._panel) {
-            root._panel.open = false;
-        }
+        root.withTargetState(state => state.open = false);
     }
 
     function closeAll() {
-        if (root._panel) {
-            root._panel.open = false;
+        for (const entry of root.entries) {
+            if (entry && entry.state) {
+                entry.state.open = false;
+            }
         }
     }
 

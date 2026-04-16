@@ -78,6 +78,12 @@ Primitives.SlideOutPanelWindow {
         }
     }
 
+    onOpenChanged: {
+        if (root.open) {
+            Services.BitwardenService.refreshVaultState();
+        }
+    }
+
     Keys.onPressed: event => {
         if (!root.state.open) {
             return;
