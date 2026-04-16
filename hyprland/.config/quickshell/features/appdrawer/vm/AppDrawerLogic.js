@@ -174,6 +174,37 @@ function buildCache(entries, favorites, pinnedIds, hiddenIds, usageMap, nowMs) {
     return result;
 }
 
+function updateUsageScores(cachedEntries, usageMap, nowMs) {
+    const source = asList(cachedEntries);
+    const now = Math.max(0, Number(nowMs) || Date.now());
+    const refreshed = [];
+
+    for (const item of source) {
+        if (!item) {
+            continue;
+        }
+
+        const usage = usageRecord(usageMap, item.desktopId);
+        refreshed.push({
+            entryRef: item.entryRef,
+            desktopId: item.desktopId,
+            iconName: item.iconName,
+            name: item.name,
+            genericName: item.genericName,
+            comment: item.comment,
+            favoriteRank: item.favoriteRank,
+            pinned: !!item.pinned,
+            hidden: !!item.hidden,
+            frecency: frecencyScore(usage, now),
+            launches: usage.launches,
+            lastUsedMs: usage.lastUsedMs,
+            searchText: item.searchText
+        });
+    }
+
+    return refreshed;
+}
+
 function fuzzyScore(query, haystack) {
     const needle = lowercase(query);
     const text = lowercase(haystack);

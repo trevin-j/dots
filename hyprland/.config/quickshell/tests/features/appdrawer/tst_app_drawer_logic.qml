@@ -71,6 +71,40 @@ TestCase {
         compare(ranked[2].desktopId, "browser.desktop");
     }
 
+    function test_updateUsageScoresRefreshesFrecencyWithoutRebuildingEntries() {
+        const entry = {
+            entryRef: { id: "firefox" },
+            desktopId: "firefox.desktop",
+            iconName: "firefox",
+            name: "Firefox",
+            genericName: "Browser",
+            comment: "",
+            favoriteRank: -1,
+            pinned: false,
+            hidden: false,
+            frecency: 0,
+            launches: 0,
+            lastUsedMs: 0,
+            searchText: "firefox browser"
+        };
+
+        const refreshed = AppDrawerLogic.updateUsageScores([
+            entry
+        ], {
+            "firefox.desktop": {
+                launches: 4,
+                lastUsedMs: 3600000
+            }
+        }, 3600000);
+
+        compare(refreshed.length, 1);
+        compare(refreshed[0].desktopId, "firefox.desktop");
+        compare(refreshed[0].entryRef, entry.entryRef);
+        compare(refreshed[0].launches, 4);
+        compare(refreshed[0].lastUsedMs, 3600000);
+        verify(refreshed[0].frecency > 0);
+    }
+
     function test_emptyQueryUsesBaseOrdering() {
         const cached = [
             {

@@ -65,6 +65,20 @@ QtObject {
         root.rebuildRanking();
     }
 
+    function refreshUsageCache() {
+        if (root.cachedApps.length === 0) {
+            return;
+        }
+
+        root.cachedApps = AppDrawerLogic.updateUsageScores(root.cachedApps, root.usageMap, Date.now());
+        root.baseRankedApps = AppDrawerLogic.sortBaseEntries(root.cachedApps);
+        if (root.state.open) {
+            root.sessionCachedApps = root.cachedApps;
+            root.sessionBaseRankedApps = root.baseRankedApps;
+        }
+        root.rebuildRanking();
+    }
+
     function scheduleSourceRefresh() {
         root.pendingSourceRefresh = true;
         if (root.state.open) {
@@ -133,7 +147,7 @@ QtObject {
             desktopRefreshTimer.restart();
         }
     }
-    onUsageMapChanged: root.scheduleSourceRefresh()
+    onUsageMapChanged: root.refreshUsageCache()
 
     property Timer desktopRefreshTimer: Timer {
         id: desktopRefreshTimer

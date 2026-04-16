@@ -117,18 +117,11 @@ Primitives.SlideOutPanelWindow {
         }
 
         const selectedRow = Math.floor(root.state.selectedIndex / root.columns);
-        const rowTop = gridMetrics.topGap + selectedRow * (root.tileHeight + gridMetrics.rowGap);
-        const rowBottom = rowTop + root.tileHeight;
-
-        if (rowTop < gridFlick.contentY) {
-            gridFlick.contentY = rowTop;
+        if (selectedRow < 0 || selectedRow >= appGrid.count) {
             return;
         }
 
-        const viewportBottom = gridFlick.contentY + gridFlick.height;
-        if (rowBottom > viewportBottom) {
-            gridFlick.contentY = rowBottom - gridFlick.height;
-        }
+        appGrid.positionViewAtIndex(selectedRow, ListView.Contain);
     }
 
     onVisibleChanged: {
@@ -285,19 +278,28 @@ Primitives.SlideOutPanelWindow {
                     readonly property real topGap: rowGap
                     readonly property real bottomGap: rowGap
                     readonly property int totalRows: Math.ceil(appModel.totalItems / Math.max(1, root.columns))
+                    readonly property real contentWidth: Math.max(0, width - sideGap * 2)
 
-                    Flickable {
-                        id: gridFlick
+                    ListView {
+                        id: appGrid
 
                         anchors.fill: parent
-                        contentWidth: width
-                        contentHeight: gridContent.height
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
+                        orientation: ListView.Vertical
+                        spacing: gridMetrics.rowGap
+                        topMargin: gridMetrics.topGap
+                        bottomMargin: gridMetrics.bottomGap
+                        leftMargin: gridMetrics.sideGap
+                        rightMargin: gridMetrics.sideGap
+                        reuseItems: true
+                        cacheBuffer: Math.max(root.tileHeight * 6, root.tileHeight * root.columns)
+                        model: gridMetrics.totalRows
+                        interactive: true
                         onContentYChanged: root.hideTitleTooltip()
 
                         WheelHandler {
-                            target: gridFlick
+                            target: appGrid
                             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                             onWheel: event => {
                                 root.hideTitleTooltip();
@@ -307,46 +309,42 @@ Primitives.SlideOutPanelWindow {
                                 } else if (event.angleDelta.y !== 0) {
                                     delta = (event.angleDelta.y / 120) * 48;
                                 }
-                                const maxContentY = Math.max(0, gridFlick.contentHeight - gridFlick.height);
-                                gridFlick.contentY = Math.max(0, Math.min(maxContentY, gridFlick.contentY - delta * 2));
+                                const maxContentY = Math.max(0, appGrid.contentHeight - appGrid.height);
+                                appGrid.contentY = Math.max(0, Math.min(maxContentY, appGrid.contentY - delta * 2));
                                 event.accepted = true;
                             }
                         }
 
-                        Item {
-                            id: gridContent
+                        delegate: Item {
+                            id: rowRoot
 
-                            width: gridFlick.width
-                            height: gridMetrics.totalRows <= 0
-                                ? gridFlick.height
-                                : gridMetrics.topGap
-                                    + gridMetrics.totalRows * root.tileHeight
-                                    + Math.max(0, gridMetrics.totalRows - 1) * gridMetrics.rowGap
-                                    + gridMetrics.bottomGap
+                            required property int index
+
+                            width: gridMetrics.contentWidth
+                            height: root.tileHeight
 
                             Repeater {
-                                model: appModel.rankedApps
+                                model: root.columns
 
                                 delegate: Item {
                                     id: tileRoot
 
                                     required property int index
-                                    required property var modelData
 
-                                    readonly property int row: Math.floor(index / root.columns)
-                                    readonly property int column: index % root.columns
-                                    readonly property string desktopId: modelData.desktopId || ""
-                                    readonly property string iconName: modelData.iconName || ""
-                                    readonly property string appName: modelData.name || desktopId
+                                    readonly property int appIndex: rowRoot.index * root.columns + index
+                                    readonly property var appData: appIndex < appModel.totalItems ? appModel.rankedApps[appIndex] : null
+                                    readonly property string desktopId: appData?.desktopId || ""
+                                    readonly property string iconName: appData?.iconName || ""
+                                    readonly property string appName: appData?.name || desktopId
                                     readonly property string iconSource: appModel.iconSourceFor(iconName)
                                     readonly property real iconTopMargin: Math.max(6, Math.round(root.tileHeight * 0.08))
                                     readonly property real textTopMargin: Math.max(6, Math.round(root.tileHeight * 0.14))
-                                    readonly property bool pinned: !!modelData.pinned
-                                    readonly property bool hidden: !!modelData.hidden
-                                    readonly property bool selected: index === root.state.selectedIndex
+                                    readonly property bool pinned: !!appData?.pinned
+                                    readonly property bool hidden: !!appData?.hidden
+                                    readonly property bool selected: appIndex === root.state.selectedIndex
 
-                                    x: gridMetrics.sideGap + column * (gridMetrics.tileWidth + gridMetrics.columnGap)
-                                    y: gridMetrics.topGap + row * (root.tileHeight + gridMetrics.rowGap)
+                                    visible: appData !== null
+                                    x: index * (gridMetrics.tileWidth + gridMetrics.columnGap)
                                     width: gridMetrics.tileWidth
                                     height: root.tileHeight
 
@@ -418,8 +416,6 @@ Primitives.SlideOutPanelWindow {
                                         }
 
                                         Text {
-                                            id: titleText
-
                                             text: tileRoot.appName
                                             color: Config.Palette.color("on_surface")
                                             font.family: Config.Appearance.fontFamily
@@ -463,7 +459,7 @@ Primitives.SlideOutPanelWindow {
                                                 return;
                                             }
 
-                                            root.state.selectedIndex = tileRoot.index;
+                                            root.state.selectedIndex = tileRoot.appIndex;
                                             root.openContextMenu(
                                                 tileRoot,
                                                 mouse.x,
@@ -480,7 +476,7 @@ Primitives.SlideOutPanelWindow {
                                                 return;
                                             }
 
-                                            root.state.selectedIndex = tileRoot.index;
+                                            root.state.selectedIndex = tileRoot.appIndex;
                                             root.launchSelectedApp();
                                         }
                                     }
