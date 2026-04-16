@@ -35,6 +35,8 @@ TestCase {
         compare(cached[0].desktopId, "b.desktop");
         compare(cached[0].pinned, true);
         compare(cached[0].hidden, false);
+        verify(cached[0].searchTokens.indexOf("bravo") >= 0);
+        verify(cached[0].searchTokens.indexOf("desktop") >= 0);
         compare(cached[1].desktopId, "a.desktop");
         compare(cached[1].favoriteRank, 0);
         compare(cached[1].hidden, true);
@@ -85,7 +87,8 @@ TestCase {
             frecency: 0,
             launches: 0,
             lastUsedMs: 0,
-            searchText: "firefox browser"
+            searchText: "firefox browser",
+            searchTokens: ["firefox", "browser"]
         };
 
         const refreshed = AppDrawerLogic.updateUsageScores([
@@ -102,7 +105,32 @@ TestCase {
         compare(refreshed[0].entryRef, entry.entryRef);
         compare(refreshed[0].launches, 4);
         compare(refreshed[0].lastUsedMs, 3600000);
+        compare(refreshed[0].searchTokens.length, 2);
+        compare(refreshed[0].searchTokens[1], "browser");
         verify(refreshed[0].frecency > 0);
+    }
+
+    function test_buildCacheCombinesSearchTokensFromMetadata() {
+        const cached = AppDrawerLogic.buildCache([
+            {
+                id: "org.mozilla.firefox.desktop",
+                name: "Firefox",
+                genericName: "Web Browser",
+                comment: "Browse the web",
+                icon: "firefox",
+                keywords: ["internet", "mozilla"]
+            }
+        ], [], [], [], {}, 1000);
+
+        compare(cached.length, 1);
+        verify(cached[0].searchTokens.indexOf("firefox") >= 0);
+        verify(cached[0].searchTokens.indexOf("web") >= 0);
+        verify(cached[0].searchTokens.indexOf("browser") >= 0);
+        verify(cached[0].searchTokens.indexOf("internet") >= 0);
+        verify(cached[0].searchTokens.indexOf("mozilla") >= 0);
+        verify(cached[0].searchTokens.indexOf("browse") >= 0);
+        verify(cached[0].searchTokens.indexOf("org") >= 0);
+        verify(cached[0].searchTokens.indexOf("desktop") >= 0);
     }
 
     function test_emptyQueryUsesBaseOrdering() {
@@ -114,7 +142,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 100,
-                searchText: "browser"
+                searchText: "browser",
+                searchTokens: ["browser"]
             },
             {
                 desktopId: "archive.desktop",
@@ -123,7 +152,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 100,
-                searchText: "archive"
+                searchText: "archive",
+                searchTokens: ["archive"]
             },
             {
                 desktopId: "terminal.desktop",
@@ -132,7 +162,8 @@ TestCase {
                 pinned: true,
                 hidden: false,
                 frecency: 1,
-                searchText: "terminal"
+                searchText: "terminal",
+                searchTokens: ["terminal"]
             }
         ];
 
@@ -154,7 +185,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 0,
-                searchText: "firefox web browser"
+                searchText: "firefox web browser",
+                searchTokens: ["firefox", "web", "browser"]
             },
             {
                 desktopId: "thunderbird.desktop",
@@ -165,7 +197,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 0,
-                searchText: "thunderbird email"
+                searchText: "thunderbird email",
+                searchTokens: ["thunderbird", "email"]
             }
         ];
 
@@ -185,7 +218,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 0,
-                searchText: "firefox web browser"
+                searchText: "firefox web browser",
+                searchTokens: ["firefox", "web", "browser"]
             },
             {
                 desktopId: "org.gnome.Nautilus.desktop",
@@ -196,7 +230,8 @@ TestCase {
                 pinned: false,
                 hidden: false,
                 frecency: 0,
-                searchText: "files nautilus file manager"
+                searchText: "files nautilus file manager",
+                searchTokens: ["files", "nautilus", "file", "manager"]
             }
         ];
 

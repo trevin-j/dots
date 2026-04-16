@@ -150,6 +150,7 @@ function buildCache(entries, favorites, pinnedIds, hiddenIds, usageMap, nowMs) {
         const comment = normalizeText(entry.comment);
         const keywordsText = normalizeKeywords(entry.keywords);
         const searchText = lowercase(`${name} ${genericName} ${keywordsText} ${comment} ${desktopId}`);
+        const cachedSearchTokens = searchTokens(searchText);
         const usage = usageRecord(usageMap, desktopId);
 
         result.push({
@@ -167,7 +168,8 @@ function buildCache(entries, favorites, pinnedIds, hiddenIds, usageMap, nowMs) {
             frecency: frecencyScore(usage, now),
             launches: usage.launches,
             lastUsedMs: usage.lastUsedMs,
-            searchText: searchText
+            searchText: searchText,
+            searchTokens: cachedSearchTokens
         });
     }
 
@@ -198,16 +200,17 @@ function updateUsageScores(cachedEntries, usageMap, nowMs) {
             frecency: frecencyScore(usage, now),
             launches: usage.launches,
             lastUsedMs: usage.lastUsedMs,
-            searchText: item.searchText
+            searchText: item.searchText,
+            searchTokens: asList(item.searchTokens)
         });
     }
 
     return refreshed;
 }
 
-function fuzzyScore(query, haystack) {
-    const needle = lowercase(query);
-    const text = lowercase(haystack);
+function fuzzyScore(query, haystack, haystackTokens) {
+    const needle = normalizeText(query);
+    const text = normalizeText(haystack);
     if (!needle) {
         return 1;
     }
@@ -220,7 +223,7 @@ function fuzzyScore(query, haystack) {
         return 400 - Math.min(240, directIndex * 8) + needle.length * 20;
     }
 
-    const tokens = searchTokens(text);
+    const tokens = asList(haystackTokens);
     let bestScore = -1;
     for (const token of tokens) {
         const tokenScore = fuzzyTokenScore(needle, token);
@@ -359,7 +362,7 @@ function rankAndFilter(cachedEntries, query) {
             continue;
         }
 
-        const fuzzy = fuzzyScore(normalizedQuery, item.searchText);
+        const fuzzy = fuzzyScore(normalizedQuery, item.searchText, item.searchTokens);
         if (fuzzy < 0) {
             continue;
         }
@@ -374,6 +377,8 @@ function rankAndFilter(cachedEntries, query) {
             pinned: !!item.pinned,
             hidden: !!item.hidden,
             frecency: item.frecency,
+            searchText: item.searchText,
+            searchTokens: asList(item.searchTokens),
             fuzzyScore: fuzzy
         });
     }
