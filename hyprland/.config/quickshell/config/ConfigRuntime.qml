@@ -21,6 +21,7 @@ QtObject {
     readonly property var popouts: merged.popouts
     readonly property var controlCenter: merged.controlCenter
     readonly property var appDrawer: merged.appDrawer
+    readonly property var bitwardenPicker: merged.bitwardenPicker
     readonly property var clipboardHistory: merged.clipboardHistory
     readonly property var emojiPicker: merged.emojiPicker
     readonly property var nerdFontPicker: merged.nerdFontPicker

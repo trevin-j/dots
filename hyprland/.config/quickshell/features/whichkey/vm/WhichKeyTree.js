@@ -23,9 +23,9 @@ function defaultBinds() {
         { keys: "uc", description: "Color picker", command: "hyprpicker | wl-copy -n", icon: "colorize" },
         { keys: "un", description: "Notifications", command: "qs ipc call controlcenter toggle", icon: "notifications" },
         { keys: "s", description: "Search", icon: "search" },
-        { keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" },
-        { keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" },
-        { keys: "su", description: "Usernames", command: "tlgui bitwarden --username", icon: "person" },
+        { keys: "sp", description: "Passwords", command: "qs ipc call bitwarden togglePassword", icon: "password" },
+        { keys: "st", description: "TOTP codes", command: "qs ipc call bitwarden toggleTotp", icon: "pin" },
+        { keys: "su", description: "Usernames", command: "qs ipc call bitwarden toggleUsername", icon: "person" },
         { keys: "sc", description: "Clipboard history", command: "qs ipc call clipboardhistory toggle", icon: "content_paste" },
         { keys: "se", description: "Emoji picker", command: "qs ipc call emoji toggle", icon: "emoji_emotions" },
         { keys: "sn", description: "Nerd font picker", command: "qs ipc call nerdfont toggle", icon: "font_download" }

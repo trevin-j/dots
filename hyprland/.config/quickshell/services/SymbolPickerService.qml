@@ -21,7 +21,7 @@ Scope {
     readonly property string dataDirPath: Platform.StandardPaths.writableLocation(Platform.StandardPaths.GenericDataLocation)
         + "/quickshell/symbol-picker"
     readonly property string updaterCommand: "if command -v update-quickshell-symbol-data >/dev/null 2>&1; then update-quickshell-symbol-data --quiet; elif [ -x \"$HOME/.dots/hyprland/.local/bin/update-quickshell-symbol-data\" ]; then \"$HOME/.dots/hyprland/.local/bin/update-quickshell-symbol-data\" --quiet; fi"
-    readonly property string cacheBuilderCommand: "if command -v build-quickshell-symbol-cache >/dev/null 2>&1; then build-quickshell-symbol-cache; elif [ -x \"$HOME/.dots/hyprland/.local/bin/build-quickshell-symbol-cache\" ]; then \"$HOME/.dots/hyprland/.local/bin/build-quickshell-symbol-cache\"; fi"
+    readonly property string cacheBuilderCommand: "if command -v build-quickshell-symbol-cache >/dev/null 2>&1; then build-quickshell-symbol-cache \"$@\"; elif [ -x \"$HOME/.dots/hyprland/.local/bin/build-quickshell-symbol-cache\" ]; then \"$HOME/.dots/hyprland/.local/bin/build-quickshell-symbol-cache\" \"$@\"; fi"
 
     readonly property string emojiDataPath: Quickshell.env("QS_EMOJI_DATA_PATH") || (root.dataDirPath + "/emoji.json")
     readonly property string emojiDataFilePath: SymbolPickerParsers.normalizeFileSystemPath(root.emojiDataPath)
@@ -215,7 +215,15 @@ Scope {
             buildEmojiCacheProcess.exec([
                 "/bin/sh",
                 "-lc",
-                `${root.cacheBuilderCommand} --kind emoji --data-file ${root.shellQuote(root.emojiDataFilePath)} --mru-file ${root.shellQuote(root.emojiMruFilePath)} --cache-file ${root.shellQuote(root.emojiCacheFilePath)}`
+                `${root.cacheBuilderCommand}`,
+                "--kind",
+                "emoji",
+                "--data-file",
+                root.emojiDataFilePath,
+                "--mru-file",
+                root.emojiMruFilePath,
+                "--cache-file",
+                root.emojiCacheFilePath
             ]);
             return;
         }
@@ -227,7 +235,15 @@ Scope {
         buildNerdFontCacheProcess.exec([
             "/bin/sh",
             "-lc",
-            `${root.cacheBuilderCommand} --kind nerdfont --data-file ${root.shellQuote(root.nerdFontDataFilePath)} --mru-file ${root.shellQuote(root.nerdFontMruFilePath)} --cache-file ${root.shellQuote(root.nerdFontCacheFilePath)}`
+            `${root.cacheBuilderCommand}`,
+            "--kind",
+            "nerdfont",
+            "--data-file",
+            root.nerdFontDataFilePath,
+            "--mru-file",
+            root.nerdFontMruFilePath,
+            "--cache-file",
+            root.nerdFontCacheFilePath
         ]);
     }
 

@@ -5,6 +5,9 @@ export pacman_deps=(
     brightnessctl
     cliphist
     curl
+    jq
+    pinentry
+    rbw
     wl-clipboard
     wtype
     hyprpolkitagent
@@ -23,6 +26,9 @@ export aur_deps=(
 )
 
 post_stow() {
+    if command -v configure-rbw-pinentry >/dev/null 2>&1; then
+        configure-rbw-pinentry --quiet || true
+    fi
     if command -v update-quickshell-symbol-data >/dev/null 2>&1; then
         update-quickshell-symbol-data --force --quiet || true
     fi

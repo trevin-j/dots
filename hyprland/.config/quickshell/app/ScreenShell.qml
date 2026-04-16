@@ -1,6 +1,8 @@
 import QtQuick
 import Quickshell
 
+import "../features/bitwarden" as BitwardenFeature
+import "../features/bitwarden/vm" as BitwardenVm
 import "../services" as Services
 import "../features/appdrawer" as AppDrawerFeature
 import "../features/appdrawer/vm" as AppDrawerVm
@@ -37,6 +39,10 @@ Item {
         id: clipboardHistoryState
     }
 
+    BitwardenVm.BitwardenPickerState {
+        id: bitwardenState
+    }
+
     SymbolPickerVm.SymbolPickerState {
         id: emojiState
     }
@@ -48,6 +54,7 @@ Item {
     Component.onCompleted: {
         Services.ControlCenterService.registerScreenState(root.panelScreen, controlCenterState);
         Services.AppDrawerService.registerScreenState(root.panelScreen, appDrawerState);
+        Services.BitwardenService.registerScreenState(root.panelScreen, bitwardenState);
         Services.ClipboardHistoryService.registerScreenState(root.panelScreen, clipboardHistoryState);
         Services.SymbolPickerService.registerScreenState("emoji", root.panelScreen, emojiState);
         Services.SymbolPickerService.registerScreenState("nerdfont", root.panelScreen, nerdFontState);
@@ -56,6 +63,7 @@ Item {
     Component.onDestruction: {
         Services.ControlCenterService.unregisterScreenState(controlCenterState);
         Services.AppDrawerService.unregisterScreenState(appDrawerState);
+        Services.BitwardenService.unregisterScreenState(bitwardenState);
         Services.ClipboardHistoryService.unregisterScreenState(clipboardHistoryState);
         Services.SymbolPickerService.unregisterScreenState("emoji", emojiState);
         Services.SymbolPickerService.unregisterScreenState("nerdfont", nerdFontState);
@@ -79,6 +87,11 @@ Item {
     ClipboardHistoryFeature.ClipboardHistoryPanelFeature {
         panelScreen: root.panelScreen
         state: clipboardHistoryState
+    }
+
+    BitwardenFeature.BitwardenPanelFeature {
+        panelScreen: root.panelScreen
+        state: bitwardenState
     }
 
     EmojiFeature.EmojiPanelFeature {

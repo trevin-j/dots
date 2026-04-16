@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v rbw >/dev/null 2>&1; then
+    exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+    exit 0
+fi
+
+extract_totp_period() {
+    local id="$1"
+    local raw totp period
+
+    raw="$(rbw get --raw "$id" 2>/dev/null || true)"
+    if [[ -z "$raw" ]]; then
+        return 1
+    fi
+
+    totp="$(printf '%s' "$raw" | jq -r '.data.totp // empty' 2>/dev/null || true)"
+    if [[ -z "$totp" ]]; then
+        return 1
+    fi
+
+    period="$(printf '%s\n' "$totp" | sed -n 's/.*[?&]period=\([0-9][0-9]*\).*/\1/p' | head -n 1)"
+    if [[ -z "$period" ]]; then
+        period=30
+    fi
+
+    printf '%s\n' "$period"
+}
+
+export -f extract_totp_period
+
+xargs -r -n 1 -P "${RBW_TOTP_SCAN_JOBS:-8}" bash -c '
+    id="$1"
+    period="$(extract_totp_period "$id" || true)"
+    if [[ -n "$period" ]]; then
+        printf "%s\t%s\n" "$id" "$period"
+    fi
+' _

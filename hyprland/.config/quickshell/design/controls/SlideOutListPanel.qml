@@ -19,6 +19,7 @@ Primitives.SlideOutPanelWindow {
     required property string panelNamespace
 
     property string emptyText: "No items"
+    property string headerStatusText: ""
     property int itemHeight: 60
     property int itemSpacing: 8
     property int itemIconSize: 18
@@ -256,6 +257,16 @@ Primitives.SlideOutPanelWindow {
                                 event.accepted = true;
                             }
                         }
+                    }
+
+                    Text {
+                        visible: root.headerStatusText !== ""
+                        text: root.headerStatusText
+                        color: Config.Palette.color("on_surface_variant")
+                        font.family: Config.Appearance.fontFamily
+                        font.weight: Font.Medium
+                        font.pixelSize: Config.Appearance.fontSizeSmall
+                        Layout.alignment: Qt.AlignVCenter
                     }
                 }
 

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+quiet=0
+if [[ "${1:-}" == "--quiet" ]]; then
+    quiet=1
+fi
+
+if ! command -v rbw >/dev/null 2>&1; then
+    exit 0
+fi
+
+selected=""
+for candidate in pinentry-qt pinentry-gnome3 pinentry-gtk-2 pinentry; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        selected="$candidate"
+        break
+    fi
+done
+
+if [[ -z "$selected" ]]; then
+    if [[ "$quiet" -ne 1 ]]; then
+        printf 'No supported pinentry binary found for rbw.\n' >&2
+    fi
+    exit 0
+fi
+
+rbw config set pinentry "$selected" >/dev/null
+
+if [[ "$quiet" -ne 1 ]]; then
+    printf 'Configured rbw to use %s\n' "$selected"
+fi
