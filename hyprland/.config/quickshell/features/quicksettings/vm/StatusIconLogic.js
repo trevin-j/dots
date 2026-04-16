@@ -1,3 +1,7 @@
+function hasBattery(batteryReady, isLaptopBattery, isPresent) {
+    return batteryReady && isLaptopBattery && (isPresent === undefined || isPresent);
+}
+
 function batteryIconName(batteryReady, batteryCharging, batteryPercent) {
     if (!batteryReady) {
         return "battery_unknown";

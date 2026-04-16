@@ -26,19 +26,24 @@ Item {
 
     readonly property var batteryDevice: UPower.displayDevice
     readonly property bool batteryReady: batteryDevice?.ready ?? false
-    readonly property real batteryRawPercent: batteryReady ? batteryDevice.percentage : 0
-    readonly property int batteryPercent: batteryReady ? Math.round(batteryRawPercent <= 1 ? batteryRawPercent * 100 : batteryRawPercent) : 0
-    readonly property bool batteryLow: batteryReady && batteryPercent <= 10
-    readonly property bool batteryCharging: batteryReady
+    readonly property bool hasBattery: IconLogic.hasBattery(
+        batteryReady,
+        batteryDevice?.isLaptopBattery ?? false,
+        batteryDevice?.isPresent
+    )
+    readonly property real batteryRawPercent: hasBattery ? batteryDevice.percentage : 0
+    readonly property int batteryPercent: hasBattery ? Math.round(batteryRawPercent <= 1 ? batteryRawPercent * 100 : batteryRawPercent) : 0
+    readonly property bool batteryLow: hasBattery && batteryPercent <= 10
+    readonly property bool batteryCharging: hasBattery
         && (batteryDevice.state === UPowerDeviceState.Charging
             || batteryDevice.state === UPowerDeviceState.PendingCharge)
 
     readonly property string batteryIconName: {
-        return IconLogic.batteryIconName(batteryReady, batteryCharging, batteryPercent);
+        return IconLogic.batteryIconName(hasBattery, batteryCharging, batteryPercent);
     }
 
     readonly property color batteryTextColor: batteryLow ? Config.Palette.color("error") : Config.Palette.color("on_surface")
-    readonly property string batteryPercentLabel: batteryReady ? `${batteryPercent}%` : "--%"
+    readonly property string batteryPercentLabel: hasBattery ? `${batteryPercent}%` : ""
 
     readonly property int wifiStrength: connectivityModel.wifiStrength
     readonly property bool wifiConnected: connectivityModel.wifiConnected

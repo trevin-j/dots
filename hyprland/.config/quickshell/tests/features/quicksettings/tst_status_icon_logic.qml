@@ -23,6 +23,12 @@ TestCase {
     }
 
     function test_batteryIconLogic() {
+        verify(!IconLogic.hasBattery(false, false, undefined));
+        verify(!IconLogic.hasBattery(true, false, undefined));
+        verify(!IconLogic.hasBattery(true, true, false));
+        verify(IconLogic.hasBattery(true, true, true));
+        verify(IconLogic.hasBattery(true, true, undefined));
+
         compare(IconLogic.batteryIconName(false, false, 10), "battery_unknown");
         compare(IconLogic.batteryIconName(true, true, 50), "battery_charging_full");
         compare(IconLogic.batteryIconName(true, false, 96), "battery_full");

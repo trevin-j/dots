@@ -67,6 +67,7 @@ Rectangle {
 
         Text {
             text: root.viewModel.batteryIconName
+            visible: root.viewModel.hasBattery
             color: root.viewModel.batteryTextColor
             font.family: root.materialFont
             font.pixelSize: root.iconSize
@@ -80,6 +81,7 @@ Rectangle {
 
         Text {
             text: root.viewModel.batteryPercentLabel
+            visible: root.viewModel.hasBattery
             color: root.viewModel.batteryTextColor
             font.family: Config.Appearance.fontFamily
             font.weight: Config.Appearance.fontWeight
