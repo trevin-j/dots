@@ -4,6 +4,7 @@ export pacman_deps=(
     firefox
     brightnessctl
     cliphist
+    curl
     wl-clipboard
     wtype
     hyprpolkitagent
@@ -20,3 +21,9 @@ export aur_deps=(
     bibata-cursor-theme-bin
     wvkbd-git
 )
+
+post_stow() {
+    if command -v update-quickshell-symbol-data >/dev/null 2>&1; then
+        update-quickshell-symbol-data --force --quiet || true
+    fi
+}

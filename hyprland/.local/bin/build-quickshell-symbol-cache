@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+
+def parse_usage_counts(path: Path) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    if not path.exists():
+        return counts
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line:
+            continue
+        counts[line] = counts.get(line, 0) + 1
+    return counts
+
+
+def normalize_search_text(parts: list[str]) -> str:
+    values: list[str] = []
+    for part in parts:
+        trimmed = part.strip()
+        if not trimmed:
+            continue
+        values.append(trimmed.replace("_", " ").replace("-", " "))
+        values.append(trimmed)
+    return " ".join(values).strip()
+
+
+def sort_entries(entries: list[dict], usage_counts: dict[str, int]) -> list[dict]:
+    return sorted(
+        entries,
+        key=lambda entry: (-usage_counts.get(entry.get("glyph", ""), 0), entry.get("sourceIndex", 0)),
+    )
+
+
+def build_emoji_entries(data: list[dict], usage_counts: dict[str, int]) -> list[dict]:
+    entries: list[dict] = []
+    source_index = 0
+
+    def push_entry(item: dict, fallback_label: str) -> None:
+        nonlocal source_index
+        glyph = item.get("unicode") if isinstance(item.get("unicode"), str) else ""
+        if not glyph:
+            return
+
+        label_value = item.get("label") if isinstance(item.get("label"), str) else ""
+        label = label_value.strip() or fallback_label
+        hexcode_value = item.get("hexcode") if isinstance(item.get("hexcode"), str) else ""
+        entry_id = hexcode_value.strip() or f"{glyph}-{source_index}"
+
+        entries.append(
+            {
+                "id": entry_id,
+                "glyph": glyph,
+                "label": label,
+                "searchText": normalize_search_text([label, entry_id]),
+                "sourceIndex": source_index,
+            }
+        )
+        source_index += 1
+
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        fallback_label = item.get("label") if isinstance(item.get("label"), str) else ""
+        fallback_label = fallback_label.strip()
+        push_entry(item, fallback_label)
+        skins = item.get("skins") if isinstance(item.get("skins"), list) else []
+        for skin in skins:
+            if isinstance(skin, dict):
+                push_entry(skin, fallback_label)
+
+    return sort_entries(entries, usage_counts)
+
+
+def build_nerd_font_entries(data: dict, usage_counts: dict[str, int]) -> list[dict]:
+    entries: list[dict] = []
+    source_index = 0
+
+    for key, item in data.items():
+        if key == "METADATA" or not isinstance(item, dict):
+            continue
+
+        glyph = item.get("char") if isinstance(item.get("char"), str) else ""
+        if not glyph:
+            continue
+
+        code = item.get("code") if isinstance(item.get("code"), str) else ""
+        entries.append(
+            {
+                "id": key,
+                "glyph": glyph,
+                "label": key,
+                "searchText": normalize_search_text([key, code]),
+                "sourceIndex": source_index,
+            }
+        )
+        source_index += 1
+
+    return sort_entries(entries, usage_counts)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--kind", choices=["emoji", "nerdfont"], required=True)
+    parser.add_argument("--data-file", required=True)
+    parser.add_argument("--mru-file", required=True)
+    parser.add_argument("--cache-file", required=True)
+    args = parser.parse_args()
+
+    data_path = Path(args.data_file).expanduser()
+    mru_path = Path(args.mru_file).expanduser()
+    cache_path = Path(args.cache_file).expanduser()
+
+    usage_counts = parse_usage_counts(mru_path)
+
+    if args.kind == "emoji":
+        payload = json.loads(data_path.read_text(encoding="utf-8")) if data_path.exists() else []
+        entries = build_emoji_entries(payload if isinstance(payload, list) else [], usage_counts)
+    else:
+        payload = json.loads(data_path.read_text(encoding="utf-8")) if data_path.exists() else {}
+        entries = build_nerd_font_entries(payload if isinstance(payload, dict) else {}, usage_counts)
+
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(entries, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    tmp_path.replace(cache_path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

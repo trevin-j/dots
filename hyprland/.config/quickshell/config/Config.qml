@@ -17,6 +17,8 @@ QtObject {
     readonly property var controlCenter: ConfigFiles.ConfigRuntime.controlCenter
     readonly property var appDrawer: ConfigFiles.ConfigRuntime.appDrawer
     readonly property var clipboardHistory: ConfigFiles.ConfigRuntime.clipboardHistory
+    readonly property var emojiPicker: ConfigFiles.ConfigRuntime.emojiPicker
+    readonly property var nerdFontPicker: ConfigFiles.ConfigRuntime.nerdFontPicker
     readonly property var notifications: ConfigFiles.ConfigRuntime.notifications
     readonly property var whichKey: ConfigFiles.ConfigRuntime.whichKey
 }
