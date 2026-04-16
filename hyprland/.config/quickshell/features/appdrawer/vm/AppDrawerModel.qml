@@ -37,6 +37,8 @@ QtObject {
     property var sessionBaseRankedApps: []
     property var rankedApps: []
     property bool pendingSourceRefresh: false
+    property bool sourceCacheReady: false
+    property bool sourceCacheBuilding: false
     readonly property int totalItems: rankedApps.length
     readonly property var selectedItem: (root.state.selectedIndex >= 0 && root.state.selectedIndex < root.totalItems)
         ? root.rankedApps[root.state.selectedIndex]
@@ -47,6 +49,12 @@ QtObject {
     }
 
     function rebuildSourceCache(syncSession) {
+        if (root.sourceCacheBuilding) {
+            return;
+        }
+
+        const shouldSyncSession = syncSession || !root.state.open || !root.sourceCacheReady;
+        root.sourceCacheBuilding = true;
         root.pendingSourceRefresh = false;
         root.snapshotApplications();
         root.cachedApps = AppDrawerLogic.buildCache(
@@ -58,11 +66,16 @@ QtObject {
             Date.now()
         );
         root.baseRankedApps = AppDrawerLogic.sortBaseEntries(root.cachedApps);
-        if (syncSession || !root.state.open) {
+        if (shouldSyncSession) {
             root.sessionCachedApps = root.cachedApps;
             root.sessionBaseRankedApps = root.baseRankedApps;
         }
+        root.sourceCacheReady = true;
+        root.sourceCacheBuilding = false;
         root.rebuildRanking();
+        if (root.pendingSourceRefresh && !root.state.open) {
+            desktopRefreshTimer.restart();
+        }
     }
 
     function refreshUsageCache() {
@@ -81,7 +94,7 @@ QtObject {
 
     function scheduleSourceRefresh() {
         root.pendingSourceRefresh = true;
-        if (root.state.open) {
+        if (root.sourceCacheBuilding || (root.state.open && root.sourceCacheReady)) {
             return;
         }
 
@@ -152,7 +165,7 @@ QtObject {
     property Timer desktopRefreshTimer: Timer {
         id: desktopRefreshTimer
 
-        interval: 120
+        interval: root.sourceCacheReady ? 120 : 0
         repeat: false
         onTriggered: root.rebuildSourceCache()
     }
@@ -190,11 +203,12 @@ QtObject {
 
         function onOpenChanged() {
             if (root.state.open) {
-                if (root.pendingSourceRefresh || root.cachedApps.length === 0) {
-                    root.rebuildSourceCache();
+                if (root.sourceCacheReady || root.cachedApps.length > 0) {
+                    root.sessionCachedApps = root.cachedApps;
+                    root.sessionBaseRankedApps = root.baseRankedApps;
+                } else {
+                    root.scheduleSourceRefresh();
                 }
-                root.sessionCachedApps = root.cachedApps;
-                root.sessionBaseRankedApps = root.baseRankedApps;
                 root.rebuildRanking();
             } else if (!root.presentationOpen) {
                 rankingDebounceTimer.stop();
