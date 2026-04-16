@@ -154,6 +154,7 @@ QtObject {
 
     readonly property var appDrawer: ({
         size: ({
+            width: 482,
             rows: 3,
             columns: 5,
             padding: 24,
@@ -170,6 +171,14 @@ QtObject {
             searchDebounceMs: 35
         }),
         favorites: []
+    })
+
+    readonly property var clipboardHistory: ({
+        size: ({
+            itemHeight: 60,
+            itemSpacing: 8,
+            iconSize: 18
+        })
     })
 
     readonly property var notifications: ({
@@ -257,7 +266,7 @@ QtObject {
             ({ keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" }),
             ({ keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" }),
             ({ keys: "su", description: "Usernames", command: "tlgui bitwarden --username", icon: "person" }),
-            ({ keys: "sc", description: "Clipboard history", command: "tlgui cliphist", icon: "content_paste" }),
+            ({ keys: "sc", description: "Clipboard history", command: "qs ipc call clipboardhistory toggle", icon: "content_paste" }),
             ({ keys: "se", description: "Emoji picker", command: "tlgui emoji", icon: "emoji_emotions" }),
             ({ keys: "sn", description: "Nerd font picker", command: "tlgui nerdfont", icon: "font_download" })
         ]

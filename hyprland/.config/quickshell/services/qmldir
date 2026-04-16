@@ -1,5 +1,6 @@
 singleton BrightnessService BrightnessService.qml
 singleton AppDrawerService AppDrawerService.qml
+singleton ClipboardHistoryService ClipboardHistoryService.qml
 singleton ControlCenterService ControlCenterService.qml
 singleton ConnectivityAdapter adapters/ConnectivityAdapter.qml
 singleton NightLightService NightLightService.qml

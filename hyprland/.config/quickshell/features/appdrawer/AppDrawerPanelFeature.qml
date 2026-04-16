@@ -41,7 +41,7 @@ Primitives.SlideOutPanelWindow {
     property string hoverTitle: ""
     property real hoverTooltipX: 0
     property real hoverTooltipY: 0
-    readonly property int panelWidth: Math.max(280, Math.round(482))
+    readonly property int panelWidth: Math.max(280, Math.round(Config.Config.appDrawer?.size?.width ?? 482))
 
     open: root.state.open
     closeDurationMs: root.panelCloseDurationMs

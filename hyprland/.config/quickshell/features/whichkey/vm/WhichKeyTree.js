@@ -26,7 +26,7 @@ function defaultBinds() {
         { keys: "sp", description: "Passwords", command: "tlgui bitwarden --password", icon: "password" },
         { keys: "st", description: "TOTP codes", command: "tlgui bitwarden --totp", icon: "pin" },
         { keys: "su", description: "Usernames", command: "tlgui bitwarden --username", icon: "person" },
-        { keys: "sc", description: "Clipboard history", command: "tlgui cliphist", icon: "content_paste" },
+        { keys: "sc", description: "Clipboard history", command: "qs ipc call clipboardhistory toggle", icon: "content_paste" },
         { keys: "se", description: "Emoji picker", command: "tlgui emoji", icon: "emoji_emotions" },
         { keys: "sn", description: "Nerd font picker", command: "tlgui nerdfont", icon: "font_download" }
     ];

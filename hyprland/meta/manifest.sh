@@ -3,7 +3,9 @@ export pacman_deps=(
     dolphin ark audiocd-kio baloo dolphin-plugins kio-admin kompare konsole ffmpegthumbs icoutils kdegraphics-thumbnailers kdesdk-thumbnailers kimageformats libappimage qt6-imageformats resvg taglib
     firefox
     brightnessctl
+    cliphist
     wl-clipboard
+    wtype
     hyprpolkitagent
     hyprland
     kdeconnect
