@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 
 import "../../../config" as Config
+import "../../../utils" as Utils
 
 /*
   StatusPill
@@ -16,7 +17,6 @@ Rectangle {
     required property string materialFont
     required property int iconSize
     required property int horizontalPadding
-    required property int verticalPadding
     required property var viewModel
 
     radius: Config.Appearance.radiusMedium
@@ -27,7 +27,7 @@ Rectangle {
     }
 
     implicitWidth: contentRow.implicitWidth + root.horizontalPadding * 2
-    implicitHeight: Math.max(contentRow.implicitHeight + root.verticalPadding * 2, Math.round(root.barHeight * 0.6))
+    implicitHeight: root.barHeight
 
     RowLayout {
         id: contentRow
@@ -35,8 +35,6 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: root.horizontalPadding
         anchors.rightMargin: root.horizontalPadding
-        anchors.topMargin: root.verticalPadding
-        anchors.bottomMargin: root.verticalPadding
         spacing: root.spacing
 
         Text {
@@ -45,11 +43,7 @@ Rectangle {
             font.family: root.materialFont
             font.pixelSize: root.iconSize
             font.weight: Font.Medium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.preferredWidth: implicitWidth
-            Layout.preferredHeight: implicitHeight
-            Layout.alignment: Qt.AlignVCenter
+            anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
@@ -58,11 +52,7 @@ Rectangle {
             font.family: root.materialFont
             font.pixelSize: root.iconSize
             font.weight: Font.Medium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.preferredWidth: implicitWidth
-            Layout.preferredHeight: implicitHeight
-            Layout.alignment: Qt.AlignVCenter
+            anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
@@ -72,11 +62,7 @@ Rectangle {
             font.family: root.materialFont
             font.pixelSize: root.iconSize
             font.weight: Font.Medium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.preferredWidth: implicitWidth
-            Layout.preferredHeight: implicitHeight
-            Layout.alignment: Qt.AlignVCenter
+            anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
@@ -85,10 +71,8 @@ Rectangle {
             color: root.viewModel.batteryTextColor
             font.family: Config.Appearance.fontFamily
             font.weight: Config.Appearance.fontWeight
-            font.pixelSize: Config.Appearance.fontSizeMedium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.alignment: Qt.AlignVCenter
+            font.pixelSize: Config.Appearance.fontSizeSmall
+            anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
@@ -96,10 +80,8 @@ Rectangle {
             color: Config.Palette.color("on_surface")
             font.family: Config.Appearance.fontFamily
             font.weight: Config.Appearance.fontWeight
-            font.pixelSize: Config.Appearance.fontSizeMedium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.alignment: Qt.AlignVCenter
+            font.pixelSize: Config.Appearance.fontSizeSmall
+            anchors.verticalCenter: parent.verticalCenter
         }
 
         Text {
@@ -107,10 +89,8 @@ Rectangle {
             color: Config.Palette.color("on_surface")
             font.family: Config.Appearance.fontFamily
             font.weight: Config.Appearance.fontWeight
-            font.pixelSize: Config.Appearance.fontSizeMedium
-            verticalAlignment: Text.AlignVCenter
-
-            Layout.alignment: Qt.AlignVCenter
+            font.pixelSize: Config.Appearance.fontSizeSmall
+            anchors.verticalCenter: parent.verticalCenter
         }
     }
 }

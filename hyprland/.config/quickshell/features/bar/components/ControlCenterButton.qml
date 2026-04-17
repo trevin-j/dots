@@ -1,6 +1,7 @@
 import QtQuick
 
 import "../../../config" as Config
+import "../../../utils" as Utils
 
 /*
   ControlCenterButton
@@ -26,7 +27,7 @@ Rectangle {
     radius: Config.Appearance.radiusMedium
 
     implicitWidth: iconLabel.implicitWidth + root.horizontalPadding * 2
-    implicitHeight: Math.max(iconLabel.implicitHeight + root.verticalPadding * 2, Math.round(root.barHeight * 0.6))
+    implicitHeight: Utils.Bar.widgetHeight(root.barHeight, iconLabel.implicitHeight + root.verticalPadding * 2)
 
     Behavior on color {
         ColorAnimation {

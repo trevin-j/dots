@@ -2,6 +2,7 @@ import QtQuick
 
 import "../../../config" as Config
 import "../../../services" as Services
+import "../../../utils" as Utils
 
 /*
   KeyboardToggle
@@ -21,7 +22,7 @@ Rectangle {
     color: Services.KeyboardService.visible ? Config.Palette.color("primary") : Config.Palette.color("surface_container")
 
     implicitWidth: iconItem.implicitWidth + root.horizontalPadding * 2
-    implicitHeight: Math.max(barHeight * 0.6, iconItem.implicitHeight + root.verticalPadding * 2)
+    implicitHeight: Utils.Bar.widgetHeight(root.barHeight, iconItem.implicitHeight + root.verticalPadding * 2)
 
     Behavior on color {
         ColorAnimation {

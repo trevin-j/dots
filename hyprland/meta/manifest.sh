@@ -14,6 +14,7 @@ export pacman_deps=(
     hyprland
     kdeconnect
     hyprsunset
+    hyprpicker
     grim slurp
     quickshell
     ttf-material-symbols-variable

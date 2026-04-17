@@ -230,11 +230,6 @@ PanelWindow {
                         screen: root.panelScreen
                         vertical: root.position === "left" || root.position === "right"
                     }
-
-                    BarComponents.ActiveWindowPill {
-                        screen: root.panelScreen
-                        Layout.fillHeight: true
-                    }
                 }
 
                 Item {
@@ -246,6 +241,12 @@ PanelWindow {
                     Layout.alignment: Qt.AlignVCenter
                     Layout.fillHeight: true
                     spacing: root.spacing
+
+                    BarComponents.ActiveWindowPill {
+                        screen: root.panelScreen
+                        barHeight: root.thickness - root.padding * 2
+                        Layout.fillHeight: true
+                    }
 
                     BarComponents.RightStatus {
                         barHeight: root.thickness - root.padding * 2

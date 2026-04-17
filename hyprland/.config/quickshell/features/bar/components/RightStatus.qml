@@ -16,8 +16,7 @@ Item {
     required property int spacing
 
     readonly property int horizontalPadding: Math.max(6, Math.round(spacing * 0.75))
-    readonly property int verticalPadding: Math.max(4, Math.round(horizontalPadding * 0.6))
-    readonly property int iconSize: Math.max(14, Math.round(barHeight * 0.45))
+    readonly property int iconSize: Math.max(16, Math.round(barHeight * 0.5))
     readonly property string materialFont: Config.Appearance.iconFontFamily
 
     QuickSettingsVm.StatusViewModel {
@@ -35,7 +34,6 @@ Item {
         materialFont: root.materialFont
         iconSize: root.iconSize
         horizontalPadding: root.horizontalPadding
-        verticalPadding: root.verticalPadding
         viewModel: statusVm
     }
 }
