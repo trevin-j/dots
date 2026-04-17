@@ -6,6 +6,17 @@ import "../../services/parsers/SymbolPickerParsers.js" as SymbolPickerParsers
 TestCase {
     name: "SymbolPickerParsers"
 
+    function test_normalizeFileSystemPath_fileScheme() {
+        compare(
+            SymbolPickerParsers.normalizeFileSystemPath("file:///home/user/.local/share/quickshell/symbol-picker/emoji-cache.json"),
+            "/home/user/.local/share/quickshell/symbol-picker/emoji-cache.json"
+        );
+        compare(
+            SymbolPickerParsers.normalizeFileSystemPath("file:/home/user/.local/share/quickshell/symbol-picker/nerdfont-cache.json"),
+            "/home/user/.local/share/quickshell/symbol-picker/nerdfont-cache.json"
+        );
+    }
+
     function test_parseUsageTextCountsRepeatedGlyphs() {
         const counts = SymbolPickerParsers.parseUsageText("😀\n😀\n🚀\n");
 

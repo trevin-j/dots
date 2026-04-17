@@ -33,8 +33,10 @@ Scope {
     readonly property string nerdFontMruPath: Quickshell.env("QS_NERD_FONT_MRU_PATH")
         || (root.dataDirPath + "/nerdfont-mru")
     readonly property string nerdFontMruFilePath: SymbolPickerParsers.normalizeFileSystemPath(root.nerdFontMruPath)
-    readonly property string emojiCacheFilePath: root.dataDirPath + "/emoji-cache.json"
-    readonly property string nerdFontCacheFilePath: root.dataDirPath + "/nerdfont-cache.json"
+    readonly property string emojiCachePath: root.dataDirPath + "/emoji-cache.json"
+    readonly property string emojiCacheFilePath: SymbolPickerParsers.normalizeFileSystemPath(root.emojiCachePath)
+    readonly property string nerdFontCachePath: root.dataDirPath + "/nerdfont-cache.json"
+    readonly property string nerdFontCacheFilePath: SymbolPickerParsers.normalizeFileSystemPath(root.nerdFontCachePath)
 
     property var emojiUsageCounts: ({})
     property var nerdFontUsageCounts: ({})
