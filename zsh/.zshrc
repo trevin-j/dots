@@ -40,14 +40,14 @@ zvm_config() {
     ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
 }
 
-apply_shell_keybinds() {
-    bindkey -v
-    bindkey -r '^h'
-    bindkey '^h' backward-kill-word
+# Any commands or binds that should override any plugin options
+# These are technically run after every individual plugin is loaded, which isn't great
+# but so far it is the only way to reliably override binds, etc after loading without relying on timing
+override_cmds()
+{
+    bindkey -r "^h"
+    bindkey "^h" backward-kill-word
 }
-
-typeset -ga zvm_after_init_commands
-zvm_after_init_commands+=(apply_shell_keybinds)
 
 GIT_AUTO_FETCH_INTERVAL=300 # 5 minutes
 
@@ -57,7 +57,7 @@ zi light-mode depth"1" for \
     jeffreytse/zsh-vi-mode \
 
 # Asynchronous plugin loading
-zi wait lucid light-mode for \
+zi wait lucid light-mode atload"override_cmds" for \
     Aloxaf/fzf-tab \
     hlissner/zsh-autopair \
     has"eza" as"completion" https://github.com/eza-community/eza/blob/main/completions/zsh/_eza \
@@ -113,7 +113,6 @@ fi
 
 if command -v fzf &>/dev/null; then
     source <(fzf --zsh)
-    apply_shell_keybinds
 fi
 
 # If lf exists
