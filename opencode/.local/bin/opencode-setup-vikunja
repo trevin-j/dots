@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Vikunja API setup script for OpenCode
+# Usage: opencode-setup-vikunja [--force]
+
+CREDS_DIR="${HOME}/.local/share/vikunja"
+CREDS_FILE="${CREDS_DIR}/credentials"
+
+show_help() {
+    cat <<EOF
+Usage: opencode-setup-vikunja [OPTIONS]
+
+Configure Vikunja API credentials for OpenCode integration.
+
+Options:
+  --force    Overwrite existing configuration
+  -h, --help Show this help message
+
+The script will prompt for:
+  - Vikunja base URL (e.g., https://try.vikunja.io or https://tasks.example.com)
+  - API token (create one in Vikunja UI under Settings > API Tokens)
+
+Credentials are stored in: ${CREDS_FILE}
+EOF
+}
+
+parse_args() {
+    FORCE=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force)
+                FORCE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                show_help >&2
+                exit 1
+                ;;
+        esac
+    done
+}
+
+prompt_input() {
+    local prompt_text="$1"
+    local is_secret="${2:-false}"
+    local input_value
+
+    if [[ "$is_secret" == "true" ]]; then
+        read -rsp "$prompt_text" input_value
+        echo >&2
+    else
+        read -rp "$prompt_text" input_value
+    fi
+
+    echo "$input_value"
+}
+
+test_credentials() {
+    local base_url="$1"
+    local token="$2"
+
+    local api_url
+    api_url="${base_url%/}/api/v1/user"
+
+    echo "Testing connection to ${api_url}..." >&2
+
+    local response
+    local http_code
+
+    response=$(curl -s -w "\n%{http_code}" \
+        -H "Authorization: Bearer ${token}" \
+        -H "Content-Type: application/json" \
+        "${api_url}" 2>/dev/null) || {
+        echo "ERROR: Failed to connect to ${api_url}. Is the URL correct?" >&2
+        return 1
+    }
+
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+
+    if [[ "$http_code" == "200" ]]; then
+        if echo "$body" | grep -q '"id"'; then
+            echo "SUCCESS: Credentials are valid!" >&2
+            return 0
+        fi
+    elif [[ "$http_code" == "401" ]]; then
+        echo "ERROR: Invalid API token (HTTP 401). Please check your token." >&2
+        return 1
+    elif [[ "$http_code" == "404" ]]; then
+        echo "ERROR: API endpoint not found (HTTP 404). Is the base URL correct?" >&2
+        return 1
+    else
+        echo "ERROR: Unexpected response (HTTP ${http_code})" >&2
+        echo "Response: ${body}" >&2
+        return 1
+    fi
+}
+
+save_credentials() {
+    local base_url="$1"
+    local token="$2"
+
+    mkdir -p "$CREDS_DIR"
+
+    cat > "$CREDS_FILE" <<EOF
+# Vikunja API credentials for OpenCode
+# Created: $(date -Iseconds)
+VIKUNJA_BASE_URL="${base_url}"
+VIKUNJA_API_TOKEN="${token}"
+EOF
+
+    chmod 600 "$CREDS_FILE"
+    echo "Credentials saved to ${CREDS_FILE}" >&2
+}
+
+main() {
+    parse_args "$@"
+
+    echo "=== Vikunja API Setup for OpenCode ===" >&2
+    echo "" >&2
+
+    if [[ -f "$CREDS_FILE" && "$FORCE" != "true" ]]; then
+        echo "Vikunja credentials are already configured." >&2
+        echo "Run with --force to reconfigure." >&2
+        echo "" >&2
+        echo "Current config: ${CREDS_FILE}" >&2
+        exit 0
+    fi
+
+    echo "Step 1/3: Vikunja Base URL" >&2
+    echo "  Example: https://try.vikunja.io" >&2
+    echo "  Example: https://tasks.myserver.com" >&2
+    echo "" >&2
+
+    local base_url
+    while true; do
+        base_url=$(prompt_input "Base URL: ")
+        if [[ -z "$base_url" ]]; then
+            echo "Base URL is required." >&2
+            continue
+        fi
+        # Normalize URL
+        if [[ ! "$base_url" =~ ^https?:// ]]; then
+            base_url="https://${base_url}"
+            echo "Assuming HTTPS: ${base_url}" >&2
+        fi
+        break
+    done
+
+    echo "" >&2
+    echo "Step 2/3: API Token" >&2
+    echo "  Create a token in Vikunja under Settings > API Tokens" >&2
+    echo "" >&2
+
+    local token
+    while true; do
+        token=$(prompt_input "API Token: " true)
+        if [[ -z "$token" ]]; then
+            echo "API token is required." >&2
+            continue
+        fi
+        break
+    done
+
+    echo "" >&2
+    echo "Step 3/3: Validating credentials..." >&2
+    echo "" >&2
+
+    if ! test_credentials "$base_url" "$token"; then
+        echo "" >&2
+        echo "Setup failed. Please check your URL and token, then try again." >&2
+        exit 1
+    fi
+
+    save_credentials "$base_url" "$token"
+
+    echo "" >&2
+    echo "=== Setup Complete ===" >&2
+    echo "You can now use the vikunja tools in OpenCode." >&2
+    echo "" >&2
+    echo "To verify: ask OpenCode to check your Vikunja status." >&2
+}
+
+main "$@"

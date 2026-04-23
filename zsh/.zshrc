@@ -126,8 +126,10 @@ if command -v lf &>/dev/null; then
     }
 fi
 
-dev_tools_zsh="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/dev-tools.zsh"
-[[ -r "$dev_tools_zsh" ]] && source "$dev_tools_zsh"
+# Source all zsh env files from ~/.config/zsh/
+for f in "${XDG_CONFIG_HOME:-$HOME/.config}"/zsh/*.zsh(N); do
+  source "$f"
+done
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

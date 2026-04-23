@@ -1,0 +1,95 @@
+import { tool } from "@opencode-ai/plugin"
+
+const HELPER_PATH = `${process.env.OPENCODE_CONFIG_DIR}/tools/vikunja-helper.sh`
+
+async function runHelper(args: string[]): Promise<string> {
+  const proc = Bun.spawn(["bash", HELPER_PATH, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+  })
+  const result = await new Response(proc.stdout).text()
+  const err = await new Response(proc.stderr).text()
+  if (err && !result) {
+    throw new Error(err.trim())
+  }
+  return result.trim()
+}
+
+export default tool({
+  description: "Check if Vikunja API credentials are configured and valid. Always call this first before using other vikunja tools. Returns JSON with configured, valid, and user fields.",
+  args: {},
+  async execute() {
+    return runHelper(["status"])
+  },
+})
+
+export const listProjects = tool({
+  description: "List all Vikunja projects the user has access to. Returns a JSON array of projects.",
+  args: {},
+  async execute() {
+    return runHelper(["list_projects"])
+  },
+})
+
+export const listTasks = tool({
+  description: "List Vikunja tasks. Optionally filter by project ID. Returns a JSON array of tasks.",
+  args: {
+    projectId: tool.schema.number().optional().describe("Optional project ID to filter tasks"),
+  },
+  async execute(args) {
+    if (args.projectId !== undefined) {
+      return runHelper(["list_tasks", String(args.projectId)])
+    }
+    return runHelper(["list_tasks"])
+  },
+})
+
+export const getTask = tool({
+  description: "Get a specific Vikunja task by its ID. Returns the task as JSON.",
+  args: {
+    taskId: tool.schema.number().describe("The task ID"),
+  },
+  async execute(args) {
+    return runHelper(["get_task", String(args.taskId)])
+  },
+})
+
+export const createTask = tool({
+  description: "Create a new Vikunja task in a project. Provide the project ID and a JSON object with task fields (title is required). Returns the created task as JSON.",
+  args: {
+    projectId: tool.schema.number().describe("The project ID to create the task in"),
+    task: tool.schema.string().describe("JSON object with task fields. Required: title. Optional: description, due_date, priority, labels, etc."),
+  },
+  async execute(args) {
+    return runHelper(["create_task", String(args.projectId), args.task])
+  },
+})
+
+export const updateTask = tool({
+  description: "Update an existing Vikunja task. Provide the task ID and a JSON object with fields to update. Returns the updated task as JSON.",
+  args: {
+    taskId: tool.schema.number().describe("The task ID to update"),
+    task: tool.schema.string().describe("JSON object with fields to update (e.g., title, description, done, due_date, priority, hex_color)"),
+  },
+  async execute(args) {
+    return runHelper(["update_task", String(args.taskId), args.task])
+  },
+})
+
+export const deleteTask = tool({
+  description: "Delete a Vikunja task by its ID.",
+  args: {
+    taskId: tool.schema.number().describe("The task ID to delete"),
+  },
+  async execute(args) {
+    return runHelper(["delete_task", String(args.taskId)])
+  },
+})
+
+export const listLabels = tool({
+  description: "List all Vikunja labels the user has access to. Returns a JSON array of labels.",
+  args: {},
+  async execute() {
+    return runHelper(["list_labels"])
+  },
+})
