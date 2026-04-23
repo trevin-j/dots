@@ -93,3 +93,30 @@ export const listLabels = tool({
     return runHelper(["list_labels"])
   },
 })
+
+export const createLabel = tool({
+  description: "Create a new Vikunja label. Provide the label title (required) and optionally a hex color without the # prefix. Returns the created label as JSON.",
+  args: {
+    title: tool.schema.string().describe("The label title (e.g., 'effort:8', 'frontend', 'security')"),
+    hexColor: tool.schema.string().optional().describe("Optional hex color without # (e.g., 'ff0000')"),
+  },
+  async execute(args) {
+    const cmdArgs = ["create_label", args.title]
+    if (args.hexColor !== undefined) {
+      cmdArgs.push(args.hexColor)
+    }
+    return runHelper(cmdArgs)
+  },
+})
+
+export const updateTaskLabels = tool({
+  description: "Replace all labels on a Vikunja task using the bulk endpoint. Pass a JSON array of label objects with id and title. Any existing labels not in the list will be removed; new ones will be added; existing matches are left untouched. Returns the updated task labels as JSON.",
+  args: {
+    taskId: tool.schema.number().describe("The task ID to update labels on"),
+    labelsJson: tool.schema.string().describe('JSON array of label objects, e.g. [{"id":1,"title":"effort:8"},{"id":7,"title":"backend"}]'),
+  },
+  async execute(args) {
+    const payload = JSON.stringify({ labels: JSON.parse(args.labelsJson) })
+    return runHelper(["bulk_update_labels", String(args.taskId), payload])
+  },
+})

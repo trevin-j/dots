@@ -19,6 +19,8 @@ Commands:
   create_task <project_id> <json>     Create a new task in a project
   update_task <id> <json>             Update an existing task
   list_labels                         List all labels
+  create_label <title> [hex_color]    Create a new label (title required; optional hex_color like ff0000)
+  bulk_update_labels <task_id> <json> Replace all labels on a task via POST /tasks/{taskID}/labels/bulk
   delete_task <id>                    Delete a task
 EOF
     exit 1
@@ -133,6 +135,26 @@ cmd_list_labels() {
     api_call GET "/labels"
 }
 
+cmd_create_label() {
+    load_creds
+    local title="$1"
+    local color="${2:-}"
+    local payload
+    if [[ -n "$color" ]]; then
+        payload=$(python3 -c "import sys,json; print(json.dumps({'title':sys.argv[1],'hex_color':sys.argv[2]}))" "$title" "$color")
+    else
+        payload=$(python3 -c "import sys,json; print(json.dumps({'title':sys.argv[1]}))" "$title")
+    fi
+    api_call PUT "/labels" "$payload"
+}
+
+cmd_bulk_update_labels() {
+    load_creds
+    local task_id="$1"
+    local json_data="$2"
+    api_call POST "/tasks/${task_id}/labels/bulk" "$json_data"
+}
+
 main() {
     if [[ $# -lt 1 ]]; then
         usage
@@ -181,6 +203,20 @@ main() {
             ;;
         list_labels)
             cmd_list_labels
+            ;;
+        create_label)
+            if [[ $# -lt 1 ]]; then
+                echo "Usage: create_label <title> [hex_color]" >&2
+                exit 1
+            fi
+            cmd_create_label "$1" "${2:-}"
+            ;;
+        bulk_update_labels)
+            if [[ $# -lt 2 ]]; then
+                echo "Usage: bulk_update_labels <task_id> <json_data>" >&2
+                exit 1
+            fi
+            cmd_bulk_update_labels "$1" "$2"
             ;;
         -h|--help|help)
             usage

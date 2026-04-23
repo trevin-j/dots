@@ -10,7 +10,7 @@ It is mostly configuration and scripts (not a single app binary).
 - `foot/`: minimal `foot` terminal config.
 - `hyprland/`: Hyprland WM config plus a substantial Quickshell codebase.
 - `lf/`: `lf` file-manager config, custom previewer, trash/restore helpers.
-- `opencode/`: local OpenCode CLI configuration (agents, commands, skills, AGENTS guidance).
+- `opencode/`: **global OpenCode configuration** — this is the actual config OpenCode reads at runtime, NOT a typical stowed dotfile package. See the dedicated `opencode/` section below for why this package is special.
 - `theming/`: Matugen-driven theming pipeline, scripts, templates, and Python utilities.
 - `tl/`: Trev's launcher scripts (`tl`, `tlgui`) using `fzf`, Wayland tools, and RBW integration.
 - `zellij/`: Zellij KDL configuration.
@@ -27,6 +27,47 @@ It is mostly configuration and scripts (not a single app binary).
   - optional hooks: `pre_dl`, `pre_stow`, `post_stow`.
 - `dotctl/.local/bin/dotctl` is the main package installer/orchestrator.
 - No single global build tool exists for all packages.
+
+## The `opencode/` Package (Global Config)
+
+The `opencode/` package is **special** — it does NOT follow the normal Stow pattern of symlinking into `~/.config/opencode/`. Instead, OpenCode reads its configuration directly from `~/.dots/opencode/config/` via the `OPENCODE_CONFIG_DIR` environment variable.
+
+### Why Not Stow?
+
+OpenCode custom tools import `@opencode-ai/plugin` at runtime. Bun resolves module imports from the **real path** of the source file. If `vikunja.ts` were a Stow symlink (`~/.config/opencode/tools/vikunja.ts` → `~/.dots/opencode/config/tools/vikunja.ts`), Bun would walk up from the real path (`~/.dots/opencode/config/tools/`) looking for `node_modules`. But `node_modules` would live in `~/.config/opencode/` — a completely different directory tree — breaking module resolution.
+
+### How It Works
+
+1. **Real files**: `opencode/config/` contains real files (not symlinks) with all OpenCode config: `tools/`, `skills/`, `agents/`, `commands/`, `opencode.jsonc`
+2. **Env var**: `opencode/.config/zsh/99-opencode.zsh` sets `OPENCODE_CONFIG_DIR="$HOME/.dots/opencode/config"`
+3. **Zsh sourcing**: `.zshrc` sources all `~/.config/zsh/*.zsh` files, picking up the env var
+4. **Selective stow**: Only `opencode/.local/bin/` and `opencode/.config/zsh/` are stowed; `opencode/config/` is ignored by Stow via `.stow-local-ignore`
+
+### Activation Requirements
+
+For the opencode config to be active, **both** must be true:
+1. Package is installed: `dotctl install opencode` (stows the env file and bin scripts)
+2. Shell has sourced the env file: requires shell restart or `source ~/.zshrc`
+
+### Adding Custom Tools
+
+Create TypeScript files in `opencode/config/tools/` using the official format:
+
+```typescript
+import { tool } from "@opencode-ai/plugin"
+
+export default tool({
+  description: "What this tool does",
+  args: {
+    param: tool.schema.string().describe("Parameter description"),
+  },
+  async execute(args) {
+    return "result"
+  },
+})
+```
+
+The first time OpenCode runs after adding a tool, it background-installs `@opencode-ai/plugin` into `opencode/config/node_modules/`. Give it a few seconds.
 
 ## Git Workflow
 
