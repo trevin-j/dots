@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# --- existing post_stow logic ---
+if command -v configure-rbw-pinentry >/dev/null 2>&1; then
+    configure-rbw-pinentry --quiet || true
+fi
+if command -v update-quickshell-symbol-data >/dev/null 2>&1; then
+    update-quickshell-symbol-data --force --quiet || true
+fi
+if command -v build-quickshell-symbol-cache >/dev/null 2>&1; then
+    build-quickshell-symbol-cache \
+        --kind emoji \
+        --data-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/emoji.json" \
+        --mru-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/emoji-mru" \
+        --cache-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/emoji-cache.json" \
+        || true
+
+    build-quickshell-symbol-cache \
+        --kind nerdfont \
+        --data-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/nerd-font-icons.json" \
+        --mru-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/nerdfont-mru" \
+        --cache-file "${XDG_DATA_HOME:-$HOME/.local/share}/quickshell/symbol-picker/nerdfont-cache.json" \
+        || true
+fi
+
+# --- plugin build ---
+local_plugin_dir="${PACKAGE_DIR}/hyprnospecialfade"
+local_build_dir="${local_plugin_dir}/build"
+
+if ! command -v cmake >/dev/null 2>&1; then
+    echo "warning: cmake not found, skipping hyprnospecialfade plugin build" >&2
+    exit 0
+fi
+
+if ! command -v pkg-config >/dev/null 2>&1; then
+    echo "warning: pkg-config not found, skipping hyprnospecialfade plugin build" >&2
+    exit 0
+fi
+
+echo "Building hyprnospecialfade plugin..."
+mkdir -p "$local_build_dir"
+
+if ! cmake -S "$local_plugin_dir" -B "$local_build_dir" -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1; then
+    echo "warning: cmake configuration failed for hyprnospecialfade plugin" >&2
+    exit 0
+fi
+
+if ! cmake --build "$local_build_dir" --target hyprnospecialfade -j"$(nproc)" >/dev/null 2>&1; then
+    echo "warning: cmake build failed for hyprnospecialfade plugin" >&2
+    exit 0
+fi
+
+echo "hyprnospecialfade plugin built successfully: ${local_build_dir}/libhyprnospecialfade.so"

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sudo pacman -S --needed archlinux-xdg-menu kservice
-sudo mkdir -p /etc/pacman.d/hooks/
-sudo cp "$DOTDIR/hyprland/meta/updateKDEcache.hook" /etc/pacman.d/hooks/updateKDEcache.hook
+# Hardcoded paths in the hyprland package require DOTDIR to be ~/.dots
+if [[ -n "${DOTDIR:-}" && "$DOTDIR" != "$HOME/.dots" ]]; then
+    echo "error: DOTDIR must be either empty or set to '$HOME/.dots' for the hyprland package." >&2
+    echo "       Current value: '$DOTDIR'" >&2
+    exit 1
+fi

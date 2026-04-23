@@ -1,0 +1,3 @@
+/home/trev/.dots/hyprland/hyprnospecialfade/build/CMakeFiles/hyprnospecialfade.dir
+/home/trev/.dots/hyprland/hyprnospecialfade/build/CMakeFiles/edit_cache.dir
+/home/trev/.dots/hyprland/hyprnospecialfade/build/CMakeFiles/rebuild_cache.dir
