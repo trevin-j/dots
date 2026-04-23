@@ -49,6 +49,55 @@ vikunja_status → if not configured, prompt user to run opencode-setup-vikunja
 - **vikunja_createLabel** — Create a new label. Requires `title`; optionally `hexColor`.
 - **vikunja_updateTaskLabels** — Replace all labels on a task using the bulk endpoint (`POST /tasks/{taskID}/labels/bulk`). Requires `taskId` and `labelsJson`.
 
+### Bucket/View Operations
+
+- **vikunja_listViews** — List all views for a project (list, kanban, gantt, table).
+- **vikunja_listBuckets** — List all buckets (columns) in a kanban view.
+- **vikunja_getView** — Get tasks from a view. For kanban views, returns buckets containing tasks.
+- **vikunja_moveTaskToBucket** — Move a task into a specific bucket (column) within a view.
+
+## Bucket-Aware Workflow
+
+When working on a task from Vikunja, **always** manage its bucket (column) status to reflect the actual work state.
+
+### Step 1: Discover the Board
+
+For any project-level work:
+1. Call `vikunja_listViews` with the `projectId`
+2. Find the **kanban** view (check `view_kind == "kanban"`)
+3. **If multiple kanban views exist, ask the user which one to use**
+4. Call `vikunja_listBuckets` to see the available columns
+5. Call `vikunja_getView` to see the current board state (buckets with tasks)
+
+### Step 2: Map Buckets to Work States
+
+Use your judgment to map bucket names to work states. Common patterns:
+
+| Work State | Typical Bucket Names |
+|------------|---------------------|
+| **Backlog** | "Backlog", "Ideas", "Someday", "Icebox" |
+| **Ready** | "Ready", "To Do", "Todo", "Open", "Selected" |
+| **In Progress** | "In Progress", "Doing", "Active", "WIP", "Started" |
+| **Blocked** | "Blocked", "On Hold", "Waiting", "Paused" |
+| **Review** | "Review", "In Review", "PR", "Pending Review", "QA" |
+| **Done** | "Done", "Complete", "Completed", "Closed", "Finished" |
+
+### Step 3: Automatic Bucket Movement
+
+**Always move the task to the appropriate bucket as work progresses:**
+
+- **Creating a new task** → place in **Backlog** or **Ready** (whichever is the starting column)
+- **Starting work on a task** → move to **In Progress**
+- **Task is blocked** → move to **Blocked** and **add a comment** explaining why and what it's blocked by
+- **Code is ready for review / PR opened** → move to **Review**
+- **Task is completed** → move to **Done**
+
+**Important rules:**
+- If a project has **no kanban view** (only list/table/gantt), skip bucket logic entirely
+- If a view has a `done_bucket_id` configured, moving a task to that bucket auto-marks it `done`
+- If a view has a `default_bucket_id`, new tasks land there by default
+- **Never guess** the bucket mapping when names are ambiguous — list the buckets and reason about them
+
 ## Task Fields Reference
 
 Common fields for `createTask` and `updateTask`:
@@ -107,6 +156,19 @@ Common fields for `createTask` and `updateTask`:
      {"id": 3, "title": "security"}
    ]
    ```
+6. If the project has a kanban board, move the task to the appropriate starting bucket (usually **Backlog** or **Ready**) using `vikunja_moveTaskToBucket`.
+
+### Working on a Task (Bucket Lifecycle)
+
+Whenever you work on a task from Vikunja, **track its state in the kanban board:**
+
+1. **Discover the board**: `vikunja_listViews` → find kanban view → `vikunja_listBuckets` to see columns
+2. **Move to In Progress** when you start working on it
+3. **Move to Blocked** if you hit an obstacle — and add a comment explaining why
+4. **Move to Review** when a PR is ready or code is complete
+5. **Move to Done** when finished
+
+If the project has **no kanban view**, skip all bucket logic and just update `done` / `percent_done` as needed.
 
 ### Updating a Task
 

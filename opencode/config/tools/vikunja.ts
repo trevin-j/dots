@@ -120,3 +120,54 @@ export const updateTaskLabels = tool({
     return runHelper(["bulk_update_labels", String(args.taskId), payload])
   },
 })
+
+export const listViews = tool({
+  description: "List all views for a Vikunja project. Returns a JSON array of views (list, kanban, gantt, table).",
+  args: {
+    projectId: tool.schema.number().describe("The project ID"),
+  },
+  async execute(args) {
+    return runHelper(["list_views", String(args.projectId)])
+  },
+})
+
+export const listBuckets = tool({
+  description: "List all buckets (columns) in a Vikunja kanban view. Returns a JSON array of buckets.",
+  args: {
+    projectId: tool.schema.number().describe("The project ID"),
+    viewId: tool.schema.number().describe("The view ID (must be a kanban view)"),
+  },
+  async execute(args) {
+    return runHelper(["list_buckets", String(args.projectId), String(args.viewId)])
+  },
+})
+
+export const getView = tool({
+  description: "Get tasks from a Vikunja view. For kanban views, returns buckets containing tasks. For list/table/gantt views, returns a flat array of tasks.",
+  args: {
+    projectId: tool.schema.number().describe("The project ID"),
+    viewId: tool.schema.number().describe("The view ID"),
+  },
+  async execute(args) {
+    return runHelper(["get_view", String(args.projectId), String(args.viewId)])
+  },
+})
+
+export const moveTaskToBucket = tool({
+  description: "Move a Vikunja task into a specific bucket (column) within a view. This is how you move tasks between kanban columns.",
+  args: {
+    projectId: tool.schema.number().describe("The project ID"),
+    viewId: tool.schema.number().describe("The view ID containing the bucket"),
+    bucketId: tool.schema.number().describe("The target bucket (column) ID"),
+    taskId: tool.schema.number().describe("The task ID to move"),
+  },
+  async execute(args) {
+    return runHelper([
+      "move_task_bucket",
+      String(args.projectId),
+      String(args.viewId),
+      String(args.bucketId),
+      String(args.taskId),
+    ])
+  },
+})

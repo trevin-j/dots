@@ -21,6 +21,11 @@ Commands:
   list_labels                         List all labels
   create_label <title> [hex_color]    Create a new label (title required; optional hex_color like ff0000)
   bulk_update_labels <task_id> <json> Replace all labels on a task via POST /tasks/{taskID}/labels/bulk
+  list_views <project_id>             List all views for a project
+  list_buckets <project_id> <view_id> List all buckets in a kanban view
+  get_view <project_id> <view_id>     Get tasks from a view (for kanban: returns buckets with tasks)
+  move_task_bucket <project_id> <view_id> <bucket_id> <task_id>
+                                      Move a task into a bucket (column) within a view
   delete_task <id>                    Delete a task
 EOF
     exit 1
@@ -155,6 +160,37 @@ cmd_bulk_update_labels() {
     api_call POST "/tasks/${task_id}/labels/bulk" "$json_data"
 }
 
+cmd_list_views() {
+    load_creds
+    local project_id="$1"
+    api_call GET "/projects/${project_id}/views"
+}
+
+cmd_list_buckets() {
+    load_creds
+    local project_id="$1"
+    local view_id="$2"
+    api_call GET "/projects/${project_id}/views/${view_id}/buckets"
+}
+
+cmd_get_view() {
+    load_creds
+    local project_id="$1"
+    local view_id="$2"
+    api_call GET "/projects/${project_id}/views/${view_id}/tasks"
+}
+
+cmd_move_task_bucket() {
+    load_creds
+    local project_id="$1"
+    local view_id="$2"
+    local bucket_id="$3"
+    local task_id="$4"
+    local payload
+    payload=$(python3 -c "import sys,json; print(json.dumps({'task_id':int(sys.argv[1])}))" "$task_id")
+    api_call POST "/projects/${project_id}/views/${view_id}/buckets/${bucket_id}/tasks" "$payload"
+}
+
 main() {
     if [[ $# -lt 1 ]]; then
         usage
@@ -217,6 +253,34 @@ main() {
                 exit 1
             fi
             cmd_bulk_update_labels "$1" "$2"
+            ;;
+        list_views)
+            if [[ $# -lt 1 ]]; then
+                echo "Usage: list_views <project_id>" >&2
+                exit 1
+            fi
+            cmd_list_views "$1"
+            ;;
+        list_buckets)
+            if [[ $# -lt 2 ]]; then
+                echo "Usage: list_buckets <project_id> <view_id>" >&2
+                exit 1
+            fi
+            cmd_list_buckets "$1" "$2"
+            ;;
+        get_view)
+            if [[ $# -lt 2 ]]; then
+                echo "Usage: get_view <project_id> <view_id>" >&2
+                exit 1
+            fi
+            cmd_get_view "$1" "$2"
+            ;;
+        move_task_bucket)
+            if [[ $# -lt 4 ]]; then
+                echo "Usage: move_task_bucket <project_id> <view_id> <bucket_id> <task_id>" >&2
+                exit 1
+            fi
+            cmd_move_task_bucket "$1" "$2" "$3" "$4"
             ;;
         -h|--help|help)
             usage
