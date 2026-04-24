@@ -1,9 +1,15 @@
 #!/bin/bash
 
+CACHE_DIR="${HOME}/.cache/lf/thumbnails"
+mkdir -p "$CACHE_DIR"
+
+cache_key() {
+  stat --printf='%n\0%i\0%F\0%s\0%W\0%Y' "$1" | sha256sum | awk '{print $1}'
+}
+
 # style text with ANSI escape codes
 # usage: style "Your Text" color [bold|italic|underline]
 style() {
-  # If -n, at the end of the line, print a newline. -n should be the first option, then shift
   local newline=""
   if [ "$1" = "-n" ]; then
     newline="\n"
@@ -14,7 +20,6 @@ style() {
   local color="$2"
   local style="$3"
 
-  # map human-friendly colors to ANSI codes
   local color_code=""
   case "$color" in
     black) color_code=30 ;;
@@ -33,36 +38,31 @@ style() {
     bright_magenta) color_code=95 ;;
     bright_cyan) color_code=96 ;;
     bright_white) color_code=97 ;;
-    *) color_code=37 ;; # default white
+    *) color_code=37 ;;
   esac
 
-  # map style to ANSI codes
   local style_code=""
   case "$style" in
     bold) style_code=1 ;;
     italic) style_code=3 ;;
     underline) style_code=4 ;;
     reverse) style_code=7 ;;
-    *) style_code=0 ;; # normal
+    *) style_code=0 ;;
   esac
 
-  # print styled text
   printf "\e[${style_code};${color_code}m%s\e[0m${newline}" "$text"
 }
 
-# function to use bat if exists, otherwise use cat
 preview_text() {
   if command -v bat >/dev/null 2>&1; then
     bat --style=plain --pager=off --decorations=never --color=always --line-range=:$2 "$1"
   elif command -v batcat >/dev/null 2>&1; then
-    # bat is batcat on debian and some other distros ¯\_(°°)_/¯
     batcat --style=plain --pager=off --decorations=never --color=always --line-range=:$2 "$1"
   else
     cat "$1"
   fi
 }
 
-# function to extract a tag case-insensitively from ffprobe JSON
 get_tag() {
   local json="$1"
   local tag="$2"
@@ -82,13 +82,11 @@ get_codec() {
 
 get_bitrate() {
   local json="$1"
-  # Divide by 1000 to get kbps, round to nearest integer
   echo "$json" | jq -r '.format.bit_rate // ""' | awk '{printf "%.0fkbps", $1/1000}'
 }
 
 get_sample_rate() {
   local json="$1"
-  # Divide by 1000 to get kHz, round to 1 decimal place, add kHz suffix
   echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").sample_rate' | awk '{printf "%.1fkHz", $1/1000}'
 }
 
@@ -99,19 +97,16 @@ get_channels() {
 
 get_duration() {
   local json="$1"
-  # Convert seconds to HH:MM:SS
   echo "$json" | jq -r '.format.duration // ""' | awk '{h=$1/3600; m=($1%3600)/60; s=$1%60; printf "%02d:%02d:%02d\n", h, m, s}'
 }
 
 get_size() {
   local json="$1"
-  # Return as megabytes
   echo "$json" | jq -r '.format.size // ""' | numfmt --to=iec-i --suffix=B --format="%.2f"
 }
 
 get_depth() {
   local json="$1"
-  # Either .bits_per_sample or .bits_per_raw_sample
   echo "$json" | jq -r '.streams[] | select(.codec_type == "audio").bits_per_sample // select(.codec_type == "audio").bits_per_raw_sample'
 }
 
@@ -127,19 +122,15 @@ normalize_format_tags() {
   '
 }
 
-# function to preview audio files
 preview_audio() {
   local file="$1"
 
-  # Use ffprobe to get JSON metadata
   local json_raw
   json_raw=$(ffprobe -v quiet -of json -show_streams -show_format "$file") || return
 
   local json
   json=$(echo "$json_raw" | normalize_format_tags)
 
-
-  # Extract tags using jq
   local title artist album genre year track lyrics
   title=$(get_tag "$json" title)
   artist=$(get_tag "$json" artist)
@@ -149,7 +140,6 @@ preview_audio() {
   track=$(get_tag "$json" track)
   lyrics=$(get_tag "$json" lyrics)
 
-  # Get other metadata
   local codec=$(get_codec "$json_raw")
   local bitrate=$(get_bitrate "$json_raw")
   local sample_rate=$(get_sample_rate "$json_raw")
@@ -158,21 +148,14 @@ preview_audio() {
   local size=$(get_size "$json_raw")
   local depth=$(get_depth "$json_raw")
 
-  # Track and title
   [ -n "$track" ] && style "$track " white italic ; style -n " $title" bright_magenta bold
-  # Artist and album
   style "󰠃 $artist " blue bold ; style -n "󰎄 $album" bright_yellow bold
-  # Date and genre
   [ -n "$year" ] && style "󰃭 $year " white italic ; [ -n "$genre" ] && style -n "󰓹 $genre" white italic
   echo
-  # Codec
   style -n " $codec" bright_green
-  # Bitrate, depth, sample rate
-  style "󰍛 $bitrate " white italic ; [ "$depth" -gt 0 ] && style -n "󰎙 $depth Bit" white italic ; style -n " $sample_rate" white italic
-  # Length, size
-  style "󰥔 $duration " white italic ; style -n " $size " white italic
-  # Channels
-  [ -n "$channels" ] && style -n " $channels Channels" white italic
+  style " 󰍛 $bitrate " white italic ; [ -n "$depth" ] && [ "$depth" -gt 0 ] && style -n " 󰎙 $depth Bit" white italic ; style -n "  $sample_rate" white italic
+  style " 󰥔 $duration " white italic ; style -n "  $size " white italic
+  [ -n "$channels" ] && style -n "  $channels Channels" white italic
 
   if [ -n "$lyrics" ]; then
     echo
@@ -180,28 +163,213 @@ preview_audio() {
   fi
 }
 
+preview_video() {
+  local file="$1"
+  local width="$2"
+  local height="$3"
+
+  ffmpeg -ss 00:00:05 -i "$file" -frames:v 1 -f image2pipe -vcodec png - 2>/dev/null | \
+    chafa -f sixel -s "${width}x${height}" --animate off --polite on -t 1 --bg black -
+
+  local json_raw
+  json_raw=$(ffprobe -v quiet -of json -show_streams -show_format "$file") || return
+
+  local vw vh vcodec fps_raw fps bitrate duration format_name
+  vw=$(echo "$json_raw" | jq -r '.streams[] | select(.codec_type == "video").width // ""')
+  vh=$(echo "$json_raw" | jq -r '.streams[] | select(.codec_type == "video").height // ""')
+  vcodec=$(echo "$json_raw" | jq -r '.streams[] | select(.codec_type == "video").codec_name // ""')
+
+  fps_raw=$(echo "$json_raw" | jq -r '.streams[] | select(.codec_type == "video").r_frame_rate // ""')
+  if echo "$fps_raw" | grep -q "/"; then
+    fps=$(echo "$fps_raw" | awk -F'/' '{printf "%.2f", $1/$2}')
+  else
+    fps="$fps_raw"
+  fi
+
+  bitrate=$(echo "$json_raw" | jq -r '.format.bit_rate // ""' | awk '{printf "%.0fkbps", $1/1000}')
+  duration=$(get_duration "$json_raw")
+  format_name=$(echo "$json_raw" | jq -r '.format.format_name // ""')
+
+  echo
+  style -n "  $vcodec" bright_green
+  [ -n "$vw" ] && [ -n "$vh" ] && style "  ${vw}x${vh}" white italic
+  [ -n "$fps" ] && style "  ${fps}fps" white italic
+  echo
+  [ -n "$duration" ] && style "󰥔 $duration  " white italic
+  [ -n "$bitrate" ] && style "󰍛 $bitrate  " white italic
+  [ -n "$format_name" ] && style " $format_name" white italic
+}
+
+preview_pdf() {
+  local file="$1"
+  local width="$2"
+  local height="$3"
+
+  local cache="${CACHE_DIR}/$(cache_key "$file").png"
+
+  if [ ! -f "$cache" ]; then
+    mutool draw -F png -r 150 -o "$cache" "$file" 1 >/dev/null 2>&1
+  fi
+
+  if [ -f "$cache" ]; then
+    chafa -f sixel -s "${width}x${height}" --animate off --polite on -t 1 --bg black "$cache"
+  else
+    style "[pdf preview failed]" bright_red bold
+  fi
+}
+
+preview_epub() {
+  local file="$1"
+  local width="$2"
+  local height="$3"
+
+  local cache="${CACHE_DIR}/$(cache_key "$file")"
+
+  if [ ! -f "${cache}_cover" ]; then
+    local tmpdir
+    tmpdir=$(mktemp -d)
+
+    python3 -c "
+import zipfile, xml.etree.ElementTree as ET, sys, os
+
+epub = sys.argv[1]
+outdir = sys.argv[2]
+
+with zipfile.ZipFile(epub) as z:
+    opf_name = None
+    for name in z.namelist():
+        if name.endswith('.opf'):
+            opf_name = name
+            break
+    if not opf_name:
+        sys.exit(1)
+
+    with z.open(opf_name) as f:
+        tree = ET.parse(f)
+        root = tree.getroot()
+        ns = {'opf': 'http://www.idpf.org/2007/opf'}
+        manifest = root.find('opf:manifest', ns)
+        if manifest is None:
+            manifest = root.find('manifest')
+
+        cover_href = None
+        if manifest is not None:
+            for item in manifest:
+                item_id = item.get('id', '').lower()
+                props = item.get('properties', '').lower()
+                if 'cover' in item_id or 'cover' in props:
+                    cover_href = item.get('href')
+                    break
+            if not cover_href:
+                for item in manifest:
+                    href = item.get('href', '').lower()
+                    if 'cover' in href:
+                        cover_href = item.get('href')
+                        break
+
+        if cover_href:
+            opf_dir = os.path.dirname(opf_name)
+            cover_path = os.path.join(opf_dir, cover_href) if opf_dir else cover_href
+            cover_path = os.path.normpath(cover_path)
+            z.extract(cover_path, outdir)
+            print(os.path.join(outdir, cover_path))
+" "$file" "$tmpdir" > "${tmpdir}/cover_path.txt"
+
+    if [ -s "${tmpdir}/cover_path.txt" ]; then
+      local extracted
+      extracted=$(cat "${tmpdir}/cover_path.txt")
+      if [ -f "$extracted" ]; then
+        cp "$extracted" "${cache}_cover"
+      fi
+    fi
+
+    rm -rf "$tmpdir"
+  fi
+
+  if [ -f "${cache}_cover" ]; then
+    chafa -f sixel -s "${width}x${height}" --animate off --polite on -t 1 --bg black "${cache}_cover"
+  else
+    style "[epub cover not found]" bright_red bold
+  fi
+}
+
+preview_office() {
+  local file="$1"
+  local width="$2"
+  local height="$3"
+
+  local cache="${CACHE_DIR}/$(cache_key "$file").png"
+
+  if [ ! -f "$cache" ]; then
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    local filename
+    filename=$(basename "$file")
+    local pdf_out="${tmpdir}/${filename%.*}.pdf"
+
+    if timeout 15 libreoffice --headless --convert-to pdf --outdir "$tmpdir" "$file" >/dev/null 2>&1; then
+      if [ -f "$pdf_out" ]; then
+        mutool draw -F png -r 150 -o "$cache" "$pdf_out" 1 >/dev/null 2>&1
+      fi
+    fi
+
+    rm -rf "$tmpdir"
+  fi
+
+  if [ -f "$cache" ]; then
+    chafa -f sixel -s "${width}x${height}" --animate off --polite on -t 1 --bg black "$cache"
+  else
+    style "[document preview unavailable]" bright_red bold
+    echo
+    file -b -- "$file"
+  fi
+}
+
 # main previewer
+
+if [ ! -s "$1" ]; then
+  style "[empty file]" bright_black italic
+  exit 0
+fi
+
 mtype="$(file -Lb --mime-type -- "$1")"
 case "$mtype" in
+  application/pdf)
+    preview_pdf "$1" "$2" "$3"
+    ;;
+  application/epub+zip)
+    preview_epub "$1" "$2" "$3"
+    ;;
   image/*)
     chafa -f sixel -s "$2x$3" --animate off --polite on -t 1 --bg black "$1"
     ;;
   audio/*)
     preview_audio "$1"
     ;;
+  video/*)
+    preview_video "$1" "$2" "$3"
+    ;;
   text/*)
     preview_text "$1" "$2"
     ;;
   application/*)
-    preview_text "$1" "$2"
-    ;;
-  video/ogg)
-    # TODO: handle if video
-    # For now, just handle assuming it is audio only
-    preview_audio "$1"
+    case "$1" in
+      *.doc|*.docx|*.xls|*.xlsx|*.ppt|*.pptx|*.odt|*.ods|*.odp)
+        preview_office "$1" "$2" "$3"
+        ;;
+      *)
+        encoding=$(file -b --mime-encoding -- "$1")
+        if [ "$encoding" = "binary" ]; then
+          style "[binary file]" bright_red bold
+          echo
+          file -b -- "$1"
+        else
+          preview_text "$1" "$2"
+        fi
+        ;;
+    esac
     ;;
   *)
     echo "Previewing $mtype is not supported yet."
     ;;
 esac
-
