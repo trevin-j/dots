@@ -115,17 +115,6 @@ if command -v fzf &>/dev/null; then
     source <(fzf --zsh)
 fi
 
-# If lf exists
-if command -v lf &>/dev/null; then
-    lfpath="$(which lf)"
-    function lf() {
-        emulate -L zsh
-        local dir
-        dir="$($lfpath -print-last-dir "$@")" || return
-        [[ -n "$dir" && "$dir" != "$PWD" && -d "$dir" ]] && builtin cd -- "$dir"
-    }
-fi
-
 # Source all zsh env files from ~/.config/zsh/
 for f in "${XDG_CONFIG_HOME:-$HOME/.config}"/zsh/*.zsh(N); do
   source "$f"
