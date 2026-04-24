@@ -140,7 +140,7 @@ Common fields for `createTask` and `updateTask`:
 1. List projects with `vikunja_listProjects` to find the target `projectId`.
 2. List existing labels with `vikunja_listLabels`.
 3. Create any missing labels with `vikunja_createLabel` (effort and domain labels).
-4. Call `vikunja_createTask` with `projectId` and JSON. Set priority per the scale above. **Never include `hex_color` or `labels`:**
+4. Call `vikunja_createTask` with `projectId` and JSON. Set priority per the scale above. **Never include `hex_color` or `labels`.** Always include a very descriptive description (no markdown formatting allowed):
    ```json
    {
      "title": "Fix login race condition",
