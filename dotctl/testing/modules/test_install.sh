@@ -178,6 +178,110 @@ test_detect_conflicts_empty_on_no_conflicts() {
     [[ -z "$output" ]] || return 1
 }
 
+# --- handle_deps tests ---
+
+test_handle_deps_skips_installed() {
+    TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotctl-mod-test.XXXXXX")
+    mkdir -p "$TEST_ROOT/bin"
+
+    cat > "$TEST_ROOT/bin/pacman" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "-Q" ]]; then
+    # pretend everything is installed
+    exit 0
+fi
+echo "unexpected pacman args: $*" >&2
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/bin/pacman"
+
+    cat > "$TEST_ROOT/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+echo "sudo invoked: $*" >&2
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/bin/sudo"
+
+    local output
+    output=$(PATH="$TEST_ROOT/bin:$PATH" handle_deps pacman foo bar 2>&1)
+
+    [[ "$output" == *"already installed"* ]] || return 1
+    [[ "$output" != *"Installing missing"* ]] || return 1
+}
+
+test_handle_deps_installs_missing() {
+    TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotctl-mod-test.XXXXXX")
+    mkdir -p "$TEST_ROOT/bin"
+
+    cat > "$TEST_ROOT/bin/pacman" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "-Q" ]]; then
+    # nothing is installed
+    exit 1
+fi
+echo "pacman install: $*"
+EOF
+    chmod +x "$TEST_ROOT/bin/pacman"
+
+    cat > "$TEST_ROOT/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+"$@"
+EOF
+    chmod +x "$TEST_ROOT/bin/sudo"
+
+    local output
+    output=$(PATH="$TEST_ROOT/bin:$PATH" handle_deps pacman foo bar 2>&1)
+
+    [[ "$output" == *"Installing missing"* ]] || return 1
+    [[ "$output" == *"pacman install: -S --needed --noconfirm foo bar"* ]] || return 1
+}
+
+test_handle_deps_mixed_installed_missing() {
+    TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotctl-mod-test.XXXXXX")
+    mkdir -p "$TEST_ROOT/bin"
+
+    cat > "$TEST_ROOT/bin/pacman" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "-Q" ]]; then
+    # only "foo" is installed
+    if [[ "$2" == "foo" ]]; then
+        exit 0
+    fi
+    exit 1
+fi
+echo "pacman install: $*"
+EOF
+    chmod +x "$TEST_ROOT/bin/pacman"
+
+    cat > "$TEST_ROOT/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+"$@"
+EOF
+    chmod +x "$TEST_ROOT/bin/sudo"
+
+    local output
+    output=$(PATH="$TEST_ROOT/bin:$PATH" handle_deps pacman foo bar 2>&1)
+
+    [[ "$output" == *"Installing missing"* ]] || return 1
+    [[ "$output" == *"pacman install: -S --needed --noconfirm bar"* ]] || return 1
+    [[ "$output" != *"foo"*"install"* ]] || return 1
+}
+
+test_handle_deps_empty_after_filter() {
+    TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotctl-mod-test.XXXXXX")
+    mkdir -p "$TEST_ROOT/bin"
+
+    cat > "$TEST_ROOT/bin/pacman" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$TEST_ROOT/bin/pacman"
+
+    local output
+    output=$(PATH="$TEST_ROOT/bin:$PATH" handle_deps pacman 2>&1)
+    [[ -z "$output" ]] || return 1
+}
+
 echo "=== install.sh module tests ==="
 echo
 
@@ -191,6 +295,10 @@ run_case 'detect conflicts skips managed symlink' test_detect_conflicts_skips_ma
 run_case 'detect conflicts reports broken symlink' test_detect_conflicts_reports_broken_symlink
 run_case 'detect conflicts skips directory' test_detect_conflicts_skips_directory
 run_case 'detect conflicts empty on no conflicts' test_detect_conflicts_empty_on_no_conflicts
+run_case 'handle_deps skips installed packages' test_handle_deps_skips_installed
+run_case 'handle_deps installs missing packages' test_handle_deps_installs_missing
+run_case 'handle_deps handles mixed installed/missing' test_handle_deps_mixed_installed_missing
+run_case 'handle_deps empty when no deps' test_handle_deps_empty_after_filter
 
 echo
 echo "Module tests: $TEST_COUNT run, $FAILED failed"

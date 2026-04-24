@@ -81,12 +81,31 @@ run_pkg_hook() {
     "$hook_file"
 }
 
+pkg_is_installed() {
+    pacman -Q "$1" >/dev/null 2>&1
+}
+
 handle_deps() {
     local manager="$1"
     shift
     local deps=("$@")
 
     [[ ${#deps[@]} -eq 0 ]] && return
+
+    local missing=()
+    local dep
+    for dep in "${deps[@]}"; do
+        if ! pkg_is_installed "$dep"; then
+            missing+=("$dep")
+        fi
+    done
+
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        echo "All ${manager} deps already installed: ${deps[*]}"
+        return
+    fi
+
+    echo "Installing missing ${manager} deps: ${missing[*]}"
 
     local installer=(sudo pacman -S --needed --noconfirm)
     if [[ "$manager" == "aur" ]]; then
@@ -99,8 +118,7 @@ handle_deps() {
         installer=("$helper" -S --needed --noconfirm)
     fi
 
-    echo "Installing ${manager} deps: ${deps[*]}"
-    "${installer[@]}" "${deps[@]}"
+    "${installer[@]}" "${missing[@]}"
 }
 
 detect_package_conflicts() {
