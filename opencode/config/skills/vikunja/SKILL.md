@@ -90,9 +90,9 @@ Use your judgment to map bucket names to work states. Common patterns:
 - **Starting work on a task** → move to **In Progress**
 - **Task is blocked** → move to **Blocked** and **add a comment** explaining why and what it's blocked by
 - **Code is ready for review / PR opened** → move to **Review**
-- **Task is completed** → move to **Done**
 
 **Important rules:**
+- If you finish a task, often don't move it to done yet. Rather, if available move to review. Else, leave in progress because typically your tasks end by submitting a pr, not committing to the default branch.
 - If a project has **no kanban view** (only list/table/gantt), skip bucket logic entirely
 - If a view has a `done_bucket_id` configured, moving a task to that bucket auto-marks it `done`
 - If a view has a `default_bucket_id`, new tasks land there by default
