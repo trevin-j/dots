@@ -23,8 +23,14 @@ set scrolloff 10
 # Use the `dim` attribute instead of underline for the cursor in the preview pane
 set cursorpreviewfmt "\033[7;2m"
 
+# Source dynamically themed prompt colors from matugen
+source ~/.config/lf/prompt-colors
+
+# Enable icons (requires Nerd Font)
+set icons true
+
 # use enter for shell commands
-map <enter> shell
+map <enter> $$SHELL
 
 # show the result of execution of previous commands
 map ` !true
@@ -43,10 +49,7 @@ map O $mimeopen -d $f
 # use either file extensions and/or mime types here. Below uses an editor for
 # text files and a file opener for the rest.
 cmd open &{{
-    case $(file --mime-type -Lb $f) in
-        text/*) lf -remote "send $id \$$EDITOR \$fx";;
-        *) for f in $fx; do $OPENER $f > /dev/null 2> /dev/null & done;;
-    esac
+    lf -remote "send $id \$$EDITOR \$fx"
 }}
 
 cmd mkdir %{{
@@ -62,9 +65,6 @@ cmd touch %{{
     touch -- "$file"
     lf -remote "send $id select \"$(printf '%s' "$file" | sed 's/\\/\\\\/g;s/"/\\"/g')\""
 }}
-
-#map A :push :mkdir<space>
-#map a :push :touch<space>
 
 cmd new %{{
     set -f

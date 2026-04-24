@@ -63,3 +63,11 @@ output_path = "~/.local/share/nvim/matugen.lua"
 [templates.tshell]
 input_path = "templates/tshell.toml"
 output_path = "~/.config/tshell/colors.toml"
+
+[templates.lf]
+input_path = "templates/lf"
+output_path = "~/.config/lf/colors"
+
+[templates.lf-prompt]
+input_path = "templates/lf-prompt"
+output_path = "~/.config/lf/prompt-colors"

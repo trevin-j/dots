@@ -1,0 +1,121 @@
+# Default file types
+ln      
+or      
+tw      
+ow      
+st      
+di      
+pi      
+so      
+bd      ﰩ
+cd      ﰩ
+su      
+sg      
+ex      
+fi      
+
+# Archives
+*.7z    
+*.bz2   
+*.gz    
+*.tar   
+*.tbz2  
+*.tgz   
+*.txz   
+*.xz    
+*.zip   
+*.rar   
+
+# Images
+*.gif   
+*.ico   
+*.jpg   
+*.jpeg  
+*.png   
+*.svg   
+*.webp  
+
+# Audio
+*.flac  
+*.m4a   
+*.mp3   
+*.ogg   
+*.opus  
+*.wav   
+*.wma   
+
+# Video
+*.avi   
+*.flv   
+*.mkv   
+*.mov   
+*.mp4   
+*.webm  
+*.wmv   
+
+# Documents
+*.pdf   
+*.doc   
+*.docx  
+*.odt   
+*.xls   
+*.xlsx  
+*.ods   
+*.ppt   
+*.pptx  
+*.odp   
+*.epub  
+
+# Code
+*.py    
+*.js    
+*.ts    
+*.jsx   
+*.tsx   
+*.html  
+*.css   
+*.scss  
+*.sass  
+*.json  
+*.md    
+*.sh    
+*.bash  
+*.zsh   
+*.fish  
+*.rs    
+*.go    
+*.c     
+*.cpp   
+*.h     
+*.hpp   
+*.java  
+*.lua   
+*.vim   
+*.nix   
+*.sql   
+
+# Config / data
+*.toml  
+*.yaml  
+*.yml   
+*.ini   
+*.conf  
+*.xml   
+*.lock  
+
+# Docker
+*.dockerfile  
+*Dockerfile   
+docker-compose* 
+
+# Git
+.git*         
+.gitignore    
+
+# Build
+*Makefile      
+*CMakeLists.txt 
+
+# License
+*LICENSE      
+*LICENSE.*    
