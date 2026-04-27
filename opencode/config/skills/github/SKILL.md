@@ -65,8 +65,9 @@ rm .tmp_issue.md
 ## Pull Requests
 
 ### Create a PR (recommended workflow)
-1) Ensure branch is pushed.
-2) Use a HEREDOC for the body to preserve formatting.
+1) Run all CI checks (lints, tests, static analysis, type checks, etc.) and confirm they pass.
+2) Ensure branch is pushed.
+3) Use a HEREDOC for the body to preserve formatting.
 
 Example:
 ```

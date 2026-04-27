@@ -19,6 +19,20 @@ For tasks that run without interruption:
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+### 0. Critical Non-Negotiable Rules
+
+These rules are mandatory and take precedence over all other guidelines.
+
+**Run all CI checks before opening any PR**
+- Before creating or opening a pull request, you MUST run every check that CI would run (lints, tests, static analysis, type checks, etc.) and confirm they all pass.
+- Do NOT skip this step or assume checks will pass.
+- Do NOT open a PR with failing checks.
+
+**Use CLI tools for all dependency changes**
+- When adding, removing, or modifying dependencies, you MUST use the appropriate CLI tool (e.g., `cargo add`, `npm add`, `uv add`, `flutter pub add`).
+- NEVER manually edit `pyproject.toml`, `Cargo.toml`, `package.json`, or any other dependency manifest file by hand.
+- ALWAYS load the `project-dependencies` skill when touching anything related to dependencies.
+
 ### 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
