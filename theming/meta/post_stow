@@ -2,3 +2,13 @@
 set -euo pipefail
 
 pywalfox install || true
+
+# Set KDE icon theme for Dolphin and other KDE6 apps
+if command -v kwriteconfig6 >/dev/null 2>&1; then
+    kwriteconfig6 --file kdeglobals --group General --key IconTheme material-actions
+fi
+
+# Set GTK icon theme for LibreOffice and other GTK apps
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface icon-theme 'material-actions'
+fi

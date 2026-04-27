@@ -1,0 +1,30 @@
+[Icon Theme]
+Name=Material Actions
+Comment=Material Symbols overlay for action icons, inheriting Papirus
+Inherits=Papirus,hicolor
+
+Example=folder
+
+FollowsColorScheme=true
+
+DesktopDefault=48
+DesktopSizes=16,22,24,32,48,64
+ToolbarDefault=22
+ToolbarSizes=16,22,24,32,48
+MainToolbarDefault=22
+MainToolbarSizes=16,22,24,32,48
+SmallDefault=16
+SmallSizes=16,22,24,32,48
+PanelDefault=48
+PanelSizes=16,22,24,32,48,64
+DialogDefault=48
+DialogSizes=16,22,24,32,48,64
+
+Directories=scalable/actions
+
+[scalable/actions]
+Size=128
+MinSize=1
+MaxSize=512
+Context=Actions
+Type=Scalable
