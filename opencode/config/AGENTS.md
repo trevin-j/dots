@@ -23,6 +23,8 @@ For tasks that run without interruption:
 
 These rules are mandatory and take precedence over all other guidelines.
 
+**Be brief**
+
 **Run all CI checks before opening any PR**
 - Before creating or opening a pull request, you MUST run every check that CI would run (lints, tests, static analysis, type checks, etc.) and confirm they all pass.
 - Do NOT skip this step or assume checks will pass.
