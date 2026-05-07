@@ -40,3 +40,73 @@ hyprlog() {
 
   cat "$session/hyprland.log"
 }
+
+pacsearch() {
+  local helper
+  if command -v paru &>/dev/null; then
+    helper=paru
+  elif command -v yay &>/dev/null; then
+    helper=yay
+  else
+    helper=pacman
+  fi
+
+  local tmp
+  tmp=$(mktemp) || return
+  "$helper" -Ss "$@" > "$tmp"
+
+  local raw
+  raw=$(
+    gawk '
+      BEGIN {
+        cyan_b = "\033[1;96m"
+        blue_b = "\033[1;94m"
+        green_b = "\033[1;92m"
+        white = "\033[37m"
+        white_b = "\033[1;97m"
+        reset = "\033[0m"
+      }
+      NR % 2 == 1 {
+        pkg = $1
+        ver = $2
+        if (match($0, /\[[^\]]+\]/))
+          size = substr($0, RSTART, RLENGTH)
+        else
+          size = ""
+        getline
+        desc = $0
+        sub(/^  /, "", desc)
+
+        if (match(pkg, /\//)) {
+          repo = substr(pkg, 1, RSTART - 1)
+          pkgname = substr(pkg, RSTART + 1)
+          if (repo == "aur")
+            colored = cyan_b repo reset white "/" white_b pkgname reset
+          else if (repo == "extra")
+            colored = blue_b repo reset white "/" white_b pkgname reset
+          else if (repo == "multilib")
+            colored = green_b repo reset white "/" white_b pkgname reset
+          else
+            colored = blue_b repo reset white "/" white_b pkgname reset
+        } else {
+          colored = blue_b pkg reset
+        }
+
+        print colored "\t" pkg "\t" ver "\t" size "\t" desc
+      }
+    ' "$tmp" \
+      | fzf --ansi --with-nth=1 --delimiter=$'\t' --multi --prompt="pacsearch> " \
+          --preview='echo {3} {4}; echo {5}' --preview-window='down:4:wrap'
+  )
+  local rc=$?
+  rm -f "$tmp"
+  (( rc )) && return
+
+  [[ -z "$raw" ]] && return
+
+  local pkgs
+  pkgs=$(echo "$raw" | awk -F'\t' '{print $2}')
+  [[ -z "$pkgs" ]] && return
+
+  "$helper" -S "${(f)pkgs}"
+}
